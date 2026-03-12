@@ -1,0 +1,37 @@
+diff --git a/node_modules/@meteorrn/core/src/Meteor.d.ts b/node_modules/@meteorrn/core/src/Meteor.d.ts
+index 0437f49..eb71e3a 100644
+--- a/node_modules/@meteorrn/core/src/Meteor.d.ts
++++ b/node_modules/@meteorrn/core/src/Meteor.d.ts
+@@ -43,9 +43,9 @@ declare module '@meteorrn/core' {
+   }
+ 
+   interface ConnectOptions {
+-    suppressUrlErrors: boolean;
++    suppressUrlErrors?: boolean;
+     AsyncStorage: AsyncStorageStatic;
+-    reachabilityUrl: string;
++    reachabilityUrl?: string;
+   }
+ 
+   interface Meteor {
+@@ -59,6 +59,11 @@ declare module '@meteorrn/core' {
+       status: Status;
+     };
+ 
++    loginWithPassword(
++      user: string | { email: string } | { username: string },
++      password: string,
++      cb?: (err?: MeteorError) => void
++    ): void;
+     logout(cb: Callback): void;
+     loggingOut(): boolean;
+     loggingIn(): boolean;
+@@ -70,7 +75,7 @@ declare module '@meteorrn/core' {
+     readonly isVerbose: boolean;
+     enableVerbose(): void;
+ 
+-    useTracker<T>(): useTracker<T>;
++    useTracker<T>(cb: () => T): T;
+ 
+     ddp: Data;
+ 

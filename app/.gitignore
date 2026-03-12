@@ -1,14 +1,13 @@
-.idea
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
 # dependencies
 node_modules/
 
 # Expo
-app/.expo/
-app/dist/
-app/web-build/
-app/expo-env.d.ts
-app/.expo-env.d.ts
+.expo/
+dist/
+web-build/
+expo-env.d.ts
 
 # Native
 .kotlin/
@@ -37,9 +36,10 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-# Meteor
-backend/.meteor/local/
+app-example
 
 # generated native folders
-app/ios
-app/android
+/ios
+/android
+
+.expo-env.d.ts
