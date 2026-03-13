@@ -1,7 +1,16 @@
 diff --git a/node_modules/@meteorrn/core/src/Meteor.d.ts b/node_modules/@meteorrn/core/src/Meteor.d.ts
-index 0437f49..eb71e3a 100644
+index 0437f49..dff3396 100644
 --- a/node_modules/@meteorrn/core/src/Meteor.d.ts
 +++ b/node_modules/@meteorrn/core/src/Meteor.d.ts
+@@ -27,7 +27,7 @@ declare module '@meteorrn/core' {
+     };
+   }
+ 
+-  interface MeteorError {
++  export interface MeteorError {
+     error: string;
+     reason?: string;
+     details?: string;
 @@ -43,9 +43,9 @@ declare module '@meteorrn/core' {
    }
  
@@ -14,7 +23,7 @@ index 0437f49..eb71e3a 100644
    }
  
    interface Meteor {
-@@ -59,6 +59,11 @@ declare module '@meteorrn/core' {
+@@ -59,9 +59,14 @@ declare module '@meteorrn/core' {
        status: Status;
      };
  
@@ -25,7 +34,11 @@ index 0437f49..eb71e3a 100644
 +    ): void;
      logout(cb: Callback): void;
      loggingOut(): boolean;
-     loggingIn(): boolean;
+-    loggingIn(): boolean;
++    loggingIn(): boolean | undefined;
+ 
+     getData(): Data;
+     user(): User | undefined;
 @@ -70,7 +75,7 @@ declare module '@meteorrn/core' {
      readonly isVerbose: boolean;
      enableVerbose(): void;

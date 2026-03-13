@@ -1,28 +1,36 @@
-import { Stack, useRouter, useSegments } from 'expo-router'
-import { useEffect } from 'react'
+import { Stack } from 'expo-router'
 
-import { useAuthStore } from '@/store/useAuthStore'
+import { SplashScreenController } from '@/components/SplashScreenController'
 import { useConnection } from '@/hooks/useConnection'
+import { useAuthStore } from '@/store/useAuthStore'
 
-const AUTH_SCREENS = ['login', 'register']
+export default function Root() {
+  useConnection()
+  return (
+    <>
+      <SplashScreenController />
+      <RootNavigator />
+    </>
+  )
+}
 
-export default function RootLayout() {
-  const { connected } = useConnection()
+function RootNavigator() {
   const userToken = useAuthStore(s => s.userToken)
-  const segments = useSegments()
-  const router = useRouter()
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        animation: 'none',
+      }}
+    >
+      <Stack.Protected guard={!!userToken}>
+        <Stack.Screen name="(app)" />
+      </Stack.Protected>
 
-  useEffect(() => {
-    if (!connected) return
-
-    const onAuthScreen = AUTH_SCREENS.includes(segments[0] as string)
-
-    if (!userToken && !onAuthScreen) {
-      router.replace('/login')
-    } else if (userToken && onAuthScreen) {
-      router.replace('/')
-    }
-  }, [connected, userToken, segments])
-
-  return <Stack screenOptions={{ headerShown: false }} />
+      <Stack.Protected guard={!userToken}>
+        <Stack.Screen name="login" />
+        <Stack.Screen name="register" />
+      </Stack.Protected>
+    </Stack>
+  )
 }

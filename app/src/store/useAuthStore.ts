@@ -11,7 +11,7 @@ type AuthActions = {
 }
 
 export const useAuthStore = create<AuthState & AuthActions>()(set => ({
-  isLoading: false,
+  isLoading: true,
   userToken: null,
   setLoading: (isLoading: boolean) => set({ isLoading }),
   setUserToken: (userToken: AuthState['userToken']) => set({ userToken }),

@@ -2,15 +2,15 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 
 import { useAuth } from '@/hooks/useAuth'
 
-export default function HomeScreen() {
-  const { authContext } = useAuth()
+export function HomeScreen() {
+  const { signOut } = useAuth()
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>You're logged in!</Text>
       <Pressable
         style={styles.button}
-        onPress={() => authContext.signOut({ onError: () => {} })}
+        onPress={() => signOut({ onError: () => {} })}
       >
         <Text style={styles.buttonText}>Sign out</Text>
       </Pressable>
