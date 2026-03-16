@@ -1,5 +1,5 @@
+import { useFormik } from 'formik'
 import { Link } from 'expo-router'
-import { useState } from 'react'
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -9,30 +9,35 @@ import {
   Text,
   TextInput,
 } from 'react-native'
+import * as Yup from 'yup'
 
 import { useAuth } from '@/hooks/useAuth'
 
+const validationSchema = Yup.object({
+  name: Yup.string().required('Required'),
+  email: Yup.string().email('Invalid email').required('Required'),
+  password: Yup.string().min(6, 'At least 6 characters').required('Required'),
+})
+
 export function RegisterScreen() {
   const { register } = useAuth()
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
 
-  function handleRegister() {
-    setError(null)
-    setLoading(true)
-    register({
-      name,
-      email,
-      password,
-      onError: err => {
-        setError(err.reason ?? err.error)
-        setLoading(false)
+  const { values, errors, touched, handleChange, handleBlur, handleSubmit, isSubmitting, setErrors } =
+    useFormik({
+      initialValues: { name: '', email: '', password: '' },
+      validationSchema,
+      onSubmit: (values, { setSubmitting }) => {
+        register({
+          name: values.name,
+          email: values.email,
+          password: values.password,
+          onError: err => {
+            setErrors({ password: err.reason ?? err.error })
+            setSubmitting(false)
+          },
+        })
       },
     })
-  }
 
   return (
     <KeyboardAvoidingView
@@ -44,36 +49,48 @@ export function RegisterScreen() {
       <TextInput
         style={styles.input}
         placeholder="Name"
-        value={name}
-        onChangeText={setName}
+        value={values.name}
+        onChangeText={handleChange('name')}
+        onBlur={handleBlur('name')}
         textContentType="name"
       />
+      {touched.name && errors.name && (
+        <Text style={styles.error}>{errors.name}</Text>
+      )}
+
       <TextInput
         style={styles.input}
         placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
+        value={values.email}
+        onChangeText={handleChange('email')}
+        onBlur={handleBlur('email')}
         autoCapitalize="none"
         keyboardType="email-address"
         textContentType="emailAddress"
       />
+      {touched.email && errors.email && (
+        <Text style={styles.error}>{errors.email}</Text>
+      )}
+
       <TextInput
         style={styles.input}
         placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
+        value={values.password}
+        onChangeText={handleChange('password')}
+        onBlur={handleBlur('password')}
         secureTextEntry
         textContentType="newPassword"
       />
-
-      {error && <Text style={styles.error}>{error}</Text>}
+      {touched.password && errors.password && (
+        <Text style={styles.error}>{errors.password}</Text>
+      )}
 
       <Pressable
         style={styles.button}
-        onPress={handleRegister}
-        disabled={loading}
+        onPress={() => handleSubmit()}
+        disabled={isSubmitting}
       >
-        {loading ? (
+        {isSubmitting ? (
           <ActivityIndicator color="#fff" />
         ) : (
           <Text style={styles.buttonText}>Create account</Text>
@@ -104,12 +121,13 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     borderRadius: 8,
     padding: 14,
-    marginBottom: 12,
+    marginBottom: 4,
     fontSize: 16,
   },
   error: {
     color: '#e53e3e',
-    marginBottom: 12,
+    marginBottom: 8,
+    fontSize: 13,
   },
   button: {
     backgroundColor: '#208AEF',

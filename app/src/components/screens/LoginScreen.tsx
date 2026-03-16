@@ -1,5 +1,5 @@
+import { useFormik } from 'formik'
 import { Link } from 'expo-router'
-import { useState } from 'react'
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -9,28 +9,33 @@ import {
   Text,
   TextInput,
 } from 'react-native'
+import * as Yup from 'yup'
 
 import { useAuth } from '@/hooks/useAuth'
 
+const validationSchema = Yup.object({
+  email: Yup.string().email('Invalid email').required('Required'),
+  password: Yup.string().required('Required'),
+})
+
 export function LoginScreen() {
   const { signIn } = useAuth()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
 
-  function handleLogin() {
-    setError(null)
-    setLoading(true)
-    signIn({
-      email,
-      password,
-      onError: err => {
-        setError(err.reason ?? err.error)
-        setLoading(false)
+  const { values, errors, touched, handleChange, handleBlur, handleSubmit, isSubmitting, setErrors } =
+    useFormik({
+      initialValues: { email: '', password: '' },
+      validationSchema,
+      onSubmit: (values, { setSubmitting }) => {
+        signIn({
+          email: values.email,
+          password: values.password,
+          onError: err => {
+            setErrors({ password: err.reason ?? err.error })
+            setSubmitting(false)
+          },
+        })
       },
     })
-  }
 
   return (
     <KeyboardAvoidingView
@@ -42,25 +47,32 @@ export function LoginScreen() {
       <TextInput
         style={styles.input}
         placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
+        value={values.email}
+        onChangeText={handleChange('email')}
+        onBlur={handleBlur('email')}
         autoCapitalize="none"
         keyboardType="email-address"
         textContentType="emailAddress"
       />
+      {touched.email && errors.email && (
+        <Text style={styles.error}>{errors.email}</Text>
+      )}
+
       <TextInput
         style={styles.input}
         placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
+        value={values.password}
+        onChangeText={handleChange('password')}
+        onBlur={handleBlur('password')}
         secureTextEntry
         textContentType="password"
       />
+      {touched.password && errors.password && (
+        <Text style={styles.error}>{errors.password}</Text>
+      )}
 
-      {error && <Text style={styles.error}>{error}</Text>}
-
-      <Pressable style={styles.button} onPress={handleLogin} disabled={loading}>
-        {loading ? (
+      <Pressable style={styles.button} onPress={() => handleSubmit()} disabled={isSubmitting}>
+        {isSubmitting ? (
           <ActivityIndicator color="#fff" />
         ) : (
           <Text style={styles.buttonText}>Sign in</Text>
@@ -91,12 +103,13 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     borderRadius: 8,
     padding: 14,
-    marginBottom: 12,
+    marginBottom: 4,
     fontSize: 16,
   },
   error: {
     color: '#e53e3e',
-    marginBottom: 12,
+    marginBottom: 8,
+    fontSize: 13,
   },
   button: {
     backgroundColor: '#208AEF',
