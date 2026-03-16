@@ -1,5 +1,7 @@
-import { Pressable, Text, View } from 'react-native'
+import { View } from 'react-native'
 
+import { Button, ButtonText } from '@/components/ui/button'
+import { Text } from '@/components/ui/text'
 import { useAuth } from '@/hooks/useAuth'
 
 export function HomeScreen() {
@@ -7,13 +9,10 @@ export function HomeScreen() {
 
   return (
     <View className="flex-1 items-center justify-center bg-white">
-      <Text className="text-2xl font-semibold mb-8">You're logged in!</Text>
-      <Pressable
-        className="bg-red-500 rounded-lg py-3 px-8"
-        onPress={() => signOut({ onError: () => {} })}
-      >
-        <Text className="text-white text-base font-semibold">Sign out</Text>
-      </Pressable>
+      <Text size="2xl" bold className="mb-8">You're logged in!</Text>
+      <Button action="negative" onPress={() => signOut({ onError: () => {} })}>
+        <ButtonText>Sign out</ButtonText>
+      </Button>
     </View>
   )
 }

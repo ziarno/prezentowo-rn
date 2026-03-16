@@ -4,10 +4,14 @@
     "strict": true,
     "paths": {
       "@/*": [
-        "./src/*"
+        "./src/*",
+        "./*"
       ],
       "@/assets/*": [
         "./assets/*"
+      ],
+      "tailwind.config": [
+        "./tailwind.config.js"
       ]
     }
   },
