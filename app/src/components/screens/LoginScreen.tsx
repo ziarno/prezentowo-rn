@@ -5,7 +5,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  StyleSheet,
   Text,
   TextInput,
 } from 'react-native'
@@ -39,13 +38,13 @@ export function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      className="flex-1 justify-center bg-white px-6"
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <Text style={styles.title}>Sign in</Text>
+      <Text className="text-3xl font-bold mb-8">Sign in</Text>
 
       <TextInput
-        style={styles.input}
+        className="border border-gray-200 rounded-lg p-4 mb-1 text-base"
         placeholder="Email"
         value={values.email}
         onChangeText={handleChange('email')}
@@ -55,11 +54,11 @@ export function LoginScreen() {
         textContentType="emailAddress"
       />
       {touched.email && errors.email && (
-        <Text style={styles.error}>{errors.email}</Text>
+        <Text className="text-red-500 text-sm mb-2">{errors.email}</Text>
       )}
 
       <TextInput
-        style={styles.input}
+        className="border border-gray-200 rounded-lg p-4 mb-1 text-base"
         placeholder="Password"
         value={values.password}
         onChangeText={handleChange('password')}
@@ -68,64 +67,24 @@ export function LoginScreen() {
         textContentType="password"
       />
       {touched.password && errors.password && (
-        <Text style={styles.error}>{errors.password}</Text>
+        <Text className="text-red-500 text-sm mb-2">{errors.password}</Text>
       )}
 
-      <Pressable style={styles.button} onPress={() => handleSubmit()} disabled={isSubmitting}>
+      <Pressable
+        className="bg-[#208AEF] rounded-lg p-4 items-center mt-2"
+        onPress={() => handleSubmit()}
+        disabled={isSubmitting}
+      >
         {isSubmitting ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Sign in</Text>
+          <Text className="text-white text-base font-semibold">Sign in</Text>
         )}
       </Pressable>
 
-      <Link href="/register" style={styles.link}>
+      <Link href="/register" className="mt-6 text-center text-[#208AEF]">
         Don't have an account? Register
       </Link>
     </KeyboardAvoidingView>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 32,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 4,
-    fontSize: 16,
-  },
-  error: {
-    color: '#e53e3e',
-    marginBottom: 8,
-    fontSize: 13,
-  },
-  button: {
-    backgroundColor: '#208AEF',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  link: {
-    marginTop: 24,
-    textAlign: 'center',
-    color: '#208AEF',
-  },
-})

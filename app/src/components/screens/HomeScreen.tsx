@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, Text, View } from 'react-native'
 
 import { useAuth } from '@/hooks/useAuth'
 
@@ -6,39 +6,14 @@ export function HomeScreen() {
   const { signOut } = useAuth()
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>You're logged in!</Text>
+    <View className="flex-1 items-center justify-center bg-white">
+      <Text className="text-2xl font-semibold mb-8">You're logged in!</Text>
       <Pressable
-        style={styles.button}
+        className="bg-red-500 rounded-lg py-3 px-8"
         onPress={() => signOut({ onError: () => {} })}
       >
-        <Text style={styles.buttonText}>Sign out</Text>
+        <Text className="text-white text-base font-semibold">Sign out</Text>
       </Pressable>
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '600',
-    marginBottom: 32,
-  },
-  button: {
-    backgroundColor: '#e53e3e',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-})
