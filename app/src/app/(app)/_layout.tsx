@@ -1,5 +1,12 @@
-import { Stack } from 'expo-router'
+import { Drawer } from 'expo-router/drawer'
+
+import { DrawerContent } from '@/components/DrawerContent'
 
 export default function AppLayout() {
-  return <Stack />
+  return (
+    <Drawer
+      drawerContent={props => <DrawerContent {...props} />}
+      screenOptions={{ headerShown: true }}
+    />
+  )
 }
