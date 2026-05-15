@@ -17,6 +17,7 @@ import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/garland'
 import { useAuth } from '@/hooks/useAuth'
 import { AuthField } from '@/ui/components/AuthField'
+import { LanguageToggle } from '@/ui/components/LanguageToggle'
 
 export function SignInScreen() {
   const { requestMagicLink } = useAuth()
@@ -65,13 +66,12 @@ export function SignInScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View className="flex-1 px-7">
-          <Pressable
-            onPress={() => router.back()}
-            hitSlop={12}
-            className="py-3.5"
-          >
-            <LocalSvg asset={backArrowAsset} width={22} height={22} />
-          </Pressable>
+          <View className="flex-row items-center justify-between py-3.5">
+            <Pressable onPress={() => router.back()} hitSlop={12}>
+              <LocalSvg asset={backArrowAsset} width={22} height={22} />
+            </Pressable>
+            <LanguageToggle />
+          </View>
 
           <View className="pt-4">
             <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">

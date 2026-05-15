@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Button, ButtonText } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
 import { useAuthStore } from '@/store/useAuthStore'
+import { LanguageToggle } from '@/ui/components/LanguageToggle'
 import { OnboardingIllustration } from '@/ui/components/OnboardingIllustration'
 
 type Page = {
@@ -75,11 +76,14 @@ export function OnboardingScreen() {
         <Text className="text-xs font-bold uppercase tracking-[1px] text-garland-ink-40">
           {pages[step].eyebrow}
         </Text>
-        <Button variant="link" action="default" onPress={finish}>
-          <ButtonText className="text-[13px] text-garland-ink-60">
-            {t`Skip`}
-          </ButtonText>
-        </Button>
+        <View className="flex-row items-center gap-3">
+          <LanguageToggle />
+          <Button variant="link" action="default" onPress={finish}>
+            <ButtonText className="text-[13px] text-garland-ink-60">
+              {t`Skip`}
+            </ButtonText>
+          </Button>
+        </View>
       </View>
 
       <FlatList

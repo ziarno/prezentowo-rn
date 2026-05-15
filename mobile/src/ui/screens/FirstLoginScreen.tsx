@@ -28,6 +28,7 @@ import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/garland'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AuthField } from '@/ui/components/AuthField'
+import { LanguageToggle } from '@/ui/components/LanguageToggle'
 
 const AVATARS = ['f1', 'm1', 'f2', 'm2', 'f3', 'm3', 'f4', 'm4'] as const
 
@@ -86,16 +87,19 @@ export function FirstLoginScreen() {
             <Text className="text-xs font-bold uppercase tracking-[1px] text-garland-ink-40">
               <Trans>Step 1 · 1</Trans>
             </Text>
-            <Button
-              variant="link"
-              action="default"
-              hitSlop={12}
-              onPress={() => setFirstLoginPending(false)}
-            >
-              <ButtonText className="text-[13px] text-garland-ink-60">
-                <Trans>Skip</Trans>
-              </ButtonText>
-            </Button>
+            <View className="flex-row items-center gap-3">
+              <LanguageToggle />
+              <Button
+                variant="link"
+                action="default"
+                hitSlop={12}
+                onPress={() => setFirstLoginPending(false)}
+              >
+                <ButtonText className="text-[13px] text-garland-ink-60">
+                  <Trans>Skip</Trans>
+                </ButtonText>
+              </Button>
+            </View>
           </View>
 
           <View className="pt-1.5">

@@ -20,6 +20,15 @@ function resolveLocale(): SupportedLocale {
 
 i18n.loadAndActivate({ locale: 'en', messages: catalogs.en })
 
+const LOCALE_ORDER: SupportedLocale[] = ['en', 'pl']
+
+export function switchLocale() {
+  const current = i18n.locale as SupportedLocale
+  const next =
+    LOCALE_ORDER[(LOCALE_ORDER.indexOf(current) + 1) % LOCALE_ORDER.length]
+  i18n.loadAndActivate({ locale: next!, messages: catalogs[next!] })
+}
+
 export function LocalizationProvider({ children }: { children: ReactNode }) {
   const [, forceUpdate] = useState(0)
 

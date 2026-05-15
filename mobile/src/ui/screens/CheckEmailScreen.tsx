@@ -11,6 +11,7 @@ import { Button, ButtonText } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/store/useAuthStore'
+import { LanguageToggle } from '@/ui/components/LanguageToggle'
 
 const RESEND_SECONDS = 42
 
@@ -51,13 +52,12 @@ export function CheckEmailScreen() {
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
       <View className="flex-1 px-7">
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={12}
-          className="py-3.5"
-        >
-          <LocalSvg asset={backArrowAsset} width={22} height={22} />
-        </Pressable>
+        <View className="flex-row items-center justify-between py-3.5">
+          <Pressable onPress={() => router.back()} hitSlop={12}>
+            <LocalSvg asset={backArrowAsset} width={22} height={22} />
+          </Pressable>
+          <LanguageToggle />
+        </View>
 
         <View className="pt-4">
           <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
