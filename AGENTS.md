@@ -7,13 +7,13 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 **From repo root:**
 ```bash
 yarn install       # Install all workspace dependencies
-yarn app           # Start mobile app (Expo dev server)
+yarn mobile        # Start mobile app (Expo dev server)
 yarn backend       # Start Meteor backend
-yarn lint          # Lint app code
-yarn format        # Format app + backend code
+yarn lint          # Lint mobile app code
+yarn format        # Format mobile + backend code
 ```
 
-**App-specific (from `app/`):**
+**Mobile-specific (from `mobile/`):**
 ```bash
 yarn start         # Start Expo dev server
 yarn ios           # Run on iOS simulator
@@ -30,11 +30,11 @@ yarn test          # Run tests once
 ## Architecture
 
 This is a monorepo with three workspaces:
-- `app/` — React Native/Expo mobile client
+- `mobile/` — React Native/Expo mobile client
 - `backend/` — Meteor.js server
 - `packages/types/` — Shared TypeScript types (e.g. `RegisterNewUserArgs`, `LoginCredentials`)
 
-### App (`app/`)
+### Mobile App (`mobile/`)
 
 **Routing**: Expo Router with file-based routes in `src/app/`:
 - `_layout.tsx` — Root layout; uses `Stack.Protected` to guard routes based on auth state

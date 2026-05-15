@@ -3,21 +3,21 @@
   "private": true,
   "workspaces": {
     "packages": [
-      "app",
+      "mobile",
       "backend",
       "packages/*"
     ],
     "nohoist": [
-      "app",
-      "app/**",
+      "mobile",
+      "mobile/**",
       "backend",
       "backend/**"
     ]
   },
   "scripts": {
-    "app": "yarn workspace app start",
+    "mobile": "yarn workspace mobile start",
     "backend": "yarn workspace backend start",
-    "lint": "yarn workspace app lint",
+    "lint": "yarn workspace mobile lint",
     "format": "yarn workspaces run format"
   },
   "engines": {

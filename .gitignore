@@ -4,11 +4,11 @@
 node_modules/
 
 # Expo
-app/.expo/
-app/dist/
-app/web-build/
-app/expo-env.d.ts
-app/.expo-env.d.ts
+mobile/.expo/
+mobile/dist/
+mobile/web-build/
+mobile/expo-env.d.ts
+mobile/.expo-env.d.ts
 
 # Native
 .kotlin/
@@ -41,5 +41,5 @@ yarn-error.*
 backend/.meteor/local/
 
 # generated native folders
-app/ios
-app/android
+mobile/ios
+mobile/android
