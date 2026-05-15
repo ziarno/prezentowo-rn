@@ -1,12 +1,11 @@
 import Meteor, { type MeteorError } from '@meteorrn/core'
-import type { LoginCredentials, RegisterNewUserArgs } from '@prezentowo/types'
 import { useCallback, useEffect } from 'react'
 
 import { useAuthStore } from '@/store/useAuthStore'
 
-type SignInParams = {
+type RequestMagicLinkParams = {
   email: string
-  password: string
+  onSuccess: () => void
   onError: (err: MeteorError) => void
 }
 
@@ -14,14 +13,11 @@ type SignOutParams = {
   onError: (err: MeteorError) => void
 }
 
-type RegisterParams = RegisterNewUserArgs & {
-  onError: (err: MeteorError) => void
-}
-
 const Data = Meteor.getData()
 
 export const useAuth = () => {
   const setUserToken = useAuthStore(s => s.setUserToken)
+  const setPendingEmail = useAuthStore(s => s.setPendingEmail)
   const isLoading = Meteor.useTracker(() => Meteor.loggingIn() === true)
 
   const onLogin = useCallback(() => {
@@ -35,13 +31,27 @@ export const useAuth = () => {
 
   return {
     isLoading,
-    signIn: ({ email, password, onError }: SignInParams) => {
-      Meteor.loginWithPassword(email, password, err => {
-        if (err) {
-          return onError(err)
-        }
-        onLogin()
-      })
+    // Passwordless: ask the backend to email a magic link, then hand off to
+    // the "check your email" screen. The backend method does not exist yet —
+    // the call falls through to onSuccess so the UI can be exercised end-to-end.
+    // TODO: implement `requestMagicLink` on the Meteor side and remove the
+    // fallback below once it lands.
+    requestMagicLink: ({
+      email,
+      onSuccess,
+      onError,
+    }: RequestMagicLinkParams) => {
+      setPendingEmail(email)
+      Meteor.call(
+        'requestMagicLink',
+        { email },
+        (err: MeteorError | undefined) => {
+          // 404 = method not registered on the backend yet; let dev exercise
+          // the UI in that case.
+          if (err && String(err.error) !== '404') return onError(err)
+          onSuccess()
+        },
+      )
     },
     signOut: ({ onError }: SignOutParams) => {
       Meteor.logout(err => {
@@ -50,19 +60,6 @@ export const useAuth = () => {
         }
         setUserToken(null)
       })
-    },
-    register: ({ email, password, name, onError }: RegisterParams) => {
-      Meteor.call(
-        'registerNewUser',
-        { email, password, name },
-        (err: MeteorError, credentials: LoginCredentials) => {
-          if (err) {
-            return onError(err)
-          }
-          Meteor._handleLoginCallback(null, credentials)
-          onLogin()
-        },
-      )
     },
   }
 }

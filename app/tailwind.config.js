@@ -173,6 +173,20 @@ module.exports = {
           info: 'rgb(var(--color-indicator-info)/<alpha-value>)',
           error: 'rgb(var(--color-indicator-error)/<alpha-value>)',
         },
+        // Garland design tokens — Prezentowo brand palette (light mode).
+        // Source: prezentowo design bundle, direction-garland.jsx
+        garland: {
+          paper: '#fffaf2',
+          paper2: '#f5ede0',
+          ink: '#1d1a14',
+          'ink-60': 'rgba(29,26,20,0.6)',
+          'ink-40': 'rgba(29,26,20,0.4)',
+          'ink-15': 'rgba(29,26,20,0.15)',
+          'ink-08': 'rgba(29,26,20,0.08)',
+          green: '#2f5b3a',
+          amber: '#c7973d',
+          berry: '#9a3a25',
+        },
       },
       fontFamily: {
         heading: undefined,
