@@ -1,6 +1,6 @@
 import Meteor, { type MeteorError } from '@meteorrn/core'
 import type { LoginCredentials, RegisterNewUserArgs } from '@prezentowo/types'
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 
 import { useAuthStore } from '@/store/useAuthStore'
 
@@ -22,21 +22,16 @@ const Data = Meteor.getData()
 
 export const useAuth = () => {
   const setUserToken = useAuthStore(s => s.setUserToken)
-  const setIsLoading = useAuthStore(s => s.setLoading)
-  const isLoading = useAuthStore(s => s.isLoading)
+  const isLoading = Meteor.useTracker(() => Meteor.loggingIn() === true)
 
-  function onLogin() {
+  const onLogin = useCallback(() => {
     setUserToken(Meteor.getAuthToken())
-  }
+  }, [setUserToken])
 
   useEffect(() => {
     Data.on('onLogin', onLogin)
     return () => Data.off('onLogin', onLogin)
-  }, [])
-
-  Meteor.useTracker(() => {
-    setIsLoading(Meteor.loggingIn() === true)
-  })
+  }, [onLogin])
 
   return {
     isLoading,

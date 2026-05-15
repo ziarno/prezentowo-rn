@@ -1,6 +1,5 @@
 import Meteor from '@meteorrn/core'
 import * as SecureStore from 'expo-secure-store'
-import { useState } from 'react'
 
 import config from '../../config.json'
 
@@ -13,11 +12,7 @@ Meteor.connect(config.backend.url, {
 })
 
 export const useConnection = () => {
-  const [connected, setConnected] = useState(false)
-
-  Meteor.useTracker(() => {
-    setConnected(Meteor.status().connected)
-  })
+  const connected = Meteor.useTracker(() => Meteor.status().connected)
 
   return { connected }
 }

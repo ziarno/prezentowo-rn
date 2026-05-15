@@ -1,14 +1,12 @@
 import { Stack } from 'expo-router'
 
-import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider'
 import { SplashScreenController } from '@/components/SplashScreenController'
-import { useConnection } from '@/hooks/useConnection'
+import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider'
 import { useAuthStore } from '@/store/useAuthStore'
 
 import '../../global.css'
 
 export default function Root() {
-  useConnection()
   return (
     <GluestackUIProvider mode="light">
       <SplashScreenController />
