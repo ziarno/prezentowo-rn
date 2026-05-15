@@ -6,11 +6,11 @@ import {
   FlatList,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
-  Pressable,
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { Button, ButtonText } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
 import { useAuthStore } from '@/store/useAuthStore'
 import { OnboardingIllustration } from '@/ui/components/OnboardingIllustration'
@@ -75,9 +75,11 @@ export function OnboardingScreen() {
         <Text className="text-xs font-bold uppercase tracking-[1px] text-garland-ink-40">
           {pages[step].eyebrow}
         </Text>
-        <Pressable onPress={finish} hitSlop={12}>
-          <Text className="text-[13px] text-garland-ink-60">{t`Skip`}</Text>
-        </Pressable>
+        <Button variant="link" action="default" onPress={finish}>
+          <ButtonText className="text-[13px] text-garland-ink-60">
+            {t`Skip`}
+          </ButtonText>
+        </Button>
       </View>
 
       <FlatList
@@ -116,14 +118,14 @@ export function OnboardingScreen() {
             />
           ))}
         </View>
-        <Pressable
+        <Button
           onPress={advance}
-          className="rounded-full bg-garland-ink px-[22px] py-3"
+          className="h-auto rounded-full bg-garland-ink px-[22px] py-3"
         >
-          <Text className="text-[15px] font-semibold text-garland-paper">
+          <ButtonText className="text-[15px] font-semibold text-garland-paper">
             {step === pages.length - 1 ? t`Get started →` : t`Continue →`}
-          </Text>
-        </Pressable>
+          </ButtonText>
+        </Button>
       </View>
     </SafeAreaView>
   )

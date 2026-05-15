@@ -1,10 +1,11 @@
 import { Trans } from '@lingui/react/macro'
 import { router } from 'expo-router'
-import { Pressable, View } from 'react-native'
+import { View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LocalSvg } from 'react-native-svg/css'
 
 import giftMarkAsset from '@/assets/svg/gift-mark.svg'
+import { Button, ButtonText } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
 
 export function WelcomeScreen() {
@@ -27,14 +28,14 @@ export function WelcomeScreen() {
         </View>
 
         <View className="gap-3 pb-9">
-          <Pressable
+          <Button
             onPress={() => router.push('/signin')}
-            className="rounded-full bg-garland-ink px-[18px] py-[15px]"
+            className="h-auto rounded-full bg-garland-ink px-[18px] py-[15px]"
           >
-            <Text className="text-center text-base font-semibold text-garland-paper">
+            <ButtonText className="text-base font-semibold text-garland-paper">
               <Trans>Get started</Trans>
-            </Text>
-          </Pressable>
+            </ButtonText>
+          </Button>
           <Text className="text-center text-xs leading-[18px] text-garland-ink-40">
             <Trans>
               Sign in or create an account — same place, no password.

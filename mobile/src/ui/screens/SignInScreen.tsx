@@ -2,7 +2,6 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { router } from 'expo-router'
 import { useFormik } from 'formik'
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,6 +12,7 @@ import { LocalSvg } from 'react-native-svg/css'
 import * as Yup from 'yup'
 
 import backArrowAsset from '@/assets/svg/back-arrow.svg'
+import { Button, ButtonSpinner, ButtonText } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/garland'
 import { useAuth } from '@/hooks/useAuth'
@@ -109,21 +109,19 @@ export function SignInScreen() {
           <View className="flex-1" />
 
           <View className="pb-9">
-            <Pressable
+            <Button
               onPress={() => handleSubmit()}
               disabled={isSubmitting}
-              className={`rounded-full bg-garland-ink px-[18px] py-[15px] ${
-                isSubmitting ? 'opacity-60' : 'opacity-100'
-              }`}
+              className="h-auto rounded-full bg-garland-ink px-[18px] py-[15px]"
             >
               {isSubmitting ? (
-                <ActivityIndicator color={garland.paper} />
+                <ButtonSpinner color={garland.paper} />
               ) : (
-                <Text className="text-center text-base font-semibold text-garland-paper">
+                <ButtonText className="text-base font-semibold text-garland-paper">
                   <Trans>Email me a link</Trans>
-                </Text>
+                </ButtonText>
               )}
-            </Pressable>
+            </Button>
 
             <View className="my-5 flex-row items-center gap-2.5">
               <View className="h-px flex-1 bg-garland-ink-08" />
@@ -133,18 +131,19 @@ export function SignInScreen() {
               <View className="h-px flex-1 bg-garland-ink-08" />
             </View>
 
-            <Pressable
+            <Button
               onPress={() => {
-                // Google sign-in is not wired up yet. Once it lands, route to
-                // /check-email or directly to the post-auth flow.
+                // Google sign-in is not wired up yet.
               }}
-              className="flex-row items-center justify-center gap-2.5 rounded-full border-[1.5px] border-garland-ink-15 px-[18px] py-[13px]"
+              className="h-auto rounded-full border-[1.5px] border-garland-ink-15 bg-transparent px-[18px] py-[13px] gap-2.5"
             >
-              <Text className="text-base font-bold text-garland-ink">G</Text>
-              <Text className="text-sm font-semibold text-garland-ink">
+              <ButtonText className="text-base font-bold text-garland-ink">
+                G
+              </ButtonText>
+              <ButtonText className="text-sm font-semibold text-garland-ink">
                 <Trans>Continue with Google</Trans>
-              </Text>
-            </Pressable>
+              </ButtonText>
+            </Button>
 
             <Text className="mt-4 text-center text-xs leading-[18px] text-garland-ink-40">
               <Trans>

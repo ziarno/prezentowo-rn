@@ -2,7 +2,6 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { useFormik } from 'formik'
 import { useState } from 'react'
 import {
-  ActivityIndicator,
   Image,
   type ImageSourcePropType,
   KeyboardAvoidingView,
@@ -24,6 +23,7 @@ import m3Avatar from '@/assets/images/avatars/m3.png'
 import m4Avatar from '@/assets/images/avatars/m4.png'
 import checkMarkAsset from '@/assets/svg/check-mark.svg'
 import plusIconAsset from '@/assets/svg/plus-icon.svg'
+import { Button, ButtonSpinner, ButtonText } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/garland'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -86,16 +86,16 @@ export function FirstLoginScreen() {
             <Text className="text-xs font-bold uppercase tracking-[1px] text-garland-ink-40">
               <Trans>Step 1 · 1</Trans>
             </Text>
-            <Pressable
+            <Button
+              variant="link"
+              action="default"
               hitSlop={12}
-              onPress={() => {
-                setFirstLoginPending(false)
-              }}
+              onPress={() => setFirstLoginPending(false)}
             >
-              <Text className="text-[13px] text-garland-ink-60">
+              <ButtonText className="text-[13px] text-garland-ink-60">
                 <Trans>Skip</Trans>
-              </Text>
-            </Pressable>
+              </ButtonText>
+            </Button>
           </View>
 
           <View className="pt-1.5">
@@ -155,21 +155,19 @@ export function FirstLoginScreen() {
           <View className="flex-1" />
 
           <View className="pb-9">
-            <Pressable
+            <Button
               onPress={() => handleSubmit()}
               disabled={isSubmitting}
-              className={`rounded-full bg-garland-ink px-[18px] py-[15px] ${
-                isSubmitting ? 'opacity-60' : 'opacity-100'
-              }`}
+              className="h-auto rounded-full bg-garland-ink px-[18px] py-[15px]"
             >
               {isSubmitting ? (
-                <ActivityIndicator color={garland.paper} />
+                <ButtonSpinner color={garland.paper} />
               ) : (
-                <Text className="text-center text-base font-semibold text-garland-paper">
+                <ButtonText className="text-base font-semibold text-garland-paper">
                   <Trans>Continue</Trans>
-                </Text>
+                </ButtonText>
               )}
-            </Pressable>
+            </Button>
           </View>
         </View>
       </KeyboardAvoidingView>
