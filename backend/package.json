@@ -1,6 +1,7 @@
 {
   "name": "backend",
   "private": true,
+  "version": "1.0.0",
   "scripts": {
     "start": "meteor --port=8100 --settings=settings.json",
     "test": "meteor test --once --driver-package meteortesting:mocha",
@@ -9,9 +10,10 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@babel/runtime": "^7.29.2",
     "@prezentowo/types": "*",
-    "@babel/runtime": "^7.23.5",
     "@swc/helpers": "^0.5.17",
+    "lodash": "^4.18.1",
     "meteor-node-stubs": "^1.2.12",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
@@ -23,6 +25,7 @@
     "@rspack/core": "^1.7.1",
     "@rspack/plugin-react-refresh": "^1.4.3",
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
+    "@types/lodash": "^4.17.24",
     "@types/meteor": "^2.9.9",
     "@types/mocha": "^8.2.3",
     "@types/node": "^22.10.6",

@@ -1,16 +1,27 @@
 {
   "name": "prezentowo-rn",
   "private": true,
-  "workspaces": [
-    "app",
-    "backend",
-    "packages/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "app",
+      "backend",
+      "packages/*"
+    ],
+    "nohoist": [
+      "app",
+      "app/**",
+      "backend",
+      "backend/**"
+    ]
+  },
   "scripts": {
-    "app": "npm run start --workspace=app",
-    "backend": "npm run start --workspace=backend",
-    "lint": "npm run lint --workspace=app",
-    "format": "npm run format --workspace=app && npm run format --workspace=backend"
+    "app": "yarn workspace app start",
+    "backend": "yarn workspace backend start",
+    "lint": "yarn workspace app lint",
+    "format": "yarn workspaces run format"
+  },
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24.0.0"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

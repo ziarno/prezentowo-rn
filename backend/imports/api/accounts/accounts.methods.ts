@@ -1,8 +1,8 @@
+import type { RegisterNewUserArgs, UpdateUserArgs } from '@prezentowo/types'
+import { isEmpty } from 'lodash'
 import { Accounts } from 'meteor/accounts-base'
 import { Match, check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
-
-import type { RegisterNewUserArgs, UpdateUserArgs } from '@prezentowo/types'
 
 const registerNewUser = async function (options: RegisterNewUserArgs) {
   check(
@@ -20,7 +20,11 @@ const registerNewUser = async function (options: RegisterNewUserArgs) {
     throw new Meteor.Error('permissionDenied', 'userExists', email)
   }
 
-  const userId = Accounts.createUser({ email, password, profile: { name } })
+  const userId = await Accounts.createUserAsync({
+    email,
+    password,
+    profile: { name },
+  })
   const stampedToken = Accounts._generateStampedLoginToken()
   const hashedToken = Accounts._hashStampedToken(stampedToken)
   Accounts._insertHashedLoginToken(userId, hashedToken)
@@ -46,13 +50,19 @@ const updateUser = async function (options: UpdateUserArgs) {
     throw new Meteor.Error('notFound', 'userNotFound', userId)
   }
 
+  const currentEmail = user.emails?.[0]?.address
+  const updates: Record<string, unknown> = {}
+
   if (name) {
-    Meteor.users.update(userId, { $set: { 'profile.name': name } })
+    updates['profile.name'] = name
   }
 
-  if (email) {
-    Accounts.removeEmail(userId, user.emails![0].address)
-    Accounts.addEmail(userId, email)
+  if (email && currentEmail !== email) {
+    updates['emails'] = [{ address: email, verified: false }]
+  }
+
+  if (!isEmpty(updates)) {
+    await Meteor.users.updateAsync(userId, { $set: updates })
   }
 }
 
