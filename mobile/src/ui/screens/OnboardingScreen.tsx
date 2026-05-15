@@ -10,10 +10,9 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-import { OnboardingIllustration } from '@/components/screens/OnboardingIllustration'
 import { Text } from '@/components/ui/text'
-import { displayFont, garland } from '@/constants/garland'
 import { useAuthStore } from '@/store/useAuthStore'
+import { OnboardingIllustration } from '@/ui/components/OnboardingIllustration'
 
 type Page = {
   eyebrow: string
@@ -70,16 +69,13 @@ export function OnboardingScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: garland.paper }}>
+    <SafeAreaView className="flex-1 bg-garland-paper">
       <View className="flex-row items-center justify-between px-7 pt-1">
-        <Text
-          className="font-bold uppercase"
-          style={{ fontSize: 12, color: garland.ink40, letterSpacing: 1 }}
-        >
+        <Text className="text-xs font-bold uppercase tracking-[1px] text-garland-ink-40">
           {PAGES[step].eyebrow}
         </Text>
         <Pressable onPress={finish} hitSlop={12}>
-          <Text style={{ fontSize: 13, color: garland.ink60 }}>Skip</Text>
+          <Text className="text-[13px] text-garland-ink-60">Skip</Text>
         </Pressable>
       </View>
 
@@ -96,22 +92,12 @@ export function OnboardingScreen() {
             <View className="mb-7 h-[220px] items-center justify-center">
               <OnboardingIllustration kind={item.illu} />
             </View>
-            <Text
-              style={{
-                fontFamily: displayFont,
-                fontSize: 36,
-                lineHeight: 36,
-                color: garland.ink,
-              }}
-            >
+            <Text className="font-garland-display text-[36px] leading-[36px] text-garland-ink">
               {item.title[0]}
               {'\n'}
               {item.title[1]}
             </Text>
-            <Text
-              className="mt-4"
-              style={{ fontSize: 16, lineHeight: 25, color: garland.ink60 }}
-            >
+            <Text className="mt-4 text-base leading-[25px] text-garland-ink-60">
               {item.body}
             </Text>
           </View>
@@ -123,27 +109,17 @@ export function OnboardingScreen() {
           {PAGES.map((_, n) => (
             <View
               key={n}
-              style={{
-                width: n === step ? 24 : 6,
-                height: 6,
-                borderRadius: 999,
-                backgroundColor: n === step ? garland.green : garland.ink15,
-              }}
+              className={`h-1.5 rounded-full ${
+                n === step ? 'w-6 bg-garland-green' : 'w-1.5 bg-garland-ink-15'
+              }`}
             />
           ))}
         </View>
         <Pressable
           onPress={advance}
-          style={{
-            backgroundColor: garland.ink,
-            borderRadius: 999,
-            paddingVertical: 12,
-            paddingHorizontal: 22,
-          }}
+          className="rounded-full bg-garland-ink px-[22px] py-3"
         >
-          <Text
-            style={{ color: garland.paper, fontSize: 15, fontWeight: '600' }}
-          >
+          <Text className="text-[15px] font-semibold text-garland-paper">
             {step === PAGES.length - 1 ? 'Get started →' : 'Continue →'}
           </Text>
         </Pressable>

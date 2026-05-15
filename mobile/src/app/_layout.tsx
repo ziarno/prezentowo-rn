@@ -1,9 +1,9 @@
 import { useFonts } from 'expo-font'
 import { Stack } from 'expo-router'
 
-import { SplashScreenController } from '@/components/SplashScreenController'
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider'
 import { useAuthStore } from '@/store/useAuthStore'
+import { SplashScreenController } from '@/ui/SplashScreenController'
 
 import '../../global.css'
 

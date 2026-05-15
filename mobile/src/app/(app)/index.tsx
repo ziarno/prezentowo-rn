@@ -1,3 +1,3 @@
-import { HomeScreen } from '@/components/screens/HomeScreen'
+import { HomeScreen } from '@/ui/screens/HomeScreen'
 
 export default HomeScreen

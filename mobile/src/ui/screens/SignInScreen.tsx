@@ -8,34 +8,18 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import Svg, { Path } from 'react-native-svg'
+import { LocalSvg } from 'react-native-svg/css'
 import * as Yup from 'yup'
 
-import { AuthField } from '@/components/garland/AuthField'
+import backArrowAsset from '@/assets/svg/back-arrow.svg'
 import { Text } from '@/components/ui/text'
-import { displayFont, garland } from '@/constants/garland'
+import { garland } from '@/constants/garland'
 import { useAuth } from '@/hooks/useAuth'
+import { AuthField } from '@/ui/components/AuthField'
 
 const validationSchema = Yup.object({
   email: Yup.string().email('Invalid email').required('Required'),
 })
-
-function BackArrow() {
-  return (
-    <Svg
-      width={22}
-      height={22}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={garland.ink}
-      strokeWidth={1.6}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <Path d="M19 12H5M12 19l-7-7 7-7" />
-    </Svg>
-  )
-}
 
 export function SignInScreen() {
   const { requestMagicLink } = useAuth()
@@ -71,9 +55,9 @@ export function SignInScreen() {
   })
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: garland.paper }}>
+    <SafeAreaView className="flex-1 bg-garland-paper">
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View className="flex-1 px-7">
@@ -82,31 +66,17 @@ export function SignInScreen() {
             hitSlop={12}
             className="py-3.5"
           >
-            <BackArrow />
+            <LocalSvg asset={backArrowAsset} width={22} height={22} />
           </Pressable>
 
           <View className="pt-4">
-            <Text
-              className="font-bold uppercase"
-              style={{ fontSize: 11, color: garland.ink40, letterSpacing: 1.1 }}
-            >
+            <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
               Welcome
             </Text>
-            <Text
-              className="mt-2"
-              style={{
-                fontFamily: displayFont,
-                fontSize: 38,
-                lineHeight: 39,
-                color: garland.ink,
-              }}
-            >
+            <Text className="mt-2 font-garland-display text-[38px] leading-[39px] text-garland-ink">
               Sign in.
             </Text>
-            <Text
-              className="mt-2.5"
-              style={{ fontSize: 14, lineHeight: 21, color: garland.ink60 }}
-            >
+            <Text className="mt-2.5 text-sm leading-[21px] text-garland-ink-60">
               {`Enter your email and we'll send a magic link. New here? We'll set you up right after.`}
             </Text>
           </View>
@@ -135,49 +105,25 @@ export function SignInScreen() {
             <Pressable
               onPress={() => handleSubmit()}
               disabled={isSubmitting}
-              style={{
-                backgroundColor: garland.ink,
-                borderRadius: 999,
-                paddingVertical: 15,
-                paddingHorizontal: 18,
-                opacity: isSubmitting ? 0.6 : 1,
-              }}
+              className={`rounded-full bg-garland-ink px-[18px] py-[15px] ${
+                isSubmitting ? 'opacity-60' : 'opacity-100'
+              }`}
             >
               {isSubmitting ? (
                 <ActivityIndicator color={garland.paper} />
               ) : (
-                <Text
-                  style={{
-                    color: garland.paper,
-                    fontSize: 16,
-                    fontWeight: '600',
-                  }}
-                  className="text-center"
-                >
+                <Text className="text-center text-base font-semibold text-garland-paper">
                   Email me a link
                 </Text>
               )}
             </Pressable>
 
-            <View className="my-5 flex-row items-center" style={{ gap: 10 }}>
-              <View
-                className="h-px flex-1"
-                style={{ backgroundColor: garland.ink08 }}
-              />
-              <Text
-                className="font-bold uppercase"
-                style={{
-                  fontSize: 12,
-                  color: garland.ink40,
-                  letterSpacing: 1.1,
-                }}
-              >
+            <View className="my-5 flex-row items-center gap-2.5">
+              <View className="h-px flex-1 bg-garland-ink-08" />
+              <Text className="text-xs font-bold uppercase tracking-[1.1px] text-garland-ink-40">
                 or
               </Text>
-              <View
-                className="h-px flex-1"
-                style={{ backgroundColor: garland.ink08 }}
-              />
+              <View className="h-px flex-1 bg-garland-ink-08" />
             </View>
 
             <Pressable
@@ -185,42 +131,18 @@ export function SignInScreen() {
                 // Google sign-in is not wired up yet. Once it lands, route to
                 // /check-email or directly to the post-auth flow.
               }}
-              style={{
-                borderRadius: 999,
-                paddingVertical: 13,
-                paddingHorizontal: 18,
-                borderWidth: 1.5,
-                borderColor: garland.ink15,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 10,
-              }}
+              className="flex-row items-center justify-center gap-2.5 rounded-full border-[1.5px] border-garland-ink-15 px-[18px] py-[13px]"
             >
-              <Text
-                style={{ fontSize: 16, color: garland.ink, fontWeight: '700' }}
-              >
-                G
-              </Text>
-              <Text
-                style={{ fontSize: 14, color: garland.ink, fontWeight: '600' }}
-              >
+              <Text className="text-base font-bold text-garland-ink">G</Text>
+              <Text className="text-sm font-semibold text-garland-ink">
                 Continue with Google
               </Text>
             </Pressable>
 
-            <Text
-              className="mt-4 text-center"
-              style={{ fontSize: 12, color: garland.ink40, lineHeight: 18 }}
-            >
+            <Text className="mt-4 text-center text-xs leading-[18px] text-garland-ink-40">
               By continuing you agree to the{' '}
-              <Text style={{ color: garland.ink, fontWeight: '700' }}>
-                Terms
-              </Text>{' '}
-              and{' '}
-              <Text style={{ color: garland.ink, fontWeight: '700' }}>
-                Privacy Policy
-              </Text>
+              <Text className="font-bold text-garland-ink">Terms</Text> and{' '}
+              <Text className="font-bold text-garland-ink">Privacy Policy</Text>
               .
             </Text>
           </View>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 200" fill="none">
+  <g stroke="#2f5b3a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="58" y="14" width="104" height="172" rx="14" />
+    <rect x="86" y="20" width="48" height="4" rx="2" fill="#2f5b3a" stroke="none" />
+    <rect x="68" y="38" width="84" height="36" rx="6" />
+    <rect x="76" y="46" width="20" height="20" rx="4" />
+    <path d="M104 50 H140" />
+    <path d="M104 58 H128" opacity="0.5" />
+    <rect x="68" y="82" width="84" height="36" rx="6" />
+    <rect x="76" y="90" width="20" height="20" rx="4" />
+    <path d="M104 94 H140" />
+    <path d="M104 102 H132" opacity="0.5" />
+    <rect x="68" y="126" width="84" height="36" rx="6" />
+    <rect x="76" y="134" width="20" height="20" rx="4" />
+    <path d="M104 138 H140" />
+    <path d="M104 146 H124" opacity="0.5" />
+    <circle cx="148" cy="172" r="11" fill="#2f5b3a" stroke="none" />
+    <path d="M148 167 V177 M143 172 H153" stroke="#fffaf2" stroke-width="1.5" />
+  </g>
+  <path d="M28 80 l3 6 l6 3 l-6 3 l-3 6 l-3 -6 l-6 -3 l6 -3 z" fill="#c7973d" />
+  <path d="M186 110 l2 4 l4 2 l-4 2 l-2 4 l-2 -4 l-4 -2 l4 -2 z" fill="#c7973d" />
+</svg>

@@ -1,3 +1,3 @@
-import { SignInScreen } from '@/components/screens/SignInScreen'
+import { SignInScreen } from '@/ui/screens/SignInScreen'
 
 export default SignInScreen

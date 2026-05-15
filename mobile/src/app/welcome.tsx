@@ -1,3 +1,3 @@
-import { WelcomeScreen } from '@/components/screens/WelcomeScreen'
+import { WelcomeScreen } from '@/ui/screens/WelcomeScreen'
 
 export default WelcomeScreen

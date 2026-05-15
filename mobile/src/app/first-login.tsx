@@ -1,3 +1,3 @@
-import { FirstLoginScreen } from '@/components/screens/FirstLoginScreen'
+import { FirstLoginScreen } from '@/ui/screens/FirstLoginScreen'
 
 export default FirstLoginScreen

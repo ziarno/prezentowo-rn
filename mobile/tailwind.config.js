@@ -189,6 +189,7 @@ module.exports = {
         },
       },
       fontFamily: {
+        'garland-display': ['FoglihtenNo07'],
         heading: undefined,
         body: undefined,
         mono: undefined,

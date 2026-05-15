@@ -20,16 +20,12 @@ export function GluestackUIProvider({
 
   useEffect(() => {
     setColorScheme(mode)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode])
+  }, [mode, setColorScheme])
 
   return (
     <View
-      style={[
-        config[colorScheme!],
-        { flex: 1, height: '100%', width: '100%' },
-        props.style,
-      ]}
+      className="h-full w-full flex-1"
+      style={[config[colorScheme!], props.style]}
     >
       <OverlayProvider>
         <ToastProvider>{props.children}</ToastProvider>

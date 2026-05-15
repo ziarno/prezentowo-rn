@@ -1,3 +1,3 @@
-import { CheckEmailScreen } from '@/components/screens/CheckEmailScreen'
+import { CheckEmailScreen } from '@/ui/screens/CheckEmailScreen'
 
 export default CheckEmailScreen
