@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { useFormik } from 'formik'
 import { useState } from 'react'
 import {
@@ -41,15 +42,18 @@ const AVATAR_SOURCES: Record<(typeof AVATARS)[number], ImageSourcePropType> = {
   m4: m4Avatar,
 }
 
-const validationSchema = Yup.object({
-  name: Yup.string().trim().required('Required'),
-})
-
 export function FirstLoginScreen() {
   const [selected, setSelected] = useState<(typeof AVATARS)[number] | null>(
     'f1',
   )
+  const { t } = useLingui()
   const setFirstLoginPending = useAuthStore(s => s.setFirstLoginPending)
+
+  const validationSchema = Yup.object({
+    name: Yup.string()
+      .trim()
+      .required(t`Required`),
+  })
 
   const {
     values,
@@ -80,7 +84,7 @@ export function FirstLoginScreen() {
         <View className="flex-1 px-7">
           <View className="flex-row items-center justify-between py-3.5">
             <Text className="text-xs font-bold uppercase tracking-[1px] text-garland-ink-40">
-              Step 1 · 1
+              <Trans>Step 1 · 1</Trans>
             </Text>
             <Pressable
               hitSlop={12}
@@ -88,26 +92,32 @@ export function FirstLoginScreen() {
                 setFirstLoginPending(false)
               }}
             >
-              <Text className="text-[13px] text-garland-ink-60">Skip</Text>
+              <Text className="text-[13px] text-garland-ink-60">
+                <Trans>Skip</Trans>
+              </Text>
             </Pressable>
           </View>
 
           <View className="pt-1.5">
             <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-              {`You're in.`}
+              <Trans>You&apos;re in.</Trans>
             </Text>
             <Text className="mt-2 font-garland-display text-[34px] leading-[35px] text-garland-ink">
-              {`Let's set you\nup.`}
+              <Trans>Let&apos;s set you</Trans>
+              {'\n'}
+              <Trans>up.</Trans>
             </Text>
             <Text className="mt-2.5 text-sm leading-[21px] text-garland-ink-60">
-              How should we show you to friends and family on Prezentowo?
+              <Trans>
+                How should we show you to friends and family on Prezentowo?
+              </Trans>
             </Text>
           </View>
 
           <View className="mt-6">
             <AuthField
-              label="Your name"
-              placeholder="Alex Kowalski"
+              label={t`Your name`}
+              placeholder={t`Alex Kowalski`}
               value={values.name}
               onChangeText={handleChange('name')}
               onBlur={handleBlur('name')}
@@ -121,7 +131,7 @@ export function FirstLoginScreen() {
 
           <View className="mt-6">
             <Text className="mb-3 text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-              Profile picture
+              <Trans>Profile picture</Trans>
             </Text>
             <View className="flex-row flex-wrap gap-2.5">
               <UploadTile />
@@ -135,8 +145,10 @@ export function FirstLoginScreen() {
               ))}
             </View>
             <Text className="mt-3 text-xs leading-[18px] text-garland-ink-40">
-              Tap the <Text className="font-bold text-garland-ink">+</Text> to
-              upload your own photo, or pick one of ours.
+              <Trans>
+                Tap the <Text className="font-bold text-garland-ink">+</Text> to
+                upload your own photo, or pick one of ours.
+              </Trans>
             </Text>
           </View>
 
@@ -154,7 +166,7 @@ export function FirstLoginScreen() {
                 <ActivityIndicator color={garland.paper} />
               ) : (
                 <Text className="text-center text-base font-semibold text-garland-paper">
-                  Continue
+                  <Trans>Continue</Trans>
                 </Text>
               )}
             </Pressable>

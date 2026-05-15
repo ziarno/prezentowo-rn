@@ -1,10 +1,11 @@
 module.exports = function (api) {
-  api.cache(true);
+  api.cache(true)
 
   return {
     presets: [['babel-preset-expo'], 'nativewind/babel'],
 
     plugins: [
+      '@lingui/babel-plugin-lingui-macro',
       [
         'module-resolver',
         {
@@ -18,5 +19,5 @@ module.exports = function (api) {
       ],
       'react-native-worklets/plugin',
     ],
-  };
-};
+  }
+}

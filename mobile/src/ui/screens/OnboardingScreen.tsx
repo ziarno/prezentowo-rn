@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { router } from 'expo-router'
 import { useCallback, useRef, useState } from 'react'
 import {
@@ -21,29 +22,29 @@ type Page = {
   illu: 'intro' | 'wishlist' | 'claim'
 }
 
-const PAGES: Page[] = [
-  {
-    eyebrow: '01 · 03',
-    title: ['Wishlists,', 'not guesswork.'],
-    body: "Prezentowo is a quiet place to share what you'd love this Christmas — so the people you love can stop guessing.",
-    illu: 'intro',
-  },
-  {
-    eyebrow: '02 · 03',
-    title: ['Build', 'your list.'],
-    body: 'Add gift ideas as you stumble on them. Links, photos, a quick note about size or colour — anything that helps.',
-    illu: 'wishlist',
-  },
-  {
-    eyebrow: '03 · 03',
-    title: ['Claim', 'quietly.'],
-    body: "When you reserve a gift for someone, only the other givers see it. The person it's for never finds out.",
-    illu: 'claim',
-  },
-]
-
 export function OnboardingScreen() {
   const width = Dimensions.get('window').width
+  const { t } = useLingui()
+  const pages: Page[] = [
+    {
+      eyebrow: t`01 · 03`,
+      title: [t`Wishlists,`, t`not guesswork.`],
+      body: t`Prezentowo is a quiet place to share what you'd love this Christmas — so the people you love can stop guessing.`,
+      illu: 'intro',
+    },
+    {
+      eyebrow: t`02 · 03`,
+      title: [t`Build`, t`your list.`],
+      body: t`Add gift ideas as you stumble on them. Links, photos, a quick note about size or colour — anything that helps.`,
+      illu: 'wishlist',
+    },
+    {
+      eyebrow: t`03 · 03`,
+      title: [t`Claim`, t`quietly.`],
+      body: t`When you reserve a gift for someone, only the other givers see it. The person it's for never finds out.`,
+      illu: 'claim',
+    },
+  ]
   const [step, setStep] = useState(0)
   const listRef = useRef<FlatList<Page>>(null)
   const completeOnboarding = useAuthStore(s => s.completeOnboarding)
@@ -54,7 +55,7 @@ export function OnboardingScreen() {
   }, [completeOnboarding])
 
   const advance = () => {
-    if (step >= PAGES.length - 1) {
+    if (step >= pages.length - 1) {
       finish()
       return
     }
@@ -72,16 +73,16 @@ export function OnboardingScreen() {
     <SafeAreaView className="flex-1 bg-garland-paper">
       <View className="flex-row items-center justify-between px-7 pt-1">
         <Text className="text-xs font-bold uppercase tracking-[1px] text-garland-ink-40">
-          {PAGES[step].eyebrow}
+          {pages[step].eyebrow}
         </Text>
         <Pressable onPress={finish} hitSlop={12}>
-          <Text className="text-[13px] text-garland-ink-60">Skip</Text>
+          <Text className="text-[13px] text-garland-ink-60">{t`Skip`}</Text>
         </Pressable>
       </View>
 
       <FlatList
         ref={listRef}
-        data={PAGES}
+        data={pages}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -106,7 +107,7 @@ export function OnboardingScreen() {
 
       <View className="flex-row items-center justify-between px-7 pb-9">
         <View className="flex-row gap-1.5">
-          {PAGES.map((_, n) => (
+          {pages.map((_, n) => (
             <View
               key={n}
               className={`h-1.5 rounded-full ${
@@ -120,7 +121,7 @@ export function OnboardingScreen() {
           className="rounded-full bg-garland-ink px-[22px] py-3"
         >
           <Text className="text-[15px] font-semibold text-garland-paper">
-            {step === PAGES.length - 1 ? 'Get started →' : 'Continue →'}
+            {step === pages.length - 1 ? t`Get started →` : t`Continue →`}
           </Text>
         </Pressable>
       </View>

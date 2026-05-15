@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import { router } from 'expo-router'
 import { Pressable, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -15,11 +16,13 @@ export function WelcomeScreen() {
             <LocalSvg asset={giftMarkAsset} width={44} height={44} />
           </View>
           <Text className="font-garland-display text-[44px] leading-[44px] tracking-[0.2px] text-garland-ink">
-            Prezentowo.
+            <Trans>Prezentowo.</Trans>
           </Text>
           <View className="my-6 h-0.5 w-9 bg-garland-green" />
           <Text className="max-w-[280px] text-base leading-[25px] text-garland-ink-60">
-            A quiet place to share gift ideas with people you love.
+            <Trans>
+              A quiet place to share gift ideas with people you love.
+            </Trans>
           </Text>
         </View>
 
@@ -29,11 +32,13 @@ export function WelcomeScreen() {
             className="rounded-full bg-garland-ink px-[18px] py-[15px]"
           >
             <Text className="text-center text-base font-semibold text-garland-paper">
-              Get started
+              <Trans>Get started</Trans>
             </Text>
           </Pressable>
           <Text className="text-center text-xs leading-[18px] text-garland-ink-40">
-            Sign in or create an account — same place, no password.
+            <Trans>
+              Sign in or create an account — same place, no password.
+            </Trans>
           </Text>
         </View>
       </View>

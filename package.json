@@ -18,7 +18,8 @@
     "mobile": "yarn workspace mobile start",
     "backend": "yarn workspace backend start",
     "lint": "yarn workspace mobile lint",
-    "format": "yarn workspaces run format"
+    "format": "yarn workspaces run format",
+    "lingui": "yarn workspace mobile lingui"
   },
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24.0.0"

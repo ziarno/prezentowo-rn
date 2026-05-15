@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import {
   type DrawerContentComponentProps,
   DrawerContentScrollView,
@@ -21,7 +22,9 @@ export function DrawerContent(props: DrawerContentComponentProps) {
           action="secondary"
           onPress={() => router.push('/')}
         >
-          <ButtonText>Home</ButtonText>
+          <ButtonText>
+            <Trans>Home</Trans>
+          </ButtonText>
         </Button>
 
         <Button
@@ -29,7 +32,9 @@ export function DrawerContent(props: DrawerContentComponentProps) {
           action="secondary"
           onPress={() => router.push('/(app)/profile')}
         >
-          <ButtonText>Profile</ButtonText>
+          <ButtonText>
+            <Trans>Profile</Trans>
+          </ButtonText>
         </Button>
 
         <View className="flex-1" />
@@ -38,7 +43,9 @@ export function DrawerContent(props: DrawerContentComponentProps) {
           action="negative"
           onPress={() => signOut({ onError: () => {} })}
         >
-          <ButtonText>Log out</ButtonText>
+          <ButtonText>
+            <Trans>Log out</Trans>
+          </ButtonText>
         </Button>
       </VStack>
     </DrawerContentScrollView>

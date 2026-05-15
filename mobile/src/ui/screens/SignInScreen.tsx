@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { router } from 'expo-router'
 import { useFormik } from 'formik'
 import {
@@ -17,12 +18,15 @@ import { garland } from '@/constants/garland'
 import { useAuth } from '@/hooks/useAuth'
 import { AuthField } from '@/ui/components/AuthField'
 
-const validationSchema = Yup.object({
-  email: Yup.string().email('Invalid email').required('Required'),
-})
-
 export function SignInScreen() {
   const { requestMagicLink } = useAuth()
+  const { t } = useLingui()
+
+  const validationSchema = Yup.object({
+    email: Yup.string()
+      .email(t`Invalid email`)
+      .required(t`Required`),
+  })
 
   const {
     values,
@@ -47,7 +51,7 @@ export function SignInScreen() {
           setSubmitting(false)
           setErrors({
             email:
-              err.reason ?? err.error?.toString() ?? 'Something went wrong',
+              err.reason ?? err.error?.toString() ?? t`Something went wrong`,
           })
         },
       })
@@ -71,20 +75,23 @@ export function SignInScreen() {
 
           <View className="pt-4">
             <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-              Welcome
+              <Trans>Welcome</Trans>
             </Text>
             <Text className="mt-2 font-garland-display text-[38px] leading-[39px] text-garland-ink">
-              Sign in.
+              <Trans>Sign in.</Trans>
             </Text>
             <Text className="mt-2.5 text-sm leading-[21px] text-garland-ink-60">
-              {`Enter your email and we'll send a magic link. New here? We'll set you up right after.`}
+              <Trans>
+                Enter your email and we&apos;ll send a magic link. New here?
+                We&apos;ll set you up right after.
+              </Trans>
             </Text>
           </View>
 
           <View className="mt-6">
             <AuthField
-              label="Email"
-              placeholder="you@example.com"
+              label={t`Email`}
+              placeholder={t`you@example.com`}
               value={values.email}
               onChangeText={handleChange('email')}
               onBlur={handleBlur('email')}
@@ -113,7 +120,7 @@ export function SignInScreen() {
                 <ActivityIndicator color={garland.paper} />
               ) : (
                 <Text className="text-center text-base font-semibold text-garland-paper">
-                  Email me a link
+                  <Trans>Email me a link</Trans>
                 </Text>
               )}
             </Pressable>
@@ -121,7 +128,7 @@ export function SignInScreen() {
             <View className="my-5 flex-row items-center gap-2.5">
               <View className="h-px flex-1 bg-garland-ink-08" />
               <Text className="text-xs font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-                or
+                <Trans>or</Trans>
               </Text>
               <View className="h-px flex-1 bg-garland-ink-08" />
             </View>
@@ -135,15 +142,19 @@ export function SignInScreen() {
             >
               <Text className="text-base font-bold text-garland-ink">G</Text>
               <Text className="text-sm font-semibold text-garland-ink">
-                Continue with Google
+                <Trans>Continue with Google</Trans>
               </Text>
             </Pressable>
 
             <Text className="mt-4 text-center text-xs leading-[18px] text-garland-ink-40">
-              By continuing you agree to the{' '}
-              <Text className="font-bold text-garland-ink">Terms</Text> and{' '}
-              <Text className="font-bold text-garland-ink">Privacy Policy</Text>
-              .
+              <Trans>
+                By continuing you agree to the{' '}
+                <Text className="font-bold text-garland-ink">Terms</Text> and{' '}
+                <Text className="font-bold text-garland-ink">
+                  Privacy Policy
+                </Text>
+                .
+              </Trans>
             </Text>
           </View>
         </View>

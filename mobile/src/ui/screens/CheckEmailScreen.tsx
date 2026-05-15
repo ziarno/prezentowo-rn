@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { router } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { Linking, Platform, Pressable, View } from 'react-native'
@@ -19,8 +20,10 @@ function formatCountdown(s: number) {
 }
 
 export function CheckEmailScreen() {
-  const email = useAuthStore(s => s.pendingEmail) ?? 'your inbox'
+  const pendingEmail = useAuthStore(s => s.pendingEmail)
   const { requestMagicLink } = useAuth()
+  const { t } = useLingui()
+  const email = pendingEmail ?? t`your inbox`
   const [countdown, setCountdown] = useState(RESEND_SECONDS)
 
   useEffect(() => {
@@ -35,10 +38,10 @@ export function CheckEmailScreen() {
   }
 
   const resend = () => {
-    if (countdown > 0 || email === 'your inbox') return
+    if (countdown > 0 || !pendingEmail) return
     setCountdown(RESEND_SECONDS)
     requestMagicLink({
-      email,
+      email: pendingEmail,
       onSuccess: () => {},
       onError: () => {},
     })
@@ -57,15 +60,19 @@ export function CheckEmailScreen() {
 
         <View className="pt-4">
           <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-            Check your email
+            <Trans>Check your email</Trans>
           </Text>
           <Text className="mt-2 font-garland-display text-[36px] leading-[37px] text-garland-ink">
-            We sent you{'\n'}a magic link.
+            <Trans>We sent you</Trans>
+            {'\n'}
+            <Trans>a magic link.</Trans>
           </Text>
           <Text className="mt-3.5 text-sm leading-[21px] text-garland-ink-60">
-            Tap the link in the email we just sent to{' '}
-            <Text className="font-bold text-garland-ink">{email}</Text> to
-            finish signing in. The link works for 15 minutes.
+            <Trans>
+              Tap the link in the email we just sent to{' '}
+              <Text className="font-bold text-garland-ink">{email}</Text> to
+              finish signing in. The link works for 15 minutes.
+            </Trans>
           </Text>
         </View>
 
@@ -75,10 +82,12 @@ export function CheckEmailScreen() {
           </View>
           <View className="min-w-0 flex-1">
             <Text className="text-sm font-bold text-garland-ink">
-              Sent just now
+              <Trans>Sent just now</Trans>
             </Text>
             <Text className="mt-1 text-xs leading-[18px] text-garland-ink-60">
-              {`From hello@prezentowo.app · check spam if you don't see it.`}
+              <Trans>
+                From hello@prezentowo.app · check spam if you don&apos;t see it.
+              </Trans>
             </Text>
           </View>
         </View>
@@ -91,16 +100,16 @@ export function CheckEmailScreen() {
             className="rounded-full bg-garland-ink px-[18px] py-[15px]"
           >
             <Text className="text-center text-base font-semibold text-garland-paper">
-              Open mail app
+              <Trans>Open mail app</Trans>
             </Text>
           </Pressable>
           <Pressable onPress={resend} className="mt-4">
             <Text className="text-center text-[13px] text-garland-ink-60">
-              {`Didn't get it? `}
+              <Trans>Didn&apos;t get it?</Trans>{' '}
               <Text className="font-bold text-garland-ink">
                 {countdown > 0
-                  ? `Resend in ${formatCountdown(countdown)}`
-                  : 'Resend'}
+                  ? t`Resend in ${formatCountdown(countdown)}`
+                  : t`Resend`}
               </Text>
             </Text>
           </Pressable>

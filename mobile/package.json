@@ -9,6 +9,9 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "lingui:extract": "lingui extract",
+    "lingui:compile": "lingui compile --typescript",
+    "lingui": "yarn lingui:extract & yarn lingui:compile",
     "format": "prettier --write .",
     "postinstall": "patch-package"
   },
@@ -17,6 +20,8 @@
     "@gluestack-ui/core": "^3.0.13",
     "@gluestack-ui/utils": "^3.0.15",
     "@legendapp/motion": "^2.5.3",
+    "@lingui/core": "6.0.1",
+    "@lingui/react": "6.0.1",
     "@meteorrn/core": "^2.9.1",
     "@prezentowo/types": "*",
     "@react-native-community/netinfo": "11.5.2",
@@ -61,6 +66,9 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@lingui/babel-plugin-lingui-macro": "6.0.1",
+    "@lingui/cli": "6.0.1",
+    "@lingui/metro-transformer": "6.0.1",
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "@types/react": "~19.2.2",
     "babel-plugin-module-resolver": "^5.0.2",

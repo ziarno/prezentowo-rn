@@ -2,6 +2,7 @@ import { useFonts } from 'expo-font'
 import { Stack } from 'expo-router'
 
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider'
+import { LocalizationProvider } from '@/localization/provider'
 import { useAuthStore } from '@/store/useAuthStore'
 import { SplashScreenController } from '@/ui/SplashScreenController'
 
@@ -14,8 +15,10 @@ export default function Root() {
 
   return (
     <GluestackUIProvider mode="light">
-      <SplashScreenController fontsLoaded={fontsLoaded} />
-      {fontsLoaded ? <RootNavigator /> : null}
+      <LocalizationProvider>
+        <SplashScreenController fontsLoaded={fontsLoaded} />
+        {fontsLoaded ? <RootNavigator /> : null}
+      </LocalizationProvider>
     </GluestackUIProvider>
   )
 }
