@@ -43,3 +43,6 @@ backend/.meteor/local/
 # generated native folders
 mobile/ios
 mobile/android
+
+# meteor mcp venv
+packages/mcp-meteor/.venv

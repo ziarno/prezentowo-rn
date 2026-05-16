@@ -20,7 +20,8 @@
     "format": "yarn workspaces run format",
     "lingui": "yarn workspace mobile lingui",
     "mcp:gluestack": "node ./node_modules/gluestack-mcp/index.js",
-    "npkill": "npx npkill"
+    "npkill": "npx npkill",
+    "postinstall": "bash scripts/setup-meteor-mcp.sh"
   },
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24.0.0"

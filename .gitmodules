@@ -1,0 +1,3 @@
+[submodule "packages/mcp-meteor"]
+	path = packages/mcp-meteor
+	url = https://github.com/apitlekays/meteor-mcp
