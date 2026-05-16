@@ -1,0 +1,4 @@
+[mcp_servers.gluestack]
+command = "yarn"
+args = ["mcp:gluestack"]
+startup_timeout_sec = 20
