@@ -2,8 +2,8 @@
   "mcpServers": {
     "gluestack": {
       "type": "stdio",
-      "command": "yarn",
-      "args": ["mcp:gluestack"]
+      "command": "node",
+      "args": ["./node_modules/gluestack-mcp/index.js"]
     },
     "meteor": {
       "type": "stdio",

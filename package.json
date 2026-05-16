@@ -17,7 +17,6 @@
     "lint": "yarn workspace mobile lint",
     "format": "yarn workspaces run format",
     "lingui": "yarn workspace mobile lingui",
-    "mcp:gluestack": "node ./node_modules/gluestack-mcp/index.js",
     "npkill": "npx npkill",
     "postinstall": "bash scripts/setup-meteor-mcp.sh"
   },
