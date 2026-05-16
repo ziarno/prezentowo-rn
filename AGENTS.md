@@ -19,7 +19,7 @@ yarn lint          # Lint mobile app code
 yarn format        # Format mobile + backend code
 ```
 
-**Mobile-specific (from `mobile/`):**
+**Mobile-specific (from `workspaces/mobile/`):**
 ```bash
 yarn start         # Start Expo dev server
 yarn ios           # Run on iOS simulator
@@ -27,7 +27,7 @@ yarn android       # Run on Android emulator
 yarn web           # Run web app
 ```
 
-**Backend-specific (from `backend/`):**
+**Backend-specific (from `workspaces/backend/`):**
 ```bash
 yarn start         # Start Meteor on port 8100 with settings.json
 yarn test          # Run tests once
@@ -35,12 +35,13 @@ yarn test          # Run tests once
 
 ## Architecture
 
-This is a monorepo with three workspaces:
-- `mobile/` — React Native/Expo mobile client
-- `backend/` — Meteor.js server
-- `packages/types/` — Shared TypeScript types (e.g. `RegisterNewUserArgs`, `LoginCredentials`)
+This is a monorepo with workspaces under `workspaces/`:
+- `workspaces/mobile/` — React Native/Expo mobile client
+- `workspaces/backend/` — Meteor.js server
+- `workspaces/types/` — Shared TypeScript types (e.g. `RegisterNewUserArgs`, `LoginCredentials`)
+- `workspaces/mcp-meteor/` — Meteor MCP server (git submodule)
 
-### Mobile App (`mobile/`)
+### Mobile App (`workspaces/mobile/`)
 
 **Routing**: Expo Router with file-based routes in `src/app/`:
 - `_layout.tsx` — Root layout; uses `Stack.Protected` to guard routes based on auth state
@@ -63,11 +64,11 @@ This is a monorepo with three workspaces:
 
 **Path alias**: `@/*` maps to `src/*` (and `./` for assets).
 
-### Backend (`backend/`)
+### Backend (`workspaces/backend/`)
 
 Meteor.js app running on port 8100 with TypeScript. Key structure:
 - `imports/api/accounts/accounts.methods.ts` — Meteor methods: `registerNewUser`, `updateUser`
 - `imports/startup/server/accounts.config.ts` — Accounts system configuration
 - Requires `settings.json` at startup (passed via `--settings settings.json`)
 
-Shared types between app and backend come from `packages/types/`.
+Shared types between app and backend come from `workspaces/types/`.
