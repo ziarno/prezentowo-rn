@@ -22,7 +22,12 @@ export function SplashScreenController({ fontsLoaded }: Props) {
   }, [loadPersistedState])
 
   useEffect(() => {
-    if (connected && !isLoading && hasCompletedOnboarding !== null && fontsLoaded) {
+    if (
+      connected &&
+      !isLoading &&
+      hasCompletedOnboarding !== null &&
+      fontsLoaded
+    ) {
       setTimeout(() => {
         SplashScreen.hide()
       }, 100)

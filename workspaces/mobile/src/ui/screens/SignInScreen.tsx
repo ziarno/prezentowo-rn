@@ -1,12 +1,7 @@
 import { Trans, useLingui } from '@lingui/react/macro'
 import { router } from 'expo-router'
 import { useFormik } from 'formik'
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  View,
-} from 'react-native'
+import { KeyboardAvoidingView, Platform, Pressable, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LocalSvg } from 'react-native-svg/css'
 import * as Yup from 'yup'

@@ -10,7 +10,12 @@ export function LanguageToggle() {
       onPress={switchLocale}
       className="h-auto p-1 opacity-50 data-[active=true]:opacity-30"
     >
-      <ButtonIcon as={GlobeIcon} height={20} width={20} className="text-garland-ink" />
+      <ButtonIcon
+        as={GlobeIcon}
+        height={20}
+        width={20}
+        className="text-garland-ink"
+      />
     </Button>
   )
 }

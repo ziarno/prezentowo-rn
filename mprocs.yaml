@@ -1,10 +1,10 @@
 procs:
   "backend - Meteor":
-    shell: "yarn backend"
+    shell: "yarn workspace backend start"
     stop:
       send-keys: ["<C-c>"]
 
   "mobile - Expo RN":
-    shell: "yarn mobile"
+    shell: "yarn workspace mobile start"
     stop:
       send-keys: ["<C-c>"]

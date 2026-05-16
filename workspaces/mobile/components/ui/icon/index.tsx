@@ -8,7 +8,12 @@ type SvgIconProps = {
   size?: number
 }
 
-export function GlobeIcon({ stroke = '#1d1a14', width, height, size }: SvgIconProps) {
+export function GlobeIcon({
+  stroke = '#1d1a14',
+  width,
+  height,
+  size,
+}: SvgIconProps) {
   const w = size ?? width ?? 20
   const h = size ?? height ?? 20
   return (

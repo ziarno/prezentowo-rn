@@ -12,7 +12,7 @@
     "lingui:extract": "lingui extract",
     "lingui:compile": "lingui compile --typescript",
     "lingui": "yarn lingui:extract & yarn lingui:compile",
-    "format": "prettier --write .",
+    "prettier": "prettier --write .",
     "postinstall": "patch-package"
   },
   "dependencies": {

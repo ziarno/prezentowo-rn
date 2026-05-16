@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useContext } from 'react'
+import { type ReactNode, createContext, useContext } from 'react'
 import { twMerge } from 'tailwind-merge'
 
 import { Button, ButtonSpinner, ButtonText } from '@/components/ui/button'
@@ -29,7 +29,9 @@ type GarlandButtonProps = {
   loading?: boolean
   children?: ReactNode
   className?: string
-  hitSlop?: number | { top: number; right: number; bottom: number; left: number }
+  hitSlop?:
+    | number
+    | { top: number; right: number; bottom: number; left: number }
 }
 
 export function GarlandButton({
@@ -52,7 +54,9 @@ export function GarlandButton({
         className={twMerge(BUTTON_CLASS[variant], className)}
       >
         {loading ? (
-          <ButtonSpinner color={variant === 'solid' ? garland.paper : garland.ink} />
+          <ButtonSpinner
+            color={variant === 'solid' ? garland.paper : garland.ink}
+          />
         ) : (
           children
         )}
@@ -66,7 +70,10 @@ type GarlandButtonTextProps = {
   className?: string
 }
 
-export function GarlandButtonText({ children, className }: GarlandButtonTextProps) {
+export function GarlandButtonText({
+  children,
+  className,
+}: GarlandButtonTextProps) {
   const variant = useContext(VariantContext)
   return (
     <ButtonText className={twMerge(TEXT_CLASS[variant], className)}>

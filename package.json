@@ -12,10 +12,8 @@
   },
   "scripts": {
     "dev": "mprocs",
-    "mobile": "yarn workspace mobile start",
-    "backend": "yarn workspace backend start",
     "lint": "yarn workspace mobile lint",
-    "format": "yarn workspaces run format",
+    "prettier": "yarn workspaces run prettier",
     "lingui": "yarn workspace mobile lingui",
     "npkill": "npx npkill",
     "postinstall": "bash scripts/setup-meteor-mcp.sh"

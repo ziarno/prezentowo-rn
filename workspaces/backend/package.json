@@ -7,7 +7,7 @@
     "test": "meteor test --once --driver-package meteortesting:mocha",
     "test-app": "TEST_WATCH=1 meteor test --full-app --driver-package meteortesting:mocha",
     "visualize": "meteor --production --extra-packages bundle-visualizer",
-    "format": "prettier --write ."
+    "prettier": "prettier --write ."
   },
   "dependencies": {
     "@babel/runtime": "^7.29.2",

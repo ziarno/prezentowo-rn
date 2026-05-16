@@ -24,3 +24,5 @@ zodern:types            # Pull in type declarations from other Meteor packages
 
 rspack@1.0.0                  # Integrate Rspack into Meteor for client and server app bundling
 accounts-password
+accounts-passwordless
+email

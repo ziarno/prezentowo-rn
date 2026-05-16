@@ -5,10 +5,10 @@ const defaultFieldSelector = {
   _id: 1,
   emails: 1,
   firstName: 1,
-  lastName: 1
+  lastName: 1,
 }
 
 Accounts.config({
   ...Meteor.settings.accounts.config,
-  defaultFieldSelector
+  defaultFieldSelector,
 })
