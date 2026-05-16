@@ -1,6 +1,11 @@
 # AGENTS.md
 
-This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+This file provides guidance when working with code in this repository.
+
+## Best practices
+
+- create shared jsx components to reduce code duplication
+- run `npx tsc --noEmit` after you're done editing code to check any typescript errors
 
 ## Commands
 
