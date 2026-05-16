@@ -1,0 +1,10 @@
+procs:
+  "backend - Meteor":
+    shell: "yarn backend"
+    stop:
+      send-keys: ["<C-c>"]
+
+  "mobile - Expo RN":
+    shell: "yarn mobile"
+    stop:
+      send-keys: ["<C-c>"]

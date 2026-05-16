@@ -8827,6 +8827,11 @@ moo@^0.5.1:
   resolved "https://registry.npmjs.org/moo/-/moo-0.5.3.tgz"
   integrity sha512-m2fmM2dDm7GZQsY7KK2cme8agi+AAljILjQnof7p1ZMDe6dQ4bdnSMx0cPppudoeNv5hEFQirN6u+O4fDE0IWA==
 
+mprocs@0.9.2:
+  version "0.9.2"
+  resolved "https://registry.yarnpkg.com/mprocs/-/mprocs-0.9.2.tgz#602e07f94e311ef1c652f5f9d3ef51f12dc25554"
+  integrity sha512-FSHarRnBDw1w3deGWkIR1ZuU6HX2XAZdGDPLv7gcvNyTHjQkOaRjqXcJjtwdhyxbUygCQ8CBaZzwLyGzvLw2qw==
+
 mrmime@^2.0.0:
   version "2.0.1"
   resolved "https://registry.npmjs.org/mrmime/-/mrmime-2.0.1.tgz"
