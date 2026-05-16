@@ -10,9 +10,9 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-import { Button, ButtonText } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
 import { useAuthStore } from '@/store/useAuthStore'
+import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LanguageToggle } from '@/ui/components/LanguageToggle'
 import { OnboardingIllustration } from '@/ui/components/OnboardingIllustration'
 
@@ -78,11 +78,9 @@ export function OnboardingScreen() {
         </Text>
         <View className="flex-row items-center gap-3">
           <LanguageToggle />
-          <Button variant="link" action="default" onPress={finish}>
-            <ButtonText className="text-[13px] text-garland-ink-60">
-              {t`Skip`}
-            </ButtonText>
-          </Button>
+          <GarlandButton variant="link" onPress={finish}>
+            <GarlandButtonText>{t`Skip`}</GarlandButtonText>
+          </GarlandButton>
         </View>
       </View>
 
@@ -122,14 +120,11 @@ export function OnboardingScreen() {
             />
           ))}
         </View>
-        <Button
-          onPress={advance}
-          className="h-auto rounded-full bg-garland-ink px-[22px] py-3"
-        >
-          <ButtonText className="text-[15px] font-semibold text-garland-paper">
+        <GarlandButton onPress={advance} className="px-[22px] py-3">
+          <GarlandButtonText>
             {step === pages.length - 1 ? t`Get started →` : t`Continue →`}
-          </ButtonText>
-        </Button>
+          </GarlandButtonText>
+        </GarlandButton>
       </View>
     </SafeAreaView>
   )

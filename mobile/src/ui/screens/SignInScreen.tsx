@@ -12,11 +12,10 @@ import { LocalSvg } from 'react-native-svg/css'
 import * as Yup from 'yup'
 
 import backArrowAsset from '@/assets/svg/back-arrow.svg'
-import { Button, ButtonSpinner, ButtonText } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
-import { garland } from '@/constants/garland'
 import { useAuth } from '@/hooks/useAuth'
 import { AuthField } from '@/ui/components/AuthField'
+import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LanguageToggle } from '@/ui/components/LanguageToggle'
 
 export function SignInScreen() {
@@ -109,19 +108,15 @@ export function SignInScreen() {
           <View className="flex-1" />
 
           <View className="pb-9">
-            <Button
+            <GarlandButton
+              loading={isSubmitting}
               onPress={() => handleSubmit()}
               disabled={isSubmitting}
-              className="h-auto rounded-full bg-garland-ink px-[18px] py-[15px]"
             >
-              {isSubmitting ? (
-                <ButtonSpinner color={garland.paper} />
-              ) : (
-                <ButtonText className="text-base font-semibold text-garland-paper">
-                  <Trans>Email me a link</Trans>
-                </ButtonText>
-              )}
-            </Button>
+              <GarlandButtonText>
+                <Trans>Email me a link</Trans>
+              </GarlandButtonText>
+            </GarlandButton>
 
             <View className="my-5 flex-row items-center gap-2.5">
               <View className="h-px flex-1 bg-garland-ink-08" />
@@ -131,19 +126,17 @@ export function SignInScreen() {
               <View className="h-px flex-1 bg-garland-ink-08" />
             </View>
 
-            <Button
+            <GarlandButton
+              variant="outline"
               onPress={() => {
                 // Google sign-in is not wired up yet.
               }}
-              className="h-auto rounded-full border-[1.5px] border-garland-ink-15 bg-transparent px-[18px] py-[13px] gap-2.5"
             >
-              <ButtonText className="text-base font-bold text-garland-ink">
-                G
-              </ButtonText>
-              <ButtonText className="text-sm font-semibold text-garland-ink">
+              <GarlandButtonText className="font-bold">G</GarlandButtonText>
+              <GarlandButtonText className="text-sm">
                 <Trans>Continue with Google</Trans>
-              </ButtonText>
-            </Button>
+              </GarlandButtonText>
+            </GarlandButton>
 
             <Text className="mt-4 text-center text-xs leading-[18px] text-garland-ink-40">
               <Trans>

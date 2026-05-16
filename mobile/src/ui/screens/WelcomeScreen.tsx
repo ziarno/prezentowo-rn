@@ -5,8 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { LocalSvg } from 'react-native-svg/css'
 
 import giftMarkAsset from '@/assets/svg/gift-mark.svg'
-import { Button, ButtonText } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
+import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LanguageToggle } from '@/ui/components/LanguageToggle'
 
 export function WelcomeScreen() {
@@ -32,14 +32,11 @@ export function WelcomeScreen() {
         </View>
 
         <View className="gap-3 pb-9">
-          <Button
-            onPress={() => router.push('/signin')}
-            className="h-auto rounded-full bg-garland-ink px-[18px] py-[15px]"
-          >
-            <ButtonText className="text-base font-semibold text-garland-paper">
+          <GarlandButton onPress={() => router.push('/signin')}>
+            <GarlandButtonText>
               <Trans>Get started</Trans>
-            </ButtonText>
-          </Button>
+            </GarlandButtonText>
+          </GarlandButton>
           <Text className="text-center text-xs leading-[18px] text-garland-ink-40">
             <Trans>
               Sign in or create an account — same place, no password.

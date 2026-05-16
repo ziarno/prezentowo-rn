@@ -7,10 +7,10 @@ import { LocalSvg } from 'react-native-svg/css'
 
 import backArrowAsset from '@/assets/svg/back-arrow.svg'
 import sendIconAsset from '@/assets/svg/send-icon.svg'
-import { Button, ButtonText } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/store/useAuthStore'
+import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LanguageToggle } from '@/ui/components/LanguageToggle'
 
 const RESEND_SECONDS = 42
@@ -96,20 +96,13 @@ export function CheckEmailScreen() {
         <View className="flex-1" />
 
         <View className="pb-9">
-          <Button
-            onPress={openMail}
-            className="h-auto rounded-full bg-garland-ink px-[18px] py-[15px]"
-          >
-            <ButtonText className="text-base font-semibold text-garland-paper">
+          <GarlandButton onPress={openMail}>
+            <GarlandButtonText>
               <Trans>Open mail app</Trans>
-            </ButtonText>
-          </Button>
-          <Button
-            variant="link"
-            action="default"
-            onPress={resend}
-            className="mt-4"
-          >
+            </GarlandButtonText>
+          </GarlandButton>
+
+          <GarlandButton variant="link" onPress={resend} className="mt-4">
             <Text className="text-center text-[13px] text-garland-ink-60">
               <Trans>Didn&apos;t get it?</Trans>{' '}
               <Text className="font-bold text-garland-ink">
@@ -118,7 +111,7 @@ export function CheckEmailScreen() {
                   : t`Resend`}
               </Text>
             </Text>
-          </Button>
+          </GarlandButton>
         </View>
       </View>
     </SafeAreaView>

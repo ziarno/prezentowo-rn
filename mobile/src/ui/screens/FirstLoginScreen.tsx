@@ -23,11 +23,10 @@ import m3Avatar from '@/assets/images/avatars/m3.png'
 import m4Avatar from '@/assets/images/avatars/m4.png'
 import checkMarkAsset from '@/assets/svg/check-mark.svg'
 import plusIconAsset from '@/assets/svg/plus-icon.svg'
-import { Button, ButtonSpinner, ButtonText } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
-import { garland } from '@/constants/garland'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AuthField } from '@/ui/components/AuthField'
+import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LanguageToggle } from '@/ui/components/LanguageToggle'
 
 const AVATARS = ['f1', 'm1', 'f2', 'm2', 'f3', 'm3', 'f4', 'm4'] as const
@@ -89,16 +88,15 @@ export function FirstLoginScreen() {
             </Text>
             <View className="flex-row items-center gap-3">
               <LanguageToggle />
-              <Button
+              <GarlandButton
                 variant="link"
-                action="default"
                 hitSlop={12}
                 onPress={() => setFirstLoginPending(false)}
               >
-                <ButtonText className="text-[13px] text-garland-ink-60">
+                <GarlandButtonText>
                   <Trans>Skip</Trans>
-                </ButtonText>
-              </Button>
+                </GarlandButtonText>
+              </GarlandButton>
             </View>
           </View>
 
@@ -159,19 +157,15 @@ export function FirstLoginScreen() {
           <View className="flex-1" />
 
           <View className="pb-9">
-            <Button
+            <GarlandButton
+              loading={isSubmitting}
               onPress={() => handleSubmit()}
               disabled={isSubmitting}
-              className="h-auto rounded-full bg-garland-ink px-[18px] py-[15px]"
             >
-              {isSubmitting ? (
-                <ButtonSpinner color={garland.paper} />
-              ) : (
-                <ButtonText className="text-base font-semibold text-garland-paper">
-                  <Trans>Continue</Trans>
-                </ButtonText>
-              )}
-            </Button>
+              <GarlandButtonText>
+                <Trans>Continue</Trans>
+              </GarlandButtonText>
+            </GarlandButton>
           </View>
         </View>
       </KeyboardAvoidingView>
