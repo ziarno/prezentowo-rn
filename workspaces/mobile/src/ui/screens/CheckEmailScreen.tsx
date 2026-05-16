@@ -10,6 +10,7 @@ import sendIconAsset from '@/assets/svg/send-icon.svg'
 import { Text } from '@/components/ui/text'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/store/useAuthStore'
+import { AuthField } from '@/ui/components/AuthField'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LanguageToggle } from '@/ui/components/LanguageToggle'
 
@@ -23,10 +24,12 @@ function formatCountdown(s: number) {
 
 export function CheckEmailScreen() {
   const pendingEmail = useAuthStore(s => s.pendingEmail)
-  const { requestMagicLink } = useAuth()
+  const { requestMagicLink, loginWithMagicToken, isLoading } = useAuth()
   const { t } = useLingui()
   const email = pendingEmail ?? t`your inbox`
   const [countdown, setCountdown] = useState(RESEND_SECONDS)
+  const [code, setCode] = useState('')
+  const [codeError, setCodeError] = useState<string | undefined>()
 
   useEffect(() => {
     if (countdown <= 0) return
@@ -37,6 +40,27 @@ export function CheckEmailScreen() {
   const openMail = () => {
     const url = Platform.OS === 'ios' ? 'message://' : 'mailto:'
     Linking.openURL(url).catch(() => {})
+  }
+
+  const submitCode = () => {
+    if (!pendingEmail) {
+      setCodeError(t`Restart sign-in and try again.`)
+      return
+    }
+    if (code.trim().length < 4) {
+      setCodeError(t`Enter the code from your email.`)
+      return
+    }
+    setCodeError(undefined)
+    loginWithMagicToken({
+      email: pendingEmail,
+      token: code,
+      onSuccess: () => setCode(''),
+      onError: err =>
+        setCodeError(
+          err.reason ?? err.error?.toString() ?? t`That code didn't work.`,
+        ),
+    })
   }
 
   const resend = () => {
@@ -93,10 +117,34 @@ export function CheckEmailScreen() {
           </View>
         </View>
 
+        <View className="mt-6">
+          <AuthField
+            label={t`Or paste your 6-digit code`}
+            placeholder="A1B2C3"
+            value={code}
+            onChangeText={setCode}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            keyboardType="default"
+            maxLength={12}
+            errorMessage={codeError}
+          />
+          <GarlandButton
+            className="mt-4"
+            loading={isLoading}
+            disabled={isLoading}
+            onPress={submitCode}
+          >
+            <GarlandButtonText>
+              <Trans>Finish signing in</Trans>
+            </GarlandButtonText>
+          </GarlandButton>
+        </View>
+
         <View className="flex-1" />
 
         <View className="pb-9">
-          <GarlandButton onPress={openMail}>
+          <GarlandButton variant="outline" onPress={openMail}>
             <GarlandButtonText>
               <Trans>Open mail app</Trans>
             </GarlandButtonText>

@@ -1,4 +1,8 @@
-import type { RegisterNewUserArgs, UpdateUserArgs } from '@prezentowo/types'
+import type {
+  RegisterNewUserArgs,
+  RequestMagicLinkArgs,
+  UpdateUserArgs,
+} from '@prezentowo/types'
 import { isEmpty } from 'lodash'
 import { Accounts } from 'meteor/accounts-base'
 import { Match, check } from 'meteor/check'
@@ -66,7 +70,29 @@ const updateUser = async function (options: UpdateUserArgs) {
   }
 }
 
+const requestMagicLink = async function (options: RequestMagicLinkArgs) {
+  check(options, Match.ObjectIncluding({ email: String }))
+
+  const normalized = options.email.trim().toLowerCase()
+
+  // Pre-create the user if absent so first-time visitors get a magic link
+  // without needing client-side createUser (which `forbidClientAccountCreation`
+  // blocks for the accounts-password path).
+  if (!(await Accounts.findUserByEmail(normalized))) {
+    await Accounts.createUserAsync({ email: normalized })
+  }
+
+  // accounts-passwordless registers `requestLoginTokenForUser` as a Meteor
+  // method; we invoke it server-side to issue + email a token.
+  await Meteor.callAsync('requestLoginTokenForUser', {
+    selector: { email: normalized },
+    userData: { email: normalized },
+    options: { userCreationDisabled: true },
+  })
+}
+
 Meteor.methods({
   registerNewUser,
   updateUser,
+  requestMagicLink,
 })

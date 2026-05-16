@@ -2,6 +2,7 @@ import { useFonts } from 'expo-font'
 import { Stack } from 'expo-router'
 
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider'
+import { useMagicLinkDeepLink } from '@/hooks/useMagicLinkDeepLink'
 import { LocalizationProvider } from '@/localization/provider'
 import { useAuthStore } from '@/store/useAuthStore'
 import { SplashScreenController } from '@/ui/SplashScreenController'
@@ -24,6 +25,7 @@ export default function Root() {
 }
 
 function RootNavigator() {
+  useMagicLinkDeepLink()
   const userToken = useAuthStore(s => s.userToken)
   const hasCompletedOnboarding = useAuthStore(s => s.hasCompletedOnboarding)
   const firstLoginPending = useAuthStore(s => s.firstLoginPending)

@@ -14,3 +14,7 @@ export type LoginCredentials = {
   id: string
   token: string
 }
+
+export type RequestMagicLinkArgs = {
+  email: string
+}

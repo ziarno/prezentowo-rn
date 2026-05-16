@@ -4,7 +4,15 @@
       "forbidClientAccountCreation": true,
       "ambiguousErrorMessages": true,
       "sendVerificationEmail": true,
-      "loginExpirationInDays": null
+      "loginExpirationInDays": null,
+      "loginTokenExpirationHours": 1,
+      "tokenSequenceLength": 6
+    },
+    "passwordless": {
+      "from": "Prezentowo <hello@prezentowo.app>",
+      "appName": "Prezentowo",
+      "magicLinkScheme": "prezentowo://",
+      "magicLinkPath": "magic-link"
     }
   }
 }

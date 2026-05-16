@@ -9,11 +9,21 @@ type RequestMagicLinkParams = {
   onError: (err: MeteorError) => void
 }
 
+type LoginWithMagicTokenParams = {
+  email: string
+  token: string
+  onSuccess: () => void
+  onError: (err: MeteorError) => void
+}
+
 type SignOutParams = {
   onError: (err: MeteorError) => void
 }
 
 const Data = Meteor.getData()
+
+const normalizeEmail = (email: string) => email.trim().toLowerCase()
+const normalizeToken = (token: string) => token.trim().toUpperCase()
 
 export const useAuth = () => {
   const setUserToken = useAuthStore(s => s.setUserToken)
@@ -31,24 +41,44 @@ export const useAuth = () => {
 
   return {
     isLoading,
-    // Passwordless: ask the backend to email a magic link, then hand off to
-    // the "check your email" screen. The backend method does not exist yet —
-    // the call falls through to onSuccess so the UI can be exercised end-to-end.
-    // TODO: implement `requestMagicLink` on the Meteor side and remove the
-    // fallback below once it lands.
     requestMagicLink: ({
       email,
       onSuccess,
       onError,
     }: RequestMagicLinkParams) => {
-      setPendingEmail(email)
+      const normalized = normalizeEmail(email)
+      setPendingEmail(normalized)
       Meteor.call(
         'requestMagicLink',
-        { email },
+        { email: normalized },
         (err: MeteorError | undefined) => {
-          // 404 = method not registered on the backend yet; let dev exercise
-          // the UI in that case.
-          if (err && String(err.error) !== '404') return onError(err)
+          if (err) return onError(err)
+          onSuccess()
+        },
+      )
+    },
+    // Finish the passwordless flow: hand the 6-digit token + email back to
+    // accounts-passwordless via the standard `login` DDP method. On success
+    // `_handleLoginCallback` saves the auth token and fires `onLogin`, which
+    // writes the token to our Zustand store.
+    loginWithMagicToken: ({
+      email,
+      token,
+      onSuccess,
+      onError,
+    }: LoginWithMagicTokenParams) => {
+      Meteor.call(
+        'login',
+        {
+          selector: { email: normalizeEmail(email) },
+          token: normalizeToken(token),
+        },
+        (
+          err: MeteorError | undefined,
+          result: { id: string; token: string },
+        ) => {
+          if (err) return onError(err)
+          Meteor._handleLoginCallback(null, result)
           onSuccess()
         },
       )
