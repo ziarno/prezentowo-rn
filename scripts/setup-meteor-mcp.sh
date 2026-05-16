@@ -2,7 +2,7 @@
 
 git submodule update --init --recursive
 
-VENV_DIR="packages/mcp-meteor/.venv"
+VENV_DIR="workspaces/mcp-meteor/.venv"
 
 if ! command -v python3 &> /dev/null; then
   echo "Warning: python3 not found, skipping meteor MCP setup"

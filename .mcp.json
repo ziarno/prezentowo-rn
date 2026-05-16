@@ -7,8 +7,8 @@
     },
     "meteor": {
       "type": "stdio",
-      "command": "packages/mcp-meteor/.venv/bin/python",
-      "args": ["packages/mcp-meteor/local_server.py"]
+      "command": "workspaces/mcp-meteor/.venv/bin/python",
+      "args": ["workspaces/mcp-meteor/local_server.py"]
     }
   }
 }
