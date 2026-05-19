@@ -5,7 +5,12 @@ import { type ReactNode, useEffect, useState } from 'react'
 import { messages as enMessages } from './locales/en/messages'
 import { messages as plMessages } from './locales/pl/messages'
 
-type SupportedLocale = 'en' | 'pl'
+export type SupportedLocale = 'en' | 'pl'
+
+export const LOCALES: { code: SupportedLocale; label: string }[] = [
+  { code: 'en', label: 'English' },
+  { code: 'pl', label: 'Polski' },
+]
 
 const catalogs = {
   en: enMessages,
@@ -20,13 +25,9 @@ function resolveLocale(): SupportedLocale {
 
 i18n.loadAndActivate({ locale: 'en', messages: catalogs.en })
 
-const LOCALE_ORDER: SupportedLocale[] = ['en', 'pl']
-
-export function switchLocale() {
-  const current = i18n.locale as SupportedLocale
-  const next =
-    LOCALE_ORDER[(LOCALE_ORDER.indexOf(current) + 1) % LOCALE_ORDER.length]
-  i18n.loadAndActivate({ locale: next!, messages: catalogs[next!] })
+export function setLocale(locale: SupportedLocale) {
+  if (i18n.locale === locale) return
+  i18n.loadAndActivate({ locale, messages: catalogs[locale] })
 }
 
 export function LocalizationProvider({ children }: { children: ReactNode }) {
@@ -36,8 +37,8 @@ export function LocalizationProvider({ children }: { children: ReactNode }) {
     const locale = resolveLocale()
     if (i18n.locale !== locale) {
       i18n.loadAndActivate({ locale, messages: catalogs[locale] })
-      forceUpdate(n => n + 1)
     }
+    return i18n.on('change', () => forceUpdate(n => n + 1))
   }, [])
 
   return <I18nProvider i18n={i18n}>{children}</I18nProvider>

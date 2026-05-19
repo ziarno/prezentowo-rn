@@ -1,5 +1,6 @@
 import { Trans, useLingui } from '@lingui/react/macro'
 import { useFormik } from 'formik'
+import type { ReactNode } from 'react'
 import { useState } from 'react'
 import {
   Image,
@@ -13,39 +14,17 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { LocalSvg } from 'react-native-svg/css'
 import * as Yup from 'yup'
 
-import f1Avatar from '@/assets/images/avatars/f1.png'
-import f2Avatar from '@/assets/images/avatars/f2.png'
-import f3Avatar from '@/assets/images/avatars/f3.png'
-import f4Avatar from '@/assets/images/avatars/f4.png'
-import m1Avatar from '@/assets/images/avatars/m1.png'
-import m2Avatar from '@/assets/images/avatars/m2.png'
-import m3Avatar from '@/assets/images/avatars/m3.png'
-import m4Avatar from '@/assets/images/avatars/m4.png'
 import checkMarkAsset from '@/assets/svg/check-mark.svg'
 import plusIconAsset from '@/assets/svg/plus-icon.svg'
 import { Text } from '@/components/ui/text'
+import { AVATAR_KEYS, type AvatarKey, avatar } from '@/constants/avatars'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AuthField } from '@/ui/components/AuthField'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
-import { LanguageToggle } from '@/ui/components/LanguageToggle'
-
-const AVATARS = ['f1', 'm1', 'f2', 'm2', 'f3', 'm3', 'f4', 'm4'] as const
-
-const AVATAR_SOURCES: Record<(typeof AVATARS)[number], ImageSourcePropType> = {
-  f1: f1Avatar,
-  f2: f2Avatar,
-  f3: f3Avatar,
-  f4: f4Avatar,
-  m1: m1Avatar,
-  m2: m2Avatar,
-  m3: m3Avatar,
-  m4: m4Avatar,
-}
+import { LanguageChangeButton } from '@/ui/components/LanguageChangeButton'
 
 export function FirstLoginScreen() {
-  const [selected, setSelected] = useState<(typeof AVATARS)[number] | null>(
-    'f1',
-  )
+  const [selected, setSelected] = useState<AvatarKey | null>('f1')
   const { t } = useLingui()
   const setFirstLoginPending = useAuthStore(s => s.setFirstLoginPending)
 
@@ -87,7 +66,7 @@ export function FirstLoginScreen() {
               <Trans>Step 1 · 1</Trans>
             </Text>
             <View className="flex-row items-center gap-3">
-              <LanguageToggle />
+              <LanguageChangeButton />
               <GarlandButton
                 variant="link"
                 hitSlop={12}
@@ -135,15 +114,18 @@ export function FirstLoginScreen() {
             <Text className="mb-3 text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
               <Trans>Profile picture</Trans>
             </Text>
-            <View className="flex-row flex-wrap gap-2.5">
-              <UploadTile />
-              {AVATARS.map(key => (
-                <AvatarTile
-                  key={key}
-                  source={AVATAR_SOURCES[key]}
-                  selected={selected === key}
-                  onPress={() => setSelected(key)}
-                />
+            <View className="-mx-1.5 flex-row flex-wrap">
+              <GridCell>
+                <UploadTile />
+              </GridCell>
+              {AVATAR_KEYS.map(key => (
+                <GridCell key={key}>
+                  <AvatarTile
+                    source={avatar(key)}
+                    selected={selected === key}
+                    onPress={() => setSelected(key)}
+                  />
+                </GridCell>
               ))}
             </View>
             <Text className="mt-3 text-xs leading-[18px] text-garland-ink-40">
@@ -173,9 +155,17 @@ export function FirstLoginScreen() {
   )
 }
 
+function GridCell({ children }: { children: ReactNode }) {
+  return (
+    <View style={{ width: '20%' }} className="p-1.5">
+      {children}
+    </View>
+  )
+}
+
 function UploadTile() {
   return (
-    <Pressable className="basis-[18%] aspect-square items-center justify-center rounded-full border-[1.5px] border-dashed border-[rgba(0,0,0,0.2)] bg-[rgba(0,0,0,0.02)]">
+    <Pressable className="aspect-square items-center justify-center rounded-full border-[1.5px] border-dashed border-[rgba(0,0,0,0.2)] bg-[rgba(0,0,0,0.02)]">
       <LocalSvg asset={plusIconAsset} width={20} height={20} />
     </Pressable>
   )
@@ -191,7 +181,7 @@ function AvatarTile({
   onPress: () => void
 }) {
   return (
-    <Pressable onPress={onPress} className="relative basis-[18%] aspect-square">
+    <Pressable onPress={onPress} className="relative aspect-square">
       <View
         className={`size-full overflow-hidden rounded-full border-[2.5px] bg-[rgba(0,0,0,0.02)] ${
           selected ? 'border-garland-green p-0.5' : 'border-transparent'

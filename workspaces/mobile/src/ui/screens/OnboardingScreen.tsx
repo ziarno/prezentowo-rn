@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Text } from '@/components/ui/text'
 import { useAuthStore } from '@/store/useAuthStore'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
-import { LanguageToggle } from '@/ui/components/LanguageToggle'
+import { LanguageChangeButton } from '@/ui/components/LanguageChangeButton'
 import { OnboardingIllustration } from '@/ui/components/OnboardingIllustration'
 
 type Page = {
@@ -77,7 +77,7 @@ export function OnboardingScreen() {
           {pages[step].eyebrow}
         </Text>
         <View className="flex-row items-center gap-3">
-          <LanguageToggle />
+          <LanguageChangeButton />
           <GarlandButton variant="link" onPress={finish}>
             <GarlandButtonText>{t`Skip`}</GarlandButtonText>
           </GarlandButton>

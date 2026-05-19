@@ -11,7 +11,7 @@ import { Text } from '@/components/ui/text'
 import { useAuth } from '@/hooks/useAuth'
 import { AuthField } from '@/ui/components/AuthField'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
-import { LanguageToggle } from '@/ui/components/LanguageToggle'
+import { LanguageChangeButton } from '@/ui/components/LanguageChangeButton'
 
 export function SignInScreen() {
   const { requestMagicLink } = useAuth()
@@ -64,7 +64,7 @@ export function SignInScreen() {
             <Pressable onPress={() => router.back()} hitSlop={12}>
               <LocalSvg asset={backArrowAsset} width={22} height={22} />
             </Pressable>
-            <LanguageToggle />
+            <LanguageChangeButton />
           </View>
 
           <View className="pt-4">

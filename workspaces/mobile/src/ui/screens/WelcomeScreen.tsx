@@ -7,14 +7,14 @@ import { LocalSvg } from 'react-native-svg/css'
 import giftMarkAsset from '@/assets/svg/gift-mark.svg'
 import { Text } from '@/components/ui/text'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
-import { LanguageToggle } from '@/ui/components/LanguageToggle'
+import { LanguageChangeButton } from '@/ui/components/LanguageChangeButton'
 
 export function WelcomeScreen() {
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
       <View className="flex-1 px-7">
         <View className="items-end py-3.5">
-          <LanguageToggle />
+          <LanguageChangeButton />
         </View>
         <View className="flex-1 justify-center">
           <View className="mb-9 opacity-90">

@@ -1,3 +1,6 @@
 import '../api/accounts/accounts.collection'
 import '../api/accounts/accounts.methods'
 import '../api/accounts/accounts.publications'
+import '../api/events/events.collection'
+import '../api/events/events.methods'
+import '../api/events/events.publications'

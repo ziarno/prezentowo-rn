@@ -1,30 +1,18 @@
-import { useLingui } from '@lingui/react/macro'
-import { Drawer } from 'expo-router/drawer'
-
-import { DrawerContent } from '@/ui/DrawerContent'
+import { Stack } from 'expo-router'
 
 export default function AppLayout() {
-  const { t } = useLingui()
-
   return (
-    <Drawer
-      drawerContent={props => <DrawerContent {...props} />}
-      screenOptions={{ headerShown: true }}
-    >
-      <Drawer.Screen
-        name="index"
-        options={{
-          drawerLabel: t`Home`,
-          title: t`Home`,
-        }}
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
+      <Stack.Screen name="profile" />
+      <Stack.Screen
+        name="create-event"
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       />
-      <Drawer.Screen
-        name="profile"
-        options={{
-          drawerLabel: t`Profile`,
-          title: t`Profile`,
-        }}
+      <Stack.Screen
+        name="join-event"
+        options={{ animation: 'slide_from_right' }}
       />
-    </Drawer>
+    </Stack>
   )
 }

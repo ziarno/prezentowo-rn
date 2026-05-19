@@ -2,7 +2,7 @@ import { type ReactNode, createContext, useContext } from 'react'
 import { twMerge } from 'tailwind-merge'
 
 import { Button, ButtonSpinner, ButtonText } from '@/components/ui/button'
-import { garland } from '@/constants/garland'
+import { garland } from '@/constants/colors'
 
 export type GarlandButtonVariant = 'solid' | 'outline' | 'link'
 

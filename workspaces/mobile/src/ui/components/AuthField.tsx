@@ -1,7 +1,7 @@
 import { TextInput, type TextInputProps, View } from 'react-native'
 
 import { Text } from '@/components/ui/text'
-import { garland } from '@/constants/garland'
+import { garland } from '@/constants/colors'
 
 type Props = TextInputProps & {
   label: string

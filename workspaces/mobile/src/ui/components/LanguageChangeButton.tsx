@@ -1,13 +1,14 @@
 import { Button, ButtonIcon } from '@/components/ui/button'
 import { GlobeIcon } from '@/components/ui/icon'
-import { switchLocale } from '@/localization/provider'
+import { useLanguageModal } from '@/localization/LanguageModalProvider'
 
-export function LanguageToggle() {
+export function LanguageChangeButton() {
+  const { open } = useLanguageModal()
   return (
     <Button
       variant="link"
       action="default"
-      onPress={switchLocale}
+      onPress={open}
       className="h-auto p-1 opacity-50 data-[active=true]:opacity-30"
     >
       <ButtonIcon

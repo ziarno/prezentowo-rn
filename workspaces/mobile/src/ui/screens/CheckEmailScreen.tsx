@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AuthField } from '@/ui/components/AuthField'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
-import { LanguageToggle } from '@/ui/components/LanguageToggle'
+import { LanguageChangeButton } from '@/ui/components/LanguageChangeButton'
 
 const RESEND_SECONDS = 42
 
@@ -80,7 +80,7 @@ export function CheckEmailScreen() {
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <LocalSvg asset={backArrowAsset} width={22} height={22} />
           </Pressable>
-          <LanguageToggle />
+          <LanguageChangeButton />
         </View>
 
         <View className="pt-4">

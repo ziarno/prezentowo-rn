@@ -1,3 +1,3 @@
-import { HomeScreen } from '@/ui/screens/HomeScreen'
+import { EventsScreen } from '@/ui/screens/EventsScreen'
 
-export default HomeScreen
+export default EventsScreen
