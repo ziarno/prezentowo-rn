@@ -44,28 +44,11 @@ const PLACEHOLDER_COLORS = [garland.berry, garland.amber, garland.green]
 
 const INITIAL_PARTICIPANTS: Participant[] = [
   { id: 'host', kind: 'real', name: 'You', avatar: 'm1', host: true },
-  { id: 'klaudia', kind: 'real', name: 'Klaudia', avatar: 'f1' },
-  { id: 'marek', kind: 'real', name: 'Marek', avatar: 'm2' },
-  {
-    id: 'babcia-ewa',
-    kind: 'placeholder',
-    name: 'Babcia Ewa',
-    initial: 'E',
-    color: garland.berry,
-  },
-  {
-    id: 'wujek-janusz',
-    kind: 'placeholder',
-    name: 'Wujek Janusz',
-    initial: 'J',
-    color: garland.amber,
-  },
 ]
 
 type FormValues = {
   title: string
   date: string
-  occasion: string
   participants: Participant[]
 }
 
@@ -79,9 +62,6 @@ export function CreateEventScreen() {
       .trim()
       .required(t`Required`),
     date: Yup.string()
-      .trim()
-      .required(t`Required`),
-    occasion: Yup.string()
       .trim()
       .required(t`Required`),
   })
@@ -98,9 +78,8 @@ export function CreateEventScreen() {
     setErrors,
   } = useFormik<FormValues>({
     initialValues: {
-      title: "Family Christmas '26",
-      date: 'December 24, 2026',
-      occasion: 'Christmas',
+      title: '',
+      date: '',
       participants: INITIAL_PARTICIPANTS,
     },
     validationSchema,
@@ -108,7 +87,6 @@ export function CreateEventScreen() {
       const args: CreateEventArgs = {
         title: formValues.title,
         date: formValues.date,
-        occasion: formValues.occasion,
         participants: formValues.participants
           .filter(p => !(p.kind === 'real' && p.host))
           .map<EventParticipantInput>(p =>
@@ -317,7 +295,7 @@ function ParticipantRow({
         </View>
         <Text className="mt-0.5 text-[11px] text-garland-ink-40">
           {participant.kind === 'real' ? (
-            <Trans>Prezentowo user</Trans>
+            <Trans>User</Trans>
           ) : (
             <Trans>Placeholder · can be claimed via invite link</Trans>
           )}

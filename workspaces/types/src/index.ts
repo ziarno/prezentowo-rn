@@ -30,7 +30,6 @@ export type EventParticipant =
 export type CreateEventArgs = {
   title: string
   date: string
-  occasion: string
   participants: EventParticipantInput[]
 }
 
@@ -38,7 +37,6 @@ export type EventDoc = {
   _id: string
   title: string
   date: string
-  occasion: string
   ownerId: string
   participants: EventParticipant[]
   createdAt: Date

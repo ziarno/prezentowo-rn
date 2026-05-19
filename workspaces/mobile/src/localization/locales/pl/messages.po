@@ -13,14 +13,28 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/ui/screens/CreateEventScreen.tsx:312
+#: src/ui/screens/CreateEventScreen.tsx:314
 msgid "— host"
 msgstr "— gospodarz"
 
+#. placeholder {0}: event.date
+#: src/ui/screens/JoinEventScreen.tsx:193
+msgid "{0}"
+msgstr ""
+
 #. placeholder {0}: event.participants.length
-#: src/ui/screens/EventsScreen.tsx:107
+#: src/ui/screens/EventsScreen.tsx:108
 msgid "{0} people"
 msgstr "{0} osób"
+
+#. placeholder {0}: placeholderColors.length
+#: src/ui/screens/JoinEventScreen.tsx:88
+msgid "{0} spots waiting to be claimed"
+msgstr ""
+
+#: src/ui/screens/JoinEventScreen.tsx:70
+msgid "{participantCount} people on the list"
+msgstr ""
 
 #: src/ui/screens/OnboardingScreen.tsx:31
 msgid "01 · 03"
@@ -34,13 +48,13 @@ msgstr "02 · 03"
 msgid "03 · 03"
 msgstr "03 · 03"
 
-#: src/ui/screens/ProfileScreen.tsx:115
+#: src/ui/screens/ProfileScreen.tsx:106
 msgid "3 days before"
 msgstr "3 dni wcześniej"
 
 #: src/ui/screens/JoinEventScreen.tsx:61
-msgid "8 people · 17 gifts on the list"
-msgstr "8 osób · 17 prezentów na liście"
+#~ msgid "8 people · 17 gifts on the list"
+#~ msgstr "8 osób · 17 prezentów na liście"
 
 #: src/ui/screens/CheckEmailScreen.tsx:93
 msgid "a magic link."
@@ -50,15 +64,15 @@ msgstr "magiczny link."
 msgid "A quiet place to share gift ideas with people you love."
 msgstr "Spokojne miejsce, w którym dzielisz się pomysłami na prezenty z bliskimi."
 
-#: src/ui/screens/ProfileScreen.tsx:131
+#: src/ui/screens/ProfileScreen.tsx:122
 msgid "About Prezentowo"
 msgstr "O Prezentowo"
 
-#: src/ui/screens/ProfileScreen.tsx:121
+#: src/ui/screens/ProfileScreen.tsx:112
 msgid "Account"
 msgstr "Konto"
 
-#: src/ui/screens/CreateEventScreen.tsx:259
+#: src/ui/screens/CreateEventScreen.tsx:261
 msgid "Add"
 msgstr "Dodaj"
 
@@ -66,7 +80,7 @@ msgstr "Dodaj"
 msgid "Add gift ideas as you stumble on them. Links, photos, a quick note about size or colour — anything that helps."
 msgstr "Dodawaj pomysły na prezenty, gdy tylko na nie trafisz. Linki, zdjęcia, krótka notatka o rozmiarze czy kolorze — wszystko, co pomoże."
 
-#: src/ui/screens/JoinEventScreen.tsx:156
+#: src/ui/screens/JoinEventScreen.tsx:238
 msgid "Add me as new"
 msgstr "Dodaj mnie jako nową osobę"
 
@@ -74,13 +88,17 @@ msgstr "Dodaj mnie jako nową osobę"
 msgid "Alex Kowalski"
 msgstr "Jan Kowalski"
 
-#: src/ui/screens/ProfileScreen.tsx:109
+#: src/ui/screens/ProfileScreen.tsx:100
 msgid "Appearance"
 msgstr "Wygląd"
 
-#: src/ui/screens/JoinEventScreen.tsx:109
+#: src/ui/screens/JoinEventScreen.tsx:177
 msgid "Are you one of these?"
 msgstr "Czy jesteś jedną z tych osób?"
+
+#: src/ui/screens/JoinEventScreen.tsx:261
+msgid "Back to events"
+msgstr ""
 
 #: src/ui/screens/OnboardingScreen.tsx:38
 msgid "Build"
@@ -90,7 +108,7 @@ msgstr "Twórz"
 msgid "By continuing you agree to the <0>Terms</0> and <1>Privacy Policy</1>."
 msgstr "Kontynuując, akceptujesz <0>Regulamin</0> i <1>Politykę prywatności</1>."
 
-#: src/ui/screens/CreateEventScreen.tsx:169
+#: src/ui/screens/CreateEventScreen.tsx:171
 msgid "Cancel"
 msgstr "Anuluj"
 
@@ -99,8 +117,8 @@ msgid "Check your email"
 msgstr "Sprawdź skrzynkę"
 
 #: src/ui/screens/JoinEventScreen.tsx:51
-msgid "Christmas '26"
-msgstr "Święta '26"
+#~ msgid "Christmas '26"
+#~ msgstr "Święta '26"
 
 #: src/ui/screens/OnboardingScreen.tsx:44
 msgid "Claim"
@@ -118,19 +136,19 @@ msgstr "Dalej →"
 msgid "Continue with Google"
 msgstr "Kontynuuj z Google"
 
-#: src/ui/screens/CreateEventScreen.tsx:181
+#: src/ui/screens/CreateEventScreen.tsx:183
 msgid "Create"
 msgstr "Utwórz"
 
-#: src/ui/screens/CreateEventScreen.tsx:211
+#: src/ui/screens/CreateEventScreen.tsx:213
 msgid "Date"
 msgstr "Data"
 
-#: src/ui/screens/CreateEventScreen.tsx:215
+#: src/ui/screens/CreateEventScreen.tsx:217
 msgid "December 24, 2026"
 msgstr "24 grudnia 2026"
 
-#: src/ui/screens/ProfileScreen.tsx:114
+#: src/ui/screens/ProfileScreen.tsx:105
 msgid "Default reminder"
 msgstr "Domyślne przypomnienie"
 
@@ -138,7 +156,7 @@ msgstr "Domyślne przypomnienie"
 msgid "Didn't get it?"
 msgstr "Nie dotarło?"
 
-#: src/ui/screens/ProfileScreen.tsx:62
+#: src/ui/screens/ProfileScreen.tsx:53
 msgid "Edit"
 msgstr "Edytuj"
 
@@ -158,23 +176,23 @@ msgstr "Wpisz kod z wiadomości."
 msgid "Enter your email and we'll send a magic link. New here? We'll set you up right after."
 msgstr "Podaj swój e-mail, a wyślemy Ci magiczny link. Jeśli jesteś tu pierwszy raz, wszystko ustawimy zaraz potem."
 
-#: src/ui/screens/ProfileScreen.tsx:87
+#: src/ui/screens/ProfileScreen.tsx:78
 msgid "Events"
 msgstr "Wydarzenia"
 
 #: src/ui/screens/JoinEventScreen.tsx:49
-msgid "Family"
-msgstr "Rodzina"
+#~ msgid "Family"
+#~ msgstr "Rodzina"
 
 #: src/ui/screens/JoinEventScreen.tsx:106
-msgid "Family Christmas '26"
-msgstr "Rodzinne Święta '26"
+#~ msgid "Family Christmas '26"
+#~ msgstr "Rodzinne Święta '26"
 
 #: src/ui/screens/CheckEmailScreen.tsx:139
 msgid "Finish signing in"
 msgstr "Dokończ logowanie"
 
-#: src/ui/screens/ProfileScreen.tsx:48
+#: src/ui/screens/ProfileScreen.tsx:39
 msgid "Friend"
 msgstr "Znajomy"
 
@@ -190,7 +208,7 @@ msgstr "Zaczynajmy"
 msgid "Get started →"
 msgstr "Zaczynajmy →"
 
-#: src/ui/screens/ProfileScreen.tsx:89
+#: src/ui/screens/ProfileScreen.tsx:80
 msgid "Given"
 msgstr "Zarezerwowane"
 
@@ -201,8 +219,8 @@ msgstr "Zarezerwowane"
 #~ msgstr "Start"
 
 #: src/ui/screens/JoinEventScreen.tsx:55
-msgid "Hosted by <0>Klaudia</0> · Dec 24, 2026"
-msgstr "Gospodarz <0>Klaudia</0> · 24 grudnia 2026"
+#~ msgid "Hosted by <0>Klaudia</0> · Dec 24, 2026"
+#~ msgstr "Gospodarz <0>Klaudia</0> · 24 grudnia 2026"
 
 #: src/ui/screens/FirstLoginScreen.tsx:92
 msgid "How should we show you to friends and family on Prezentowo?"
@@ -212,32 +230,47 @@ msgstr "Jak mamy pokazywać Cię znajomym i rodzinie w Prezentowo?"
 msgid "Invalid email"
 msgstr "Nieprawidłowy adres e-mail"
 
+#. placeholder {0}: pickedPlaceholder.name
+#. placeholder {0}: user.profile.name
+#: src/ui/screens/JoinEventScreen.tsx:242
+#: src/ui/screens/JoinEventScreen.tsx:268
+msgid "Join as {0}"
+msgstr ""
+
 #: src/ui/screens/JoinEventScreen.tsx:172
-msgid "Join as {picked}"
-msgstr "Dołącz jako {picked}"
+#~ msgid "Join as {picked}"
+#~ msgstr "Dołącz jako {picked}"
 
 #: src/ui/screens/JoinEventScreen.tsx:159
-msgid "Join as Alex Kowalski"
-msgstr "Dołącz jako Jan Kowalski"
+#~ msgid "Join as Alex Kowalski"
+#~ msgstr "Dołącz jako Jan Kowalski"
 
-#: src/ui/screens/JoinEventScreen.tsx:170
+#: src/ui/screens/JoinEventScreen.tsx:270
 msgid "Join the event"
 msgstr "Dołącz do wydarzenia"
 
-#: src/ui/screens/ProfileScreen.tsx:81
+#: src/ui/screens/JoinEventScreen.tsx:179
+msgid "Join this event"
+msgstr ""
+
+#: src/ui/screens/JoinEventScreen.tsx:244
+msgid "Join with your account"
+msgstr ""
+
+#: src/ui/screens/ProfileScreen.tsx:72
 msgid "Joined {joinedLabel}"
 msgstr "Dołączył {joinedLabel}"
 
 #: src/ui/screens/JoinEventScreen.tsx:112
-msgid "Klaudia added some names while planning. Pick yours — your wishlist and gifts will move over."
-msgstr "Klaudia dodała kilka imion podczas planowania. Wybierz swoje — Twoja lista i prezenty się przeniosą."
+#~ msgid "Klaudia added some names while planning. Pick yours — your wishlist and gifts will move over."
+#~ msgstr "Klaudia dodała kilka imion podczas planowania. Wybierz swoje — Twoja lista i prezenty się przeniosą."
 
 #: src/ui/screens/JoinEventScreen.tsx:72
-msgid "Klaudia, Marek, Ela & 5 more"
-msgstr "Klaudia, Marek, Ela i 5 kolejnych"
+#~ msgid "Klaudia, Marek, Ela & 5 more"
+#~ msgstr "Klaudia, Marek, Ela i 5 kolejnych"
 
 #: src/ui/components/LanguageBottomModal.tsx:44
-#: src/ui/screens/ProfileScreen.tsx:103
+#: src/ui/screens/ProfileScreen.tsx:94
 msgid "Language"
 msgstr "Język"
 
@@ -245,35 +278,45 @@ msgstr "Język"
 msgid "Let's set you"
 msgstr "Ustawmy Twój"
 
-#: src/ui/screens/ProfileScreen.tsx:110
+#: src/ui/screens/ProfileScreen.tsx:101
 msgid "Light — paper"
 msgstr "Jasny — papier"
+
+#: src/ui/screens/JoinEventScreen.tsx:42
+#: src/ui/screens/JoinEventScreen.tsx:139
+msgid "Loading event…"
+msgstr ""
 
 #: src/ui/DrawerContent.tsx:47
 #~ msgid "Log out"
 #~ msgstr "Wyloguj się"
 
-#: src/ui/screens/ProfileScreen.tsx:127
+#: src/ui/screens/ProfileScreen.tsx:118
 msgid "Magic link · Google"
 msgstr "Magiczny link · Google"
 
-#: src/ui/screens/CreateEventScreen.tsx:205
+#: src/ui/screens/CreateEventScreen.tsx:207
 msgid "Name your event"
 msgstr "Nazwij swoje wydarzenie"
 
-#: src/ui/screens/CreateEventScreen.tsx:245
+#: src/ui/screens/CreateEventScreen.tsx:247
 msgid "Name, email, or @username…"
 msgstr "Imię, e-mail lub @użytkownik…"
 
-#: src/ui/screens/CreateEventScreen.tsx:173
+#: src/ui/screens/CreateEventScreen.tsx:175
 msgid "New event"
 msgstr "Nowe wydarzenie"
 
-#: src/ui/screens/CreateEventScreen.tsx:197
+#: src/ui/screens/CreateEventScreen.tsx:199
 msgid "New event."
 msgstr "Nowe wydarzenie."
 
-#: src/ui/screens/EventsScreen.tsx:53
+#: src/ui/screens/JoinEventScreen.tsx:39
+#: src/ui/screens/JoinEventScreen.tsx:136
+msgid "No event was provided."
+msgstr ""
+
+#: src/ui/screens/EventsScreen.tsx:54
 msgid "No events yet. Tap the + button to create your first one."
 msgstr "Brak ereigneń. Kliknij przycisk +, aby utworzyć pierwsze."
 
@@ -281,7 +324,7 @@ msgstr "Brak ereigneń. Kliknij przycisk +, aby utworzyć pierwsze."
 msgid "not guesswork."
 msgstr "bez zgadywania."
 
-#: src/ui/screens/ProfileScreen.tsx:98
+#: src/ui/screens/ProfileScreen.tsx:89
 msgid "Notifications"
 msgstr "Powiadomienia"
 
@@ -298,23 +341,23 @@ msgid "Or paste your 6-digit code"
 msgstr "Lub wklej swój 6-cyfrowy kod"
 
 #. placeholder {0}: values.participants.length
-#: src/ui/screens/CreateEventScreen.tsx:222
+#: src/ui/screens/CreateEventScreen.tsx:224
 msgid "People · {0}"
 msgstr "Osoby · {0}"
 
-#: src/ui/screens/CreateEventScreen.tsx:320
+#: src/ui/screens/CreateEventScreen.tsx:322
 msgid "Placeholder · can be claimed via invite link"
 msgstr "Zastępczy · można go przejąć poprzez link zaproszenia"
 
-#: src/ui/screens/JoinEventScreen.tsx:142
+#: src/ui/screens/JoinEventScreen.tsx:224
 msgid "Placeholder · not claimed yet"
 msgstr "Zastępczy · jeszcze nie przejęty"
 
-#: src/ui/screens/CreateEventScreen.tsx:269
+#: src/ui/screens/CreateEventScreen.tsx:271
 msgid "Placeholder names let you plan for people not on Prezentowo yet. Anyone you share the invite link with can claim a placeholder."
 msgstr "Zastępcze imiona pozwalają planować dla osób, które nie są jeszcze na Prezentowo. Każdy, z kim podzielisz się linkiem zaproszenia, może przejąć zastępcze miejsce."
 
-#: src/ui/screens/EventsScreen.tsx:31
+#: src/ui/screens/EventsScreen.tsx:32
 msgid "Prezentowo"
 msgstr "Prezentowo"
 
@@ -323,8 +366,8 @@ msgid "Prezentowo is a quiet place to share what you'd love this Christmas — s
 msgstr "Prezentowo to spokojne miejsce, w którym dzielisz się tym, co chciałoby się dostać na święta — żeby bliscy nie musieli zgadywać."
 
 #: src/ui/screens/CreateEventScreen.tsx:318
-msgid "Prezentowo user"
-msgstr "Użytkownik Prezentowo"
+#~ msgid "Prezentowo user"
+#~ msgstr "Użytkownik Prezentowo"
 
 #: src/ui/screens/WelcomeScreen.tsx:24
 msgid "Prezentowo."
@@ -341,7 +384,7 @@ msgstr "Prezentowo."
 msgid "Profile picture"
 msgstr "Zdjęcie profilowe"
 
-#: src/ui/screens/ProfileScreen.tsx:99
+#: src/ui/screens/ProfileScreen.tsx:90
 msgid "Push, email"
 msgstr "Powiadomienia push, e-mail"
 
@@ -349,9 +392,9 @@ msgstr "Powiadomienia push, e-mail"
 msgid "quietly."
 msgstr "po cichu."
 
-#: src/ui/screens/CreateEventScreen.tsx:79
-#: src/ui/screens/CreateEventScreen.tsx:82
-#: src/ui/screens/CreateEventScreen.tsx:85
+#: src/ui/screens/CreateEventScreen.tsx:80
+#: src/ui/screens/CreateEventScreen.tsx:83
+#: src/ui/screens/CreateEventScreen.tsx:86
 #: src/ui/screens/FirstLoginScreen.tsx:34
 #: src/ui/screens/SignInScreen.tsx:23
 msgid "Required"
@@ -374,7 +417,7 @@ msgstr "Zacznij logowanie od nowa i spróbuj ponownie."
 msgid "Sent just now"
 msgstr "Wysłano przed chwilą"
 
-#: src/ui/screens/ProfileScreen.tsx:93
+#: src/ui/screens/ProfileScreen.tsx:84
 msgid "Settings"
 msgstr "Ustawienia"
 
@@ -382,11 +425,11 @@ msgstr "Ustawienia"
 msgid "Sign in or create an account — same place, no password."
 msgstr "Zaloguj się lub utwórz konto — w tym samym miejscu, bez hasła."
 
-#: src/ui/screens/JoinEventScreen.tsx:83
+#: src/ui/screens/JoinEventScreen.tsx:102
 msgid "Sign in to continue"
 msgstr "Zaloguj się, aby kontynuować"
 
-#: src/ui/screens/JoinEventScreen.tsx:79
+#: src/ui/screens/JoinEventScreen.tsx:98
 msgid "Sign in to join this event."
 msgstr "Zaloguj się, aby dołączyć do tego wydarzenia."
 
@@ -394,11 +437,11 @@ msgstr "Zaloguj się, aby dołączyć do tego wydarzenia."
 msgid "Sign in."
 msgstr "Zaloguj się."
 
-#: src/ui/screens/ProfileScreen.tsx:143
+#: src/ui/screens/ProfileScreen.tsx:134
 msgid "Sign out"
 msgstr "Wyloguj się"
 
-#: src/ui/screens/ProfileScreen.tsx:126
+#: src/ui/screens/ProfileScreen.tsx:117
 msgid "Sign-in & security"
 msgstr "Logowanie i bezpieczeństwo"
 
@@ -407,7 +450,8 @@ msgstr "Logowanie i bezpieczeństwo"
 msgid "Skip"
 msgstr "Pomiń"
 
-#: src/ui/screens/CreateEventScreen.tsx:124
+#: src/ui/screens/CreateEventScreen.tsx:129
+#: src/ui/screens/JoinEventScreen.tsx:156
 #: src/ui/screens/SignInScreen.tsx:49
 msgid "Something went wrong"
 msgstr "Coś poszło nie tak"
@@ -428,13 +472,21 @@ msgstr "Kliknij link w wiadomości, którą właśnie wysłaliśmy na <0>{email}
 msgid "That code didn't work."
 msgstr "Ten kod nie zadziałał."
 
-#: src/ui/screens/CreateEventScreen.tsx:201
+#: src/ui/screens/JoinEventScreen.tsx:188
+msgid "The host added some names while planning. Pick yours — your wishlist and gifts will move over."
+msgstr ""
+
+#: src/ui/screens/CreateEventScreen.tsx:203
 msgid "Title"
 msgstr "Tytuł"
 
 #: src/ui/screens/FirstLoginScreen.tsx:89
 msgid "up."
 msgstr "profil."
+
+#: src/ui/screens/CreateEventScreen.tsx:320
+msgid "User"
+msgstr ""
 
 #: src/ui/screens/CheckEmailScreen.tsx:91
 msgid "We sent you"
@@ -448,7 +500,7 @@ msgstr "Witaj"
 msgid "When you reserve a gift for someone, only the other givers see it. The person it's for never finds out."
 msgstr "Gdy zarezerwujesz komuś prezent, zobaczą to tylko pozostali obdarowujący. Osoba, dla której jest prezent, nigdy się o tym nie dowie."
 
-#: src/ui/screens/ProfileScreen.tsx:88
+#: src/ui/screens/ProfileScreen.tsx:79
 msgid "Wished"
 msgstr "Zapragnięte"
 
@@ -456,11 +508,21 @@ msgstr "Zapragnięte"
 msgid "Wishlists,"
 msgstr "Listy życzeń,"
 
+#. placeholder {0}: event.title
+#. placeholder {1}: event.date
+#: src/ui/screens/JoinEventScreen.tsx:184
+msgid "You're already a participant of {0} ({1})."
+msgstr ""
+
+#: src/ui/screens/JoinEventScreen.tsx:175
+msgid "You're already in."
+msgstr ""
+
 #: src/ui/screens/FirstLoginScreen.tsx:84
 msgid "You're in."
 msgstr "Jesteś w środku."
 
-#: src/ui/screens/JoinEventScreen.tsx:46
+#: src/ui/screens/JoinEventScreen.tsx:61
 msgid "You're invited to"
 msgstr "Zostałeś zaproszony na"
 
@@ -472,7 +534,7 @@ msgstr "Zostałeś zaproszony na"
 msgid "you@example.com"
 msgstr "twoj@email.com"
 
-#: src/ui/screens/EventsScreen.tsx:41
+#: src/ui/screens/EventsScreen.tsx:42
 msgid "Your events"
 msgstr "Twoje wydarzenia"
 

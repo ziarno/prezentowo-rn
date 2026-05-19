@@ -37,7 +37,6 @@ const createEvent = async function (
     Match.ObjectIncluding({
       title: String,
       date: String,
-      occasion: String,
       participants: [participantPattern],
     }),
   )
@@ -48,9 +47,8 @@ const createEvent = async function (
 
   const title = options.title.trim()
   const date = options.date.trim()
-  const occasion = options.occasion.trim()
 
-  if (!title || !date || !occasion) {
+  if (!title || !date) {
     throw new Meteor.Error('invalidArgs', 'missingFields')
   }
 
@@ -78,7 +76,6 @@ const createEvent = async function (
   const _id = await Events.insertAsync({
     title,
     date,
-    occasion,
     ownerId: this.userId,
     participants: [host, ...otherParticipants],
     createdAt: new Date(),
@@ -124,9 +121,7 @@ const joinEvent = async function (
       throw new Meteor.Error('invalidArgs', 'mustBeAPlaceholder')
     }
     nextParticipants = event.participants.map(p =>
-      p.id === options.participantId
-        ? { id: p.id, kind: 'real', userId }
-        : p,
+      p.id === options.participantId ? { id: p.id, kind: 'real', userId } : p,
     )
   } else {
     nextParticipants = [
