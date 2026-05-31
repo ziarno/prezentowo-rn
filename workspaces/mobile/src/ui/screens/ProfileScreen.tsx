@@ -5,10 +5,10 @@ import { Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import {
-  BackIcon,
   BellIcon,
   CalendarIcon,
   ChevronIcon,
+  CloseIcon,
   GlobeIcon,
   HeartIcon,
   LockIcon,
@@ -45,13 +45,13 @@ export function ProfileScreen() {
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
       <View className="flex-row items-center justify-between px-[22px] pb-2 pt-3.5">
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <BackIcon width={22} height={22} color={garland.ink} />
-        </Pressable>
         <Pressable hitSlop={12}>
           <Text className="text-sm text-garland-ink-60">
             <Trans>Edit</Trans>
           </Text>
+        </Pressable>
+        <Pressable onPress={() => router.back()} hitSlop={12}>
+          <CloseIcon width={22} height={22} color={garland.ink} />
         </Pressable>
       </View>
 

@@ -4,7 +4,7 @@ export default function AppLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
-      <Stack.Screen name="profile" />
+      <Stack.Screen name="profile" options={{ animation: 'ios_from_left' }} />
       <Stack.Screen
         name="create-event"
         options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
