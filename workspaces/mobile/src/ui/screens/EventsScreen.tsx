@@ -30,7 +30,7 @@ export function EventsScreen() {
             <Avatar source={avatar('m1')} size={32} />
           </Pressable>
           <Text className="font-garland-display text-lg text-garland-ink">
-            {t('Prezentowo')}
+            {t('events.brand')}
           </Text>
           <Pressable hitSlop={8}>
             <BellIcon width={22} height={22} color={garland.ink60} />
@@ -40,7 +40,7 @@ export function EventsScreen() {
 
         <View className="px-[22px]">
           <Text className="mb-1.5 mt-[22px] text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-            {t('Your events')}
+            {t('events.yourEvents')}
           </Text>
         </View>
 
@@ -52,7 +52,7 @@ export function EventsScreen() {
           {events.length === 0 ? (
             <View className="px-[22px] pt-6">
               <Text className="text-sm text-garland-ink-60">
-                {t('No events yet. Tap the + button to create your first one.')}
+                {t('events.empty')}
               </Text>
             </View>
           ) : (
@@ -105,7 +105,7 @@ function EventRow({ event, accent }: { event: EventListItem; accent: string }) {
           {event.title}
         </Text>
         <Text className="mt-1 text-[13px] text-garland-ink-60">
-          {t('{{personCount}} people', {
+          {t('events.peopleCount', {
             personCount: event.participants.length,
           })}
         </Text>

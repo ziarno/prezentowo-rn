@@ -29,7 +29,7 @@ export function FirstLoginScreen() {
   const setFirstLoginPending = useAuthStore(s => s.setFirstLoginPending)
 
   const validationSchema = Yup.object({
-    name: Yup.string().trim().required(t('Required')),
+    name: Yup.string().trim().required(t('common.required')),
   })
 
   const {
@@ -61,7 +61,7 @@ export function FirstLoginScreen() {
         <View className="flex-1 px-7">
           <View className="flex-row items-center justify-between py-3.5">
             <Text className="text-xs font-bold uppercase tracking-[1px] text-garland-ink-40">
-              {t('Step 1 · 1')}
+              {t('firstLogin.step')}
             </Text>
             <View className="flex-row items-center gap-3">
               <LanguageChangeButton />
@@ -70,29 +70,29 @@ export function FirstLoginScreen() {
                 hitSlop={12}
                 onPress={() => setFirstLoginPending(false)}
               >
-                <GarlandButtonText>{t('Skip')}</GarlandButtonText>
+                <GarlandButtonText>{t('common.skip')}</GarlandButtonText>
               </GarlandButton>
             </View>
           </View>
 
           <View className="pt-1.5">
             <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-              {t("You're in.")}
+              {t('firstLogin.eyebrow')}
             </Text>
             <Text className="mt-2 font-garland-display text-[34px] leading-[35px] text-garland-ink">
-              {t("Let's set you")}
+              {t('firstLogin.titleLine1')}
               {'\n'}
-              {t('up.')}
+              {t('firstLogin.titleLine2')}
             </Text>
             <Text className="mt-2.5 text-sm leading-[21px] text-garland-ink-60">
-              {t('How should we show you to friends and family on Prezentowo?')}
+              {t('firstLogin.subtitle')}
             </Text>
           </View>
 
           <View className="mt-6">
             <AuthField
-              label={t('Your name')}
-              placeholder={t('Alex Kowalski')}
+              label={t('firstLogin.nameLabel')}
+              placeholder={t('firstLogin.namePlaceholder')}
               value={values.name}
               onChangeText={handleChange('name')}
               onBlur={handleBlur('name')}
@@ -106,7 +106,7 @@ export function FirstLoginScreen() {
 
           <View className="mt-6">
             <Text className="mb-3 text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-              {t('Profile picture')}
+              {t('firstLogin.profilePicture')}
             </Text>
             <View className="-mx-1.5 flex-row flex-wrap">
               <GridCell>
@@ -124,7 +124,7 @@ export function FirstLoginScreen() {
             </View>
             <Text className="mt-3 text-xs leading-[18px] text-garland-ink-40">
               <Trans
-                i18nKey="Tap the <0>+</0> to upload your own photo, or pick one of ours."
+                i18nKey="firstLogin.uploadHint"
                 components={[
                   <Text key="plus" className="font-bold text-garland-ink" />,
                 ]}
@@ -140,7 +140,7 @@ export function FirstLoginScreen() {
               onPress={() => handleSubmit()}
               disabled={isSubmitting}
             >
-              <GarlandButtonText>{t('Continue')}</GarlandButtonText>
+              <GarlandButtonText>{t('common.continue')}</GarlandButtonText>
             </GarlandButton>
           </View>
         </View>

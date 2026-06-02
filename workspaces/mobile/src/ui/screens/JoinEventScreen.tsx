@@ -36,10 +36,10 @@ function JoinEventSignIn({ eventId }: { eventId?: string }) {
   const event = useEventById(eventId)
 
   if (!eventId) {
-    return <JoinEventMissing message={t('No event was provided.')} />
+    return <JoinEventMissing message={t('join.noEventProvided')} />
   }
   if (!event) {
-    return <JoinEventMissing message={t('Loading event…')} />
+    return <JoinEventMissing message={t('join.loadingEvent')} />
   }
 
   const participantCount = event.participants.length
@@ -58,7 +58,7 @@ function JoinEventSignIn({ eventId }: { eventId?: string }) {
 
         <View className="flex-1 justify-center">
           <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-            {t("You're invited to")}
+            {t('join.invitedTo')}
           </Text>
           <Text className="mt-2 font-garland-display text-[40px] leading-[41px] text-garland-ink">
             {event.title}
@@ -67,7 +67,7 @@ function JoinEventSignIn({ eventId }: { eventId?: string }) {
           <Text className="text-sm leading-[22px] text-garland-ink-60">
             {event.date}
             {'\n'}
-            {t('{{participantCount}} people on the list', { participantCount })}
+            {t('join.peopleOnList', { participantCount })}
           </Text>
 
           {placeholderColors.length > 0 ? (
@@ -85,7 +85,7 @@ function JoinEventSignIn({ eventId }: { eventId?: string }) {
                 ))}
               </View>
               <Text className="text-xs text-garland-ink-60">
-                {t('{{spots}} spots waiting to be claimed', {
+                {t('join.spotsWaiting', {
                   spots: placeholderColors.length,
                 })}
               </Text>
@@ -95,10 +95,10 @@ function JoinEventSignIn({ eventId }: { eventId?: string }) {
 
         <View className="gap-2.5 pb-9">
           <Text className="text-center text-xs text-garland-ink-60">
-            {t('Sign in to join this event.')}
+            {t('join.signInToJoin')}
           </Text>
           <GarlandButton onPress={() => router.replace('/welcome')}>
-            <GarlandButtonText>{t('Sign in to continue')}</GarlandButtonText>
+            <GarlandButtonText>{t('join.signInToContinue')}</GarlandButtonText>
           </GarlandButton>
         </View>
       </View>
@@ -134,10 +134,10 @@ function JoinEventPick({ eventId }: { eventId?: string }) {
   const [error, setError] = useState<string | null>(null)
 
   if (!eventId) {
-    return <JoinEventMissing message={t('No event was provided.')} />
+    return <JoinEventMissing message={t('join.noEventProvided')} />
   }
   if (!event) {
-    return <JoinEventMissing message={t('Loading event…')} />
+    return <JoinEventMissing message={t('join.loadingEvent')} />
   }
 
   const pickedPlaceholder =
@@ -157,7 +157,7 @@ function JoinEventPick({ eventId }: { eventId?: string }) {
       .catch((err: MeteorError) => {
         setSubmitting(false)
         setError(
-          err.reason ?? err.error?.toString() ?? t('Something went wrong'),
+          err.reason ?? err.error?.toString() ?? t('common.somethingWentWrong'),
         )
       })
   }
@@ -177,21 +177,19 @@ function JoinEventPick({ eventId }: { eventId?: string }) {
           </Text>
           <Text className="mt-1.5 font-garland-display text-[30px] leading-[32px] text-garland-ink">
             {alreadyJoined
-              ? t("You're already in.")
+              ? t('join.alreadyIn')
               : placeholders.length > 0
-                ? t('Are you one of these?')
-                : t('Join this event')}
+                ? t('join.areYouOneOfThese')
+                : t('join.joinThisEvent')}
           </Text>
           <Text className="mt-2.5 text-sm leading-[21px] text-garland-ink-60">
             {alreadyJoined
-              ? t("You're already a participant of {{title}} ({{date}}).", {
+              ? t('join.alreadyParticipant', {
                   title: event.title,
                   date: event.date,
                 })
               : placeholders.length > 0
-                ? t(
-                    'The host added some names while planning. Pick yours — your wishlist and gifts will move over.',
-                  )
+                ? t('join.hostAddedNames')
                 : event.date}
           </Text>
         </View>
@@ -222,7 +220,7 @@ function JoinEventPick({ eventId }: { eventId?: string }) {
                       {p.name}
                     </Text>
                     <Text className="mt-0.5 text-xs text-garland-ink-40">
-                      {t('Placeholder · not claimed yet')}
+                      {t('join.placeholderNotClaimed')}
                     </Text>
                   </View>
                 </PickRow>
@@ -236,12 +234,12 @@ function JoinEventPick({ eventId }: { eventId?: string }) {
                 <Avatar source={avatar('m1')} size={38} />
                 <View className="min-w-0 flex-1">
                   <Text className="text-[15px] font-bold text-garland-ink">
-                    {t('Add me as new')}
+                    {t('join.addMeAsNew')}
                   </Text>
                   <Text className="mt-0.5 text-xs text-garland-ink-40">
                     {user?.profile?.name
-                      ? t('Join as {{name}}', { name: user.profile.name })
-                      : t('Join with your account')}
+                      ? t('join.joinAs', { name: user.profile.name })
+                      : t('join.joinWithAccount')}
                   </Text>
                 </View>
               </PickRow>
@@ -256,14 +254,14 @@ function JoinEventPick({ eventId }: { eventId?: string }) {
         <View className="px-[22px] pb-6 pt-2">
           {alreadyJoined ? (
             <GarlandButton onPress={() => router.replace('/')}>
-              <GarlandButtonText>{t('Back to events')}</GarlandButtonText>
+              <GarlandButtonText>{t('join.backToEvents')}</GarlandButtonText>
             </GarlandButton>
           ) : (
             <GarlandButton onPress={handleJoin} disabled={submitting}>
               <GarlandButtonText>
                 {pickedPlaceholder
-                  ? t('Join as {{name}}', { name: pickedPlaceholder.name })
-                  : t('Join the event')}
+                  ? t('join.joinAs', { name: pickedPlaceholder.name })
+                  : t('join.joinTheEvent')}
               </GarlandButtonText>
             </GarlandButton>
           )}

@@ -18,7 +18,9 @@ export function SignInScreen() {
   const { t } = useTranslation()
 
   const validationSchema = Yup.object({
-    email: Yup.string().email(t('Invalid email')).required(t('Required')),
+    email: Yup.string()
+      .email(t('signin.invalidEmail'))
+      .required(t('common.required')),
   })
 
   const {
@@ -44,7 +46,9 @@ export function SignInScreen() {
           setSubmitting(false)
           setErrors({
             email:
-              err.reason ?? err.error?.toString() ?? t('Something went wrong'),
+              err.reason ??
+              err.error?.toString() ??
+              t('common.somethingWentWrong'),
           })
         },
       })
@@ -67,22 +71,20 @@ export function SignInScreen() {
 
           <View className="pt-4">
             <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-              {t('Welcome')}
+              {t('signin.eyebrow')}
             </Text>
             <Text className="mt-2 font-garland-display text-[38px] leading-[39px] text-garland-ink">
-              {t('Sign in.')}
+              {t('signin.title')}
             </Text>
             <Text className="mt-2.5 text-sm leading-[21px] text-garland-ink-60">
-              {t(
-                "Enter your email and we'll send a magic link. New here? We'll set you up right after.",
-              )}
+              {t('signin.subtitle')}
             </Text>
           </View>
 
           <View className="mt-6">
             <AuthField
-              label={t('Email')}
-              placeholder={t('you@example.com')}
+              label={t('signin.emailLabel')}
+              placeholder={t('signin.emailPlaceholder')}
               value={values.email}
               onChangeText={handleChange('email')}
               onBlur={handleBlur('email')}
@@ -105,13 +107,13 @@ export function SignInScreen() {
               onPress={() => handleSubmit()}
               disabled={isSubmitting}
             >
-              <GarlandButtonText>{t('Email me a link')}</GarlandButtonText>
+              <GarlandButtonText>{t('signin.emailMeLink')}</GarlandButtonText>
             </GarlandButton>
 
             <View className="my-5 flex-row items-center gap-2.5">
               <View className="h-px flex-1 bg-garland-ink-08" />
               <Text className="text-xs font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-                {t('or')}
+                {t('signin.or')}
               </Text>
               <View className="h-px flex-1 bg-garland-ink-08" />
             </View>
@@ -124,13 +126,13 @@ export function SignInScreen() {
             >
               <GarlandButtonText className="font-bold">G</GarlandButtonText>
               <GarlandButtonText className="text-sm">
-                {t('Continue with Google')}
+                {t('signin.continueWithGoogle')}
               </GarlandButtonText>
             </GarlandButton>
 
             <Text className="mt-4 text-center text-xs leading-[18px] text-garland-ink-40">
               <Trans
-                i18nKey="By continuing you agree to the <0>Terms</0> and <1>Privacy Policy</1>."
+                i18nKey="signin.terms"
                 components={[
                   <Text key="terms" className="font-bold text-garland-ink" />,
                   <Text key="privacy" className="font-bold text-garland-ink" />,

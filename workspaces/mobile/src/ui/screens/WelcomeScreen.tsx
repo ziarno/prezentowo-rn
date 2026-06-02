@@ -22,20 +22,20 @@ export function WelcomeScreen() {
             <LocalSvg asset={giftMarkAsset} width={44} height={44} />
           </View>
           <Text className="font-garland-display text-[44px] leading-[44px] tracking-[0.2px] text-garland-ink">
-            {t('Prezentowo.')}
+            {t('welcome.title')}
           </Text>
           <View className="my-6 h-0.5 w-9 bg-garland-green" />
           <Text className="max-w-[280px] text-base leading-[25px] text-garland-ink-60">
-            {t('A quiet place to share gift ideas with people you love.')}
+            {t('welcome.tagline')}
           </Text>
         </View>
 
         <View className="gap-3 pb-9">
           <GarlandButton onPress={() => router.push('/signin')}>
-            <GarlandButtonText>{t('Get started')}</GarlandButtonText>
+            <GarlandButtonText>{t('common.getStarted')}</GarlandButtonText>
           </GarlandButton>
           <Text className="text-center text-xs leading-[18px] text-garland-ink-40">
-            {t('Sign in or create an account — same place, no password.')}
+            {t('welcome.signInHint')}
           </Text>
         </View>
       </View>

@@ -30,27 +30,30 @@ export function OnboardingScreen() {
   const { t } = useTranslation()
   const pages: Page[] = [
     {
-      eyebrow: t('01 · 03'),
-      title: [t('Wishlists,'), t('not guesswork.')],
-      body: t(
-        "Prezentowo is a quiet place to share what you'd love this Christmas — so the people you love can stop guessing.",
-      ),
+      eyebrow: t('onboarding.page1.eyebrow'),
+      title: [
+        t('onboarding.page1.titleLine1'),
+        t('onboarding.page1.titleLine2'),
+      ],
+      body: t('onboarding.page1.body'),
       illu: 'intro',
     },
     {
-      eyebrow: t('02 · 03'),
-      title: [t('Build'), t('your list.')],
-      body: t(
-        'Add gift ideas as you stumble on them. Links, photos, a quick note about size or colour — anything that helps.',
-      ),
+      eyebrow: t('onboarding.page2.eyebrow'),
+      title: [
+        t('onboarding.page2.titleLine1'),
+        t('onboarding.page2.titleLine2'),
+      ],
+      body: t('onboarding.page2.body'),
       illu: 'wishlist',
     },
     {
-      eyebrow: t('03 · 03'),
-      title: [t('Claim'), t('quietly.')],
-      body: t(
-        "When you reserve a gift for someone, only the other givers see it. The person it's for never finds out.",
-      ),
+      eyebrow: t('onboarding.page3.eyebrow'),
+      title: [
+        t('onboarding.page3.titleLine1'),
+        t('onboarding.page3.titleLine2'),
+      ],
+      body: t('onboarding.page3.body'),
       illu: 'claim',
     },
   ]
@@ -87,7 +90,7 @@ export function OnboardingScreen() {
         <View className="flex-row items-center gap-3">
           <LanguageChangeButton />
           <GarlandButton variant="link" onPress={finish}>
-            <GarlandButtonText>{t('Skip')}</GarlandButtonText>
+            <GarlandButtonText>{t('common.skip')}</GarlandButtonText>
           </GarlandButton>
         </View>
       </View>
@@ -130,7 +133,9 @@ export function OnboardingScreen() {
         </View>
         <GarlandButton onPress={advance} className="gap-1.5 px-[22px] py-3">
           <GarlandButtonText>
-            {step === pages.length - 1 ? t('Get started') : t('Continue')}
+            {step === pages.length - 1
+              ? t('common.getStarted')
+              : t('common.continue')}
           </GarlandButtonText>
           <ArrowRightIcon width={18} height={18} color={garland.paper} />
         </GarlandButton>

@@ -36,7 +36,7 @@ export function ProfileScreen() {
 
   const user = useCurrentUser()
 
-  const displayName = user?.profile?.name ?? t('Friend')
+  const displayName = user?.profile?.name ?? t('profile.friend')
   const email = user?.emails?.[0]?.address
   const joinedLabel = formatJoined(user?.createdAt, i18n.language)
   const localeLabel =
@@ -46,7 +46,9 @@ export function ProfileScreen() {
     <SafeAreaView className="flex-1 bg-garland-paper">
       <View className="flex-row items-center justify-between px-[22px] pb-2 pt-3.5">
         <Pressable hitSlop={12}>
-          <Text className="text-sm text-garland-ink-60">{t('Edit')}</Text>
+          <Text className="text-sm text-garland-ink-60">
+            {t('profile.edit')}
+          </Text>
         </Pressable>
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <CloseIcon width={22} height={22} color={garland.ink} />
@@ -67,55 +69,53 @@ export function ProfileScreen() {
             <Text className="mt-1.5 text-sm text-garland-ink-60">
               {email}
               {email && joinedLabel ? ' · ' : ''}
-              {joinedLabel
-                ? t('Joined {{joinedLabel}}', { joinedLabel })
-                : null}
+              {joinedLabel ? t('profile.joined', { joinedLabel }) : null}
             </Text>
           ) : null}
         </View>
 
         <View className="mt-7 flex-row gap-6 border-y border-garland-ink-08 py-5">
-          <Stat value="04" label={t('Events')} />
-          <Stat value="17" label={t('Wished')} />
-          <Stat value="09" label={t('Given')} />
+          <Stat value="04" label={t('profile.statEvents')} />
+          <Stat value="17" label={t('profile.statWished')} />
+          <Stat value="09" label={t('profile.statGiven')} />
         </View>
 
-        <SectionHeading>{t('Settings')}</SectionHeading>
+        <SectionHeading>{t('profile.settings')}</SectionHeading>
         <View className="border-t border-garland-ink-08">
           <SettingsRow
             Icon={BellIcon}
-            label={t('Notifications')}
-            sublabel={t('Push, email')}
+            label={t('profile.notifications')}
+            sublabel={t('profile.notificationsSub')}
           />
           <SettingsRow
             Icon={GlobeIcon}
-            label={t('Language')}
+            label={t('common.language')}
             sublabel={localeLabel}
             onPress={openLanguageModal}
           />
           <SettingsRow
             Icon={MoonIcon}
-            label={t('Appearance')}
-            sublabel={t('Light — paper')}
+            label={t('profile.appearance')}
+            sublabel={t('profile.appearanceSub')}
           />
           <SettingsRow
             Icon={CalendarIcon}
-            label={t('Default reminder')}
-            sublabel={t('3 days before')}
+            label={t('profile.defaultReminder')}
+            sublabel={t('profile.defaultReminderSub')}
             last
           />
         </View>
 
-        <SectionHeading>{t('Account')}</SectionHeading>
+        <SectionHeading>{t('profile.account')}</SectionHeading>
         <View className="border-t border-garland-ink-08">
           <SettingsRow
             Icon={LockIcon}
-            label={t('Sign-in & security')}
-            sublabel={t('Magic link · Google')}
+            label={t('profile.security')}
+            sublabel={t('profile.securitySub')}
           />
           <SettingsRow
             Icon={HeartIcon}
-            label={t('About Prezentowo')}
+            label={t('profile.about')}
             sublabel="v2.4"
             last
           />
@@ -127,7 +127,7 @@ export function ProfileScreen() {
           className="mt-8 self-center"
         >
           <Text className="text-sm font-bold text-garland-berry">
-            {t('Sign out')}
+            {t('profile.signOut')}
           </Text>
         </Pressable>
       </ScrollView>

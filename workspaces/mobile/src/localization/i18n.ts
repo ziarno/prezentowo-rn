@@ -24,9 +24,6 @@ i18n.use(initReactI18next).init({
   },
   lng: resolveLocale(),
   fallbackLng: 'en',
-  // Our keys are the source English strings, which contain `.` and `:`.
-  keySeparator: false,
-  nsSeparator: false,
   interpolation: { escapeValue: false },
   react: { useSuspense: false },
 })

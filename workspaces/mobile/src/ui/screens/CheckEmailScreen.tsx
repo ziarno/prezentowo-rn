@@ -26,7 +26,7 @@ export function CheckEmailScreen() {
   const pendingEmail = useAuthStore(s => s.pendingEmail)
   const { requestMagicLink, loginWithMagicToken, isLoading } = useAuth()
   const { t } = useTranslation()
-  const email = pendingEmail ?? t('your inbox')
+  const email = pendingEmail ?? t('checkEmail.yourInbox')
   const [countdown, setCountdown] = useState(RESEND_SECONDS)
   const [code, setCode] = useState('')
   const [codeError, setCodeError] = useState<string | undefined>()
@@ -44,11 +44,11 @@ export function CheckEmailScreen() {
 
   const submitCode = () => {
     if (!pendingEmail) {
-      setCodeError(t('Restart sign-in and try again.'))
+      setCodeError(t('checkEmail.restart'))
       return
     }
     if (code.trim().length < 4) {
-      setCodeError(t('Enter the code from your email.'))
+      setCodeError(t('checkEmail.enterCode'))
       return
     }
     setCodeError(undefined)
@@ -58,7 +58,7 @@ export function CheckEmailScreen() {
       onSuccess: () => setCode(''),
       onError: err =>
         setCodeError(
-          err.reason ?? err.error?.toString() ?? t("That code didn't work."),
+          err.reason ?? err.error?.toString() ?? t('checkEmail.codeDidntWork'),
         ),
     })
   }
@@ -85,16 +85,16 @@ export function CheckEmailScreen() {
 
         <View className="pt-4">
           <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-            {t('Check your email')}
+            {t('checkEmail.eyebrow')}
           </Text>
           <Text className="mt-2 font-garland-display text-[36px] leading-[37px] text-garland-ink">
-            {t('We sent you')}
+            {t('checkEmail.titleLine1')}
             {'\n'}
-            {t('a magic link.')}
+            {t('checkEmail.titleLine2')}
           </Text>
           <Text className="mt-3.5 text-sm leading-[21px] text-garland-ink-60">
             <Trans
-              i18nKey="Tap the link in the email we just sent to <0>{{email}}</0> to finish signing in. The link works for 15 minutes."
+              i18nKey="checkEmail.body"
               values={{ email }}
               components={[
                 <Text key="email" className="font-bold text-garland-ink" />,
@@ -109,17 +109,17 @@ export function CheckEmailScreen() {
           </View>
           <View className="min-w-0 flex-1">
             <Text className="text-sm font-bold text-garland-ink">
-              {t('Sent just now')}
+              {t('checkEmail.sentJustNow')}
             </Text>
             <Text className="mt-1 text-xs leading-[18px] text-garland-ink-60">
-              {t("From hello@prezentowo.app · check spam if you don't see it.")}
+              {t('checkEmail.fromSpam')}
             </Text>
           </View>
         </View>
 
         <View className="mt-6">
           <AuthField
-            label={t('Or paste your 6-digit code')}
+            label={t('checkEmail.codeLabel')}
             placeholder="A1B2C3"
             value={code}
             onChangeText={setCode}
@@ -135,7 +135,9 @@ export function CheckEmailScreen() {
             disabled={isLoading}
             onPress={submitCode}
           >
-            <GarlandButtonText>{t('Finish signing in')}</GarlandButtonText>
+            <GarlandButtonText>
+              {t('checkEmail.finishSignIn')}
+            </GarlandButtonText>
           </GarlandButton>
         </View>
 
@@ -143,18 +145,18 @@ export function CheckEmailScreen() {
 
         <View className="pb-9">
           <GarlandButton variant="outline" onPress={openMail}>
-            <GarlandButtonText>{t('Open mail app')}</GarlandButtonText>
+            <GarlandButtonText>{t('checkEmail.openMail')}</GarlandButtonText>
           </GarlandButton>
 
           <GarlandButton variant="link" onPress={resend} className="mt-4">
             <Text className="text-center text-[13px] text-garland-ink-60">
-              {t("Didn't get it?")}{' '}
+              {t('checkEmail.didntGetIt')}{' '}
               <Text className="font-bold text-garland-ink">
                 {countdown > 0
-                  ? t('Resend in {{time}}', {
+                  ? t('checkEmail.resendIn', {
                       time: formatCountdown(countdown),
                     })
-                  : t('Resend')}
+                  : t('checkEmail.resend')}
               </Text>
             </Text>
           </GarlandButton>

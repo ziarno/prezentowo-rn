@@ -42,7 +42,7 @@ export const LanguageBottomModal = forwardRef<BottomSheetModal>(
       >
         <BottomSheetView style={{ paddingHorizontal: 22, paddingBottom: 32 }}>
           <Text className="mb-2 mt-1 text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-            {t('Language')}
+            {t('common.language')}
           </Text>
           <LanguageList />
         </BottomSheetView>

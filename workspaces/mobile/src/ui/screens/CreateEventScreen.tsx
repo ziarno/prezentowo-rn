@@ -58,8 +58,8 @@ export function CreateEventScreen() {
   const newNameInputRef = useRef<TextInput>(null)
 
   const validationSchema = Yup.object({
-    title: Yup.string().trim().required(t('Required')),
-    date: Yup.string().trim().required(t('Required')),
+    title: Yup.string().trim().required(t('common.required')),
+    date: Yup.string().trim().required(t('common.required')),
   })
 
   const {
@@ -100,7 +100,9 @@ export function CreateEventScreen() {
           setSubmitting(false)
           setErrors({
             title:
-              err.reason ?? err.error?.toString() ?? t('Something went wrong'),
+              err.reason ??
+              err.error?.toString() ??
+              t('common.somethingWentWrong'),
           })
         })
     },
@@ -141,10 +143,12 @@ export function CreateEventScreen() {
       >
         <View className="flex-row items-center justify-between px-[22px] pb-2 pt-3.5">
           <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Text className="text-sm text-garland-ink-60">{t('Cancel')}</Text>
+            <Text className="text-sm text-garland-ink-60">
+              {t('createEvent.cancel')}
+            </Text>
           </Pressable>
           <Text className="text-[13px] font-bold uppercase tracking-[1px] text-garland-ink">
-            {t('New event')}
+            {t('createEvent.headerTitle')}
           </Text>
           <Pressable
             onPress={() => handleSubmit()}
@@ -152,7 +156,7 @@ export function CreateEventScreen() {
             hitSlop={12}
           >
             <Text className="text-sm font-bold text-garland-green">
-              {t('Create')}
+              {t('createEvent.create')}
             </Text>
           </Pressable>
         </View>
@@ -168,32 +172,32 @@ export function CreateEventScreen() {
           showsVerticalScrollIndicator={false}
         >
           <Text className="mb-[22px] mt-1.5 font-garland-display text-[28px] leading-[31px] text-garland-ink">
-            {t('New event.')}
+            {t('createEvent.title')}
           </Text>
 
           <GarlandField
-            label={t('Title')}
+            label={t('createEvent.titleLabel')}
             value={values.title}
             onChangeText={handleChange('title')}
             onBlur={handleBlur('title')}
-            placeholder={t('Name your event')}
+            placeholder={t('createEvent.titlePlaceholder')}
             errorMessage={
               touched.title && errors.title ? errors.title : undefined
             }
           />
           <GarlandField
-            label={t('Date')}
+            label={t('createEvent.dateLabel')}
             value={values.date}
             onChangeText={handleChange('date')}
             onBlur={handleBlur('date')}
-            placeholder={t('December 24, 2026')}
+            placeholder={t('createEvent.datePlaceholder')}
             errorMessage={touched.date && errors.date ? errors.date : undefined}
           />
 
           <View className="mt-1.5">
             <View className="mb-2.5 flex-row items-baseline justify-between">
               <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-                {t('People · {{peopleCount}}', {
+                {t('createEvent.peopleCount', {
                   peopleCount: values.participants.length,
                 })}
               </Text>
@@ -218,7 +222,7 @@ export function CreateEventScreen() {
                   onChangeText={setNewName}
                   onSubmitEditing={addParticipant}
                   returnKeyType="done"
-                  placeholder={t('Name, email, or @username…')}
+                  placeholder={t('createEvent.participantPlaceholder')}
                   placeholderTextColor={garland.ink40}
                   className="flex-1 px-3.5 py-2.5 text-sm text-garland-ink"
                 />
@@ -231,7 +235,7 @@ export function CreateEventScreen() {
                 onPress={addParticipant}
                 disabled={!newName.trim()}
               >
-                <GarlandButtonText>{t('Add')}</GarlandButtonText>
+                <GarlandButtonText>{t('createEvent.add')}</GarlandButtonText>
               </GarlandButton>
             </View>
 
@@ -240,9 +244,7 @@ export function CreateEventScreen() {
                 <LockIcon width={14} height={14} color={garland.green} />
               </View>
               <Text className="flex-1 text-xs leading-[18px] text-garland-ink-60">
-                {t(
-                  'Placeholder names let you plan for people not on Prezentowo yet. Anyone you share the invite link with can claim a placeholder.',
-                )}
+                {t('createEvent.placeholderInfo')}
               </Text>
             </View>
           </View>
@@ -282,14 +284,14 @@ function ParticipantRow({
           </Text>
           {isHost ? (
             <Text className="text-[10px] font-bold uppercase tracking-[1px] text-garland-green">
-              {t('— host')}
+              {t('createEvent.host')}
             </Text>
           ) : null}
         </View>
         <Text className="mt-0.5 text-[11px] text-garland-ink-40">
           {participant.kind === 'real'
-            ? t('User')
-            : t('Placeholder · can be claimed via invite link')}
+            ? t('createEvent.userRole')
+            : t('createEvent.placeholderRole')}
         </Text>
       </View>
       {isHost ? null : (
