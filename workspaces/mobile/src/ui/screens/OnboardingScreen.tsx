@@ -10,7 +10,9 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { ArrowRightIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
+import { garland } from '@/constants/colors'
 import { useAuthStore } from '@/store/useAuthStore'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LanguageChangeButton } from '@/ui/components/LanguageChangeButton'
@@ -126,10 +128,11 @@ export function OnboardingScreen() {
             />
           ))}
         </View>
-        <GarlandButton onPress={advance} className="px-[22px] py-3">
+        <GarlandButton onPress={advance} className="gap-1.5 px-[22px] py-3">
           <GarlandButtonText>
-            {step === pages.length - 1 ? t('Get started →') : t('Continue →')}
+            {step === pages.length - 1 ? t('Get started') : t('Continue')}
           </GarlandButtonText>
+          <ArrowRightIcon width={18} height={18} color={garland.paper} />
         </GarlandButton>
       </View>
     </SafeAreaView>
