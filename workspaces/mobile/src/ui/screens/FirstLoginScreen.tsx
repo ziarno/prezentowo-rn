@@ -1,7 +1,7 @@
-import { Trans, useLingui } from '@lingui/react/macro'
 import { useFormik } from 'formik'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
 import {
   Image,
   type ImageSourcePropType,
@@ -25,13 +25,11 @@ import { LanguageChangeButton } from '@/ui/components/LanguageChangeButton'
 
 export function FirstLoginScreen() {
   const [selected, setSelected] = useState<AvatarKey | null>('f1')
-  const { t } = useLingui()
+  const { t } = useTranslation()
   const setFirstLoginPending = useAuthStore(s => s.setFirstLoginPending)
 
   const validationSchema = Yup.object({
-    name: Yup.string()
-      .trim()
-      .required(t`Required`),
+    name: Yup.string().trim().required(t('Required')),
   })
 
   const {
@@ -63,7 +61,7 @@ export function FirstLoginScreen() {
         <View className="flex-1 px-7">
           <View className="flex-row items-center justify-between py-3.5">
             <Text className="text-xs font-bold uppercase tracking-[1px] text-garland-ink-40">
-              <Trans>Step 1 · 1</Trans>
+              {t('Step 1 · 1')}
             </Text>
             <View className="flex-row items-center gap-3">
               <LanguageChangeButton />
@@ -72,33 +70,29 @@ export function FirstLoginScreen() {
                 hitSlop={12}
                 onPress={() => setFirstLoginPending(false)}
               >
-                <GarlandButtonText>
-                  <Trans>Skip</Trans>
-                </GarlandButtonText>
+                <GarlandButtonText>{t('Skip')}</GarlandButtonText>
               </GarlandButton>
             </View>
           </View>
 
           <View className="pt-1.5">
             <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-              <Trans>You&apos;re in.</Trans>
+              {t("You're in.")}
             </Text>
             <Text className="mt-2 font-garland-display text-[34px] leading-[35px] text-garland-ink">
-              <Trans>Let&apos;s set you</Trans>
+              {t("Let's set you")}
               {'\n'}
-              <Trans>up.</Trans>
+              {t('up.')}
             </Text>
             <Text className="mt-2.5 text-sm leading-[21px] text-garland-ink-60">
-              <Trans>
-                How should we show you to friends and family on Prezentowo?
-              </Trans>
+              {t('How should we show you to friends and family on Prezentowo?')}
             </Text>
           </View>
 
           <View className="mt-6">
             <AuthField
-              label={t`Your name`}
-              placeholder={t`Alex Kowalski`}
+              label={t('Your name')}
+              placeholder={t('Alex Kowalski')}
               value={values.name}
               onChangeText={handleChange('name')}
               onBlur={handleBlur('name')}
@@ -112,7 +106,7 @@ export function FirstLoginScreen() {
 
           <View className="mt-6">
             <Text className="mb-3 text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-              <Trans>Profile picture</Trans>
+              {t('Profile picture')}
             </Text>
             <View className="-mx-1.5 flex-row flex-wrap">
               <GridCell>
@@ -129,10 +123,12 @@ export function FirstLoginScreen() {
               ))}
             </View>
             <Text className="mt-3 text-xs leading-[18px] text-garland-ink-40">
-              <Trans>
-                Tap the <Text className="font-bold text-garland-ink">+</Text> to
-                upload your own photo, or pick one of ours.
-              </Trans>
+              <Trans
+                i18nKey="Tap the <0>+</0> to upload your own photo, or pick one of ours."
+                components={[
+                  <Text key="plus" className="font-bold text-garland-ink" />,
+                ]}
+              />
             </Text>
           </View>
 
@@ -144,9 +140,7 @@ export function FirstLoginScreen() {
               onPress={() => handleSubmit()}
               disabled={isSubmitting}
             >
-              <GarlandButtonText>
-                <Trans>Continue</Trans>
-              </GarlandButtonText>
+              <GarlandButtonText>{t('Continue')}</GarlandButtonText>
             </GarlandButton>
           </View>
         </View>

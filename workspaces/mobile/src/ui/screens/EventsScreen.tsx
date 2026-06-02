@@ -1,14 +1,14 @@
-import { Trans } from '@lingui/react/macro'
 import { router } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import type { EventListItem } from '@/api/events'
-import { useMyEvents } from '@/hooks/useMyEvents'
 import { ArrowRightIcon, BellIcon, PlusIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { avatar } from '@/constants/avatars'
 import { garland } from '@/constants/colors'
+import { useMyEvents } from '@/hooks/useMyEvents'
 import { Avatar } from '@/ui/components/Avatar'
 
 const ACCENT_PALETTE = [
@@ -19,6 +19,7 @@ const ACCENT_PALETTE = [
 ]
 
 export function EventsScreen() {
+  const { t } = useTranslation()
   const events = useMyEvents()
 
   return (
@@ -29,7 +30,7 @@ export function EventsScreen() {
             <Avatar source={avatar('m1')} size={32} />
           </Pressable>
           <Text className="font-garland-display text-lg text-garland-ink">
-            <Trans>Prezentowo</Trans>
+            {t('Prezentowo')}
           </Text>
           <Pressable hitSlop={8}>
             <BellIcon width={22} height={22} color={garland.ink60} />
@@ -39,7 +40,7 @@ export function EventsScreen() {
 
         <View className="px-[22px]">
           <Text className="mb-1.5 mt-[22px] text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-            <Trans>Your events</Trans>
+            {t('Your events')}
           </Text>
         </View>
 
@@ -51,9 +52,7 @@ export function EventsScreen() {
           {events.length === 0 ? (
             <View className="px-[22px] pt-6">
               <Text className="text-sm text-garland-ink-60">
-                <Trans>
-                  No events yet. Tap the + button to create your first one.
-                </Trans>
+                {t('No events yet. Tap the + button to create your first one.')}
               </Text>
             </View>
           ) : (
@@ -88,6 +87,7 @@ export function EventsScreen() {
 }
 
 function EventRow({ event, accent }: { event: EventListItem; accent: string }) {
+  const { t } = useTranslation()
   return (
     <Pressable
       onPress={() => router.push(`/join-event?eventId=${event._id}`)}
@@ -105,7 +105,9 @@ function EventRow({ event, accent }: { event: EventListItem; accent: string }) {
           {event.title}
         </Text>
         <Text className="mt-1 text-[13px] text-garland-ink-60">
-          <Trans>{event.participants.length} people</Trans>
+          {t('{{personCount}} people', {
+            personCount: event.participants.length,
+          })}
         </Text>
       </View>
       <ArrowRightIcon width={22} height={22} color={garland.ink40} />

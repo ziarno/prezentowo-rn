@@ -1,6 +1,8 @@
 import { useFonts } from 'expo-font'
 import { Stack } from 'expo-router'
+import { StatusBar } from 'expo-status-bar'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider'
 import { useMagicLinkDeepLink } from '@/hooks/useMagicLinkDeepLink'
@@ -18,14 +20,17 @@ export default function Root() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <GluestackUIProvider mode="light">
-        <LocalizationProvider>
-          <LanguageModalProvider>
-            <SplashScreenController fontsLoaded={fontsLoaded} />
-            {fontsLoaded ? <RootNavigator /> : null}
-          </LanguageModalProvider>
-        </LocalizationProvider>
-      </GluestackUIProvider>
+      <SafeAreaProvider>
+        <GluestackUIProvider mode="light">
+          <StatusBar style="dark" />
+          <LocalizationProvider>
+            <LanguageModalProvider>
+              <SplashScreenController fontsLoaded={fontsLoaded} />
+              {fontsLoaded ? <RootNavigator /> : null}
+            </LanguageModalProvider>
+          </LocalizationProvider>
+        </GluestackUIProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   )
 }

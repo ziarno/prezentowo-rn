@@ -5,7 +5,6 @@ module.exports = function (api) {
     presets: [['babel-preset-expo'], 'nativewind/babel'],
 
     plugins: [
-      '@lingui/babel-plugin-lingui-macro',
       [
         'module-resolver',
         {

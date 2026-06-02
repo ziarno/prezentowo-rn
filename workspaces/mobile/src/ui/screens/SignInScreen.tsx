@@ -1,6 +1,6 @@
-import { Trans, useLingui } from '@lingui/react/macro'
 import { router } from 'expo-router'
 import { useFormik } from 'formik'
+import { Trans, useTranslation } from 'react-i18next'
 import { KeyboardAvoidingView, Platform, Pressable, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LocalSvg } from 'react-native-svg/css'
@@ -15,12 +15,10 @@ import { LanguageChangeButton } from '@/ui/components/LanguageChangeButton'
 
 export function SignInScreen() {
   const { requestMagicLink } = useAuth()
-  const { t } = useLingui()
+  const { t } = useTranslation()
 
   const validationSchema = Yup.object({
-    email: Yup.string()
-      .email(t`Invalid email`)
-      .required(t`Required`),
+    email: Yup.string().email(t('Invalid email')).required(t('Required')),
   })
 
   const {
@@ -46,7 +44,7 @@ export function SignInScreen() {
           setSubmitting(false)
           setErrors({
             email:
-              err.reason ?? err.error?.toString() ?? t`Something went wrong`,
+              err.reason ?? err.error?.toString() ?? t('Something went wrong'),
           })
         },
       })
@@ -69,23 +67,22 @@ export function SignInScreen() {
 
           <View className="pt-4">
             <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-              <Trans>Welcome</Trans>
+              {t('Welcome')}
             </Text>
             <Text className="mt-2 font-garland-display text-[38px] leading-[39px] text-garland-ink">
-              <Trans>Sign in.</Trans>
+              {t('Sign in.')}
             </Text>
             <Text className="mt-2.5 text-sm leading-[21px] text-garland-ink-60">
-              <Trans>
-                Enter your email and we&apos;ll send a magic link. New here?
-                We&apos;ll set you up right after.
-              </Trans>
+              {t(
+                "Enter your email and we'll send a magic link. New here? We'll set you up right after.",
+              )}
             </Text>
           </View>
 
           <View className="mt-6">
             <AuthField
-              label={t`Email`}
-              placeholder={t`you@example.com`}
+              label={t('Email')}
+              placeholder={t('you@example.com')}
               value={values.email}
               onChangeText={handleChange('email')}
               onBlur={handleBlur('email')}
@@ -108,15 +105,13 @@ export function SignInScreen() {
               onPress={() => handleSubmit()}
               disabled={isSubmitting}
             >
-              <GarlandButtonText>
-                <Trans>Email me a link</Trans>
-              </GarlandButtonText>
+              <GarlandButtonText>{t('Email me a link')}</GarlandButtonText>
             </GarlandButton>
 
             <View className="my-5 flex-row items-center gap-2.5">
               <View className="h-px flex-1 bg-garland-ink-08" />
               <Text className="text-xs font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-                <Trans>or</Trans>
+                {t('or')}
               </Text>
               <View className="h-px flex-1 bg-garland-ink-08" />
             </View>
@@ -129,19 +124,18 @@ export function SignInScreen() {
             >
               <GarlandButtonText className="font-bold">G</GarlandButtonText>
               <GarlandButtonText className="text-sm">
-                <Trans>Continue with Google</Trans>
+                {t('Continue with Google')}
               </GarlandButtonText>
             </GarlandButton>
 
             <Text className="mt-4 text-center text-xs leading-[18px] text-garland-ink-40">
-              <Trans>
-                By continuing you agree to the{' '}
-                <Text className="font-bold text-garland-ink">Terms</Text> and{' '}
-                <Text className="font-bold text-garland-ink">
-                  Privacy Policy
-                </Text>
-                .
-              </Trans>
+              <Trans
+                i18nKey="By continuing you agree to the <0>Terms</0> and <1>Privacy Policy</1>."
+                components={[
+                  <Text key="terms" className="font-bold text-garland-ink" />,
+                  <Text key="privacy" className="font-bold text-garland-ink" />,
+                ]}
+              />
             </Text>
           </View>
         </View>

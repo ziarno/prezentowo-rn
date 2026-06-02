@@ -5,8 +5,8 @@ import {
   BottomSheetView,
   useBottomSheetModal,
 } from '@gorhom/bottom-sheet'
-import { Trans, useLingui } from '@lingui/react/macro'
 import { forwardRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Pressable, View } from 'react-native'
 
 import { CheckIcon } from '@/components/ui/icon'
@@ -20,6 +20,7 @@ import {
 
 export const LanguageBottomModal = forwardRef<BottomSheetModal>(
   function LanguageBottomModal(_, ref) {
+    const { t } = useTranslation()
     const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
         <BottomSheetBackdrop
@@ -41,7 +42,7 @@ export const LanguageBottomModal = forwardRef<BottomSheetModal>(
       >
         <BottomSheetView style={{ paddingHorizontal: 22, paddingBottom: 32 }}>
           <Text className="mb-2 mt-1 text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-            <Trans>Language</Trans>
+            {t('Language')}
           </Text>
           <LanguageList />
         </BottomSheetView>
@@ -51,9 +52,9 @@ export const LanguageBottomModal = forwardRef<BottomSheetModal>(
 )
 
 function LanguageList() {
-  const { i18n } = useLingui()
+  const { i18n } = useTranslation()
   const { dismiss } = useBottomSheetModal()
-  const current = i18n.locale as SupportedLocale
+  const current = i18n.language as SupportedLocale
 
   return (
     <View className="border-t border-garland-ink-08">

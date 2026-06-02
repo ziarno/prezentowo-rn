@@ -1,8 +1,8 @@
-import { Trans, useLingui } from '@lingui/react/macro'
 import type { MeteorError } from '@meteorrn/core'
 import type { EventDoc } from '@prezentowo/types'
 import { router } from 'expo-router'
 import { type ReactNode, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -32,14 +32,14 @@ export function JoinEventScreen({
 }
 
 function JoinEventSignIn({ eventId }: { eventId?: string }) {
-  const { t } = useLingui()
+  const { t } = useTranslation()
   const event = useEventById(eventId)
 
   if (!eventId) {
-    return <JoinEventMissing message={t`No event was provided.`} />
+    return <JoinEventMissing message={t('No event was provided.')} />
   }
   if (!event) {
-    return <JoinEventMissing message={t`Loading event…`} />
+    return <JoinEventMissing message={t('Loading event…')} />
   }
 
   const participantCount = event.participants.length
@@ -58,7 +58,7 @@ function JoinEventSignIn({ eventId }: { eventId?: string }) {
 
         <View className="flex-1 justify-center">
           <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-            <Trans>You&apos;re invited to</Trans>
+            {t("You're invited to")}
           </Text>
           <Text className="mt-2 font-garland-display text-[40px] leading-[41px] text-garland-ink">
             {event.title}
@@ -67,7 +67,7 @@ function JoinEventSignIn({ eventId }: { eventId?: string }) {
           <Text className="text-sm leading-[22px] text-garland-ink-60">
             {event.date}
             {'\n'}
-            <Trans>{participantCount} people on the list</Trans>
+            {t('{{participantCount}} people on the list', { participantCount })}
           </Text>
 
           {placeholderColors.length > 0 ? (
@@ -85,9 +85,9 @@ function JoinEventSignIn({ eventId }: { eventId?: string }) {
                 ))}
               </View>
               <Text className="text-xs text-garland-ink-60">
-                <Trans>
-                  {placeholderColors.length} spots waiting to be claimed
-                </Trans>
+                {t('{{spots}} spots waiting to be claimed', {
+                  spots: placeholderColors.length,
+                })}
               </Text>
             </View>
           ) : null}
@@ -95,12 +95,10 @@ function JoinEventSignIn({ eventId }: { eventId?: string }) {
 
         <View className="gap-2.5 pb-9">
           <Text className="text-center text-xs text-garland-ink-60">
-            <Trans>Sign in to join this event.</Trans>
+            {t('Sign in to join this event.')}
           </Text>
           <GarlandButton onPress={() => router.replace('/welcome')}>
-            <GarlandButtonText>
-              <Trans>Sign in to continue</Trans>
-            </GarlandButtonText>
+            <GarlandButtonText>{t('Sign in to continue')}</GarlandButtonText>
           </GarlandButton>
         </View>
       </View>
@@ -109,14 +107,17 @@ function JoinEventSignIn({ eventId }: { eventId?: string }) {
 }
 
 function JoinEventPick({ eventId }: { eventId?: string }) {
-  const { t } = useLingui()
+  const { t } = useTranslation()
   const event = useEventById(eventId)
   const user = useCurrentUser()
 
   const placeholders = useMemo(
     () =>
       event?.participants.filter(p => p.kind === 'placeholder') ??
-      ([] as Extract<EventDoc['participants'][number], { kind: 'placeholder' }>[]),
+      ([] as Extract<
+        EventDoc['participants'][number],
+        { kind: 'placeholder' }
+      >[]),
     [event],
   )
 
@@ -133,14 +134,16 @@ function JoinEventPick({ eventId }: { eventId?: string }) {
   const [error, setError] = useState<string | null>(null)
 
   if (!eventId) {
-    return <JoinEventMissing message={t`No event was provided.`} />
+    return <JoinEventMissing message={t('No event was provided.')} />
   }
   if (!event) {
-    return <JoinEventMissing message={t`Loading event…`} />
+    return <JoinEventMissing message={t('Loading event…')} />
   }
 
   const pickedPlaceholder =
-    picked === NEW_PICK ? null : placeholders.find(p => p.id === picked) ?? null
+    picked === NEW_PICK
+      ? null
+      : (placeholders.find(p => p.id === picked) ?? null)
 
   const handleJoin = () => {
     if (submitting) return
@@ -153,7 +156,9 @@ function JoinEventPick({ eventId }: { eventId?: string }) {
       })
       .catch((err: MeteorError) => {
         setSubmitting(false)
-        setError(err.reason ?? err.error?.toString() ?? t`Something went wrong`)
+        setError(
+          err.reason ?? err.error?.toString() ?? t('Something went wrong'),
+        )
       })
   }
 
@@ -171,27 +176,23 @@ function JoinEventPick({ eventId }: { eventId?: string }) {
             {event.title}
           </Text>
           <Text className="mt-1.5 font-garland-display text-[30px] leading-[32px] text-garland-ink">
-            {alreadyJoined ? (
-              <Trans>You&apos;re already in.</Trans>
-            ) : placeholders.length > 0 ? (
-              <Trans>Are you one of these?</Trans>
-            ) : (
-              <Trans>Join this event</Trans>
-            )}
+            {alreadyJoined
+              ? t("You're already in.")
+              : placeholders.length > 0
+                ? t('Are you one of these?')
+                : t('Join this event')}
           </Text>
           <Text className="mt-2.5 text-sm leading-[21px] text-garland-ink-60">
-            {alreadyJoined ? (
-              <Trans>
-                You&apos;re already a participant of {event.title} ({event.date}).
-              </Trans>
-            ) : placeholders.length > 0 ? (
-              <Trans>
-                The host added some names while planning. Pick yours — your
-                wishlist and gifts will move over.
-              </Trans>
-            ) : (
-              <Trans>{event.date}</Trans>
-            )}
+            {alreadyJoined
+              ? t("You're already a participant of {{title}} ({{date}}).", {
+                  title: event.title,
+                  date: event.date,
+                })
+              : placeholders.length > 0
+                ? t(
+                    'The host added some names while planning. Pick yours — your wishlist and gifts will move over.',
+                  )
+                : event.date}
           </Text>
         </View>
 
@@ -221,7 +222,7 @@ function JoinEventPick({ eventId }: { eventId?: string }) {
                       {p.name}
                     </Text>
                     <Text className="mt-0.5 text-xs text-garland-ink-40">
-                      <Trans>Placeholder · not claimed yet</Trans>
+                      {t('Placeholder · not claimed yet')}
                     </Text>
                   </View>
                 </PickRow>
@@ -235,14 +236,12 @@ function JoinEventPick({ eventId }: { eventId?: string }) {
                 <Avatar source={avatar('m1')} size={38} />
                 <View className="min-w-0 flex-1">
                   <Text className="text-[15px] font-bold text-garland-ink">
-                    <Trans>Add me as new</Trans>
+                    {t('Add me as new')}
                   </Text>
                   <Text className="mt-0.5 text-xs text-garland-ink-40">
-                    {user?.profile?.name ? (
-                      <Trans>Join as {user.profile.name}</Trans>
-                    ) : (
-                      <Trans>Join with your account</Trans>
-                    )}
+                    {user?.profile?.name
+                      ? t('Join as {{name}}', { name: user.profile.name })
+                      : t('Join with your account')}
                   </Text>
                 </View>
               </PickRow>
@@ -257,18 +256,14 @@ function JoinEventPick({ eventId }: { eventId?: string }) {
         <View className="px-[22px] pb-6 pt-2">
           {alreadyJoined ? (
             <GarlandButton onPress={() => router.replace('/')}>
-              <GarlandButtonText>
-                <Trans>Back to events</Trans>
-              </GarlandButtonText>
+              <GarlandButtonText>{t('Back to events')}</GarlandButtonText>
             </GarlandButton>
           ) : (
             <GarlandButton onPress={handleJoin} disabled={submitting}>
               <GarlandButtonText>
-                {pickedPlaceholder ? (
-                  <Trans>Join as {pickedPlaceholder.name}</Trans>
-                ) : (
-                  <Trans>Join the event</Trans>
-                )}
+                {pickedPlaceholder
+                  ? t('Join as {{name}}', { name: pickedPlaceholder.name })
+                  : t('Join the event')}
               </GarlandButtonText>
             </GarlandButton>
           )}

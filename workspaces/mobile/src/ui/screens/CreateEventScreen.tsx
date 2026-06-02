@@ -1,9 +1,9 @@
-import { Trans, useLingui } from '@lingui/react/macro'
 import type { MeteorError } from '@meteorrn/core'
 import type { CreateEventArgs, EventParticipantInput } from '@prezentowo/types'
 import { router } from 'expo-router'
 import { useFormik } from 'formik'
 import { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   KeyboardAvoidingView,
   Platform,
@@ -53,17 +53,13 @@ type FormValues = {
 }
 
 export function CreateEventScreen() {
-  const { t } = useLingui()
+  const { t } = useTranslation()
   const [newName, setNewName] = useState('')
   const newNameInputRef = useRef<TextInput>(null)
 
   const validationSchema = Yup.object({
-    title: Yup.string()
-      .trim()
-      .required(t`Required`),
-    date: Yup.string()
-      .trim()
-      .required(t`Required`),
+    title: Yup.string().trim().required(t('Required')),
+    date: Yup.string().trim().required(t('Required')),
   })
 
   const {
@@ -104,7 +100,7 @@ export function CreateEventScreen() {
           setSubmitting(false)
           setErrors({
             title:
-              err.reason ?? err.error?.toString() ?? t`Something went wrong`,
+              err.reason ?? err.error?.toString() ?? t('Something went wrong'),
           })
         })
     },
@@ -145,12 +141,10 @@ export function CreateEventScreen() {
       >
         <View className="flex-row items-center justify-between px-[22px] pb-2 pt-3.5">
           <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Text className="text-sm text-garland-ink-60">
-              <Trans>Cancel</Trans>
-            </Text>
+            <Text className="text-sm text-garland-ink-60">{t('Cancel')}</Text>
           </Pressable>
           <Text className="text-[13px] font-bold uppercase tracking-[1px] text-garland-ink">
-            <Trans>New event</Trans>
+            {t('New event')}
           </Text>
           <Pressable
             onPress={() => handleSubmit()}
@@ -158,7 +152,7 @@ export function CreateEventScreen() {
             hitSlop={12}
           >
             <Text className="text-sm font-bold text-garland-green">
-              <Trans>Create</Trans>
+              {t('Create')}
             </Text>
           </Pressable>
         </View>
@@ -174,32 +168,34 @@ export function CreateEventScreen() {
           showsVerticalScrollIndicator={false}
         >
           <Text className="mb-[22px] mt-1.5 font-garland-display text-[28px] leading-[31px] text-garland-ink">
-            <Trans>New event.</Trans>
+            {t('New event.')}
           </Text>
 
           <GarlandField
-            label={t`Title`}
+            label={t('Title')}
             value={values.title}
             onChangeText={handleChange('title')}
             onBlur={handleBlur('title')}
-            placeholder={t`Name your event`}
+            placeholder={t('Name your event')}
             errorMessage={
               touched.title && errors.title ? errors.title : undefined
             }
           />
           <GarlandField
-            label={t`Date`}
+            label={t('Date')}
             value={values.date}
             onChangeText={handleChange('date')}
             onBlur={handleBlur('date')}
-            placeholder={t`December 24, 2026`}
+            placeholder={t('December 24, 2026')}
             errorMessage={touched.date && errors.date ? errors.date : undefined}
           />
 
           <View className="mt-1.5">
             <View className="mb-2.5 flex-row items-baseline justify-between">
               <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-                <Trans>People · {values.participants.length}</Trans>
+                {t('People · {{peopleCount}}', {
+                  peopleCount: values.participants.length,
+                })}
               </Text>
             </View>
 
@@ -222,7 +218,7 @@ export function CreateEventScreen() {
                   onChangeText={setNewName}
                   onSubmitEditing={addParticipant}
                   returnKeyType="done"
-                  placeholder={t`Name, email, or @username…`}
+                  placeholder={t('Name, email, or @username…')}
                   placeholderTextColor={garland.ink40}
                   className="flex-1 px-3.5 py-2.5 text-sm text-garland-ink"
                 />
@@ -235,9 +231,7 @@ export function CreateEventScreen() {
                 onPress={addParticipant}
                 disabled={!newName.trim()}
               >
-                <GarlandButtonText>
-                  <Trans>Add</Trans>
-                </GarlandButtonText>
+                <GarlandButtonText>{t('Add')}</GarlandButtonText>
               </GarlandButton>
             </View>
 
@@ -246,11 +240,9 @@ export function CreateEventScreen() {
                 <LockIcon width={14} height={14} color={garland.green} />
               </View>
               <Text className="flex-1 text-xs leading-[18px] text-garland-ink-60">
-                <Trans>
-                  Placeholder names let you plan for people not on Prezentowo
-                  yet. Anyone you share the invite link with can claim a
-                  placeholder.
-                </Trans>
+                {t(
+                  'Placeholder names let you plan for people not on Prezentowo yet. Anyone you share the invite link with can claim a placeholder.',
+                )}
               </Text>
             </View>
           </View>
@@ -267,6 +259,7 @@ function ParticipantRow({
   participant: Participant
   onRemove: () => void
 }) {
+  const { t } = useTranslation()
   const isHost = participant.kind === 'real' && participant.host
   return (
     <View className="flex-row items-center gap-3 border-b border-garland-ink-08 py-3">
@@ -289,16 +282,14 @@ function ParticipantRow({
           </Text>
           {isHost ? (
             <Text className="text-[10px] font-bold uppercase tracking-[1px] text-garland-green">
-              <Trans>— host</Trans>
+              {t('— host')}
             </Text>
           ) : null}
         </View>
         <Text className="mt-0.5 text-[11px] text-garland-ink-40">
-          {participant.kind === 'real' ? (
-            <Trans>User</Trans>
-          ) : (
-            <Trans>Placeholder · can be claimed via invite link</Trans>
-          )}
+          {participant.kind === 'real'
+            ? t('User')
+            : t('Placeholder · can be claimed via invite link')}
         </Text>
       </View>
       {isHost ? null : (

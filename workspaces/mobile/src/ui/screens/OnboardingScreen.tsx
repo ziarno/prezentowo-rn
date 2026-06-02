@@ -1,6 +1,6 @@
-import { useLingui } from '@lingui/react/macro'
 import { router } from 'expo-router'
 import { useCallback, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Dimensions,
   FlatList,
@@ -25,24 +25,30 @@ type Page = {
 
 export function OnboardingScreen() {
   const width = Dimensions.get('window').width
-  const { t } = useLingui()
+  const { t } = useTranslation()
   const pages: Page[] = [
     {
-      eyebrow: t`01 · 03`,
-      title: [t`Wishlists,`, t`not guesswork.`],
-      body: t`Prezentowo is a quiet place to share what you'd love this Christmas — so the people you love can stop guessing.`,
+      eyebrow: t('01 · 03'),
+      title: [t('Wishlists,'), t('not guesswork.')],
+      body: t(
+        "Prezentowo is a quiet place to share what you'd love this Christmas — so the people you love can stop guessing.",
+      ),
       illu: 'intro',
     },
     {
-      eyebrow: t`02 · 03`,
-      title: [t`Build`, t`your list.`],
-      body: t`Add gift ideas as you stumble on them. Links, photos, a quick note about size or colour — anything that helps.`,
+      eyebrow: t('02 · 03'),
+      title: [t('Build'), t('your list.')],
+      body: t(
+        'Add gift ideas as you stumble on them. Links, photos, a quick note about size or colour — anything that helps.',
+      ),
       illu: 'wishlist',
     },
     {
-      eyebrow: t`03 · 03`,
-      title: [t`Claim`, t`quietly.`],
-      body: t`When you reserve a gift for someone, only the other givers see it. The person it's for never finds out.`,
+      eyebrow: t('03 · 03'),
+      title: [t('Claim'), t('quietly.')],
+      body: t(
+        "When you reserve a gift for someone, only the other givers see it. The person it's for never finds out.",
+      ),
       illu: 'claim',
     },
   ]
@@ -79,7 +85,7 @@ export function OnboardingScreen() {
         <View className="flex-row items-center gap-3">
           <LanguageChangeButton />
           <GarlandButton variant="link" onPress={finish}>
-            <GarlandButtonText>{t`Skip`}</GarlandButtonText>
+            <GarlandButtonText>{t('Skip')}</GarlandButtonText>
           </GarlandButton>
         </View>
       </View>
@@ -122,7 +128,7 @@ export function OnboardingScreen() {
         </View>
         <GarlandButton onPress={advance} className="px-[22px] py-3">
           <GarlandButtonText>
-            {step === pages.length - 1 ? t`Get started →` : t`Continue →`}
+            {step === pages.length - 1 ? t('Get started →') : t('Continue →')}
           </GarlandButtonText>
         </GarlandButton>
       </View>

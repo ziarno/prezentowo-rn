@@ -1,6 +1,6 @@
-import { Trans, useLingui } from '@lingui/react/macro'
 import { router } from 'expo-router'
 import type { ComponentType, ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -30,25 +30,23 @@ type IconComponent = ComponentType<{
 }>
 
 export function ProfileScreen() {
-  const { t, i18n } = useLingui()
+  const { t, i18n } = useTranslation()
   const { signOut } = useAuth()
   const { open: openLanguageModal } = useLanguageModal()
 
   const user = useCurrentUser()
 
-  const displayName = user?.profile?.name ?? t`Friend`
+  const displayName = user?.profile?.name ?? t('Friend')
   const email = user?.emails?.[0]?.address
-  const joinedLabel = formatJoined(user?.createdAt, i18n.locale)
+  const joinedLabel = formatJoined(user?.createdAt, i18n.language)
   const localeLabel =
-    LOCALES.find(l => l.code === i18n.locale)?.label ?? 'English'
+    LOCALES.find(l => l.code === i18n.language)?.label ?? 'English'
 
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
       <View className="flex-row items-center justify-between px-[22px] pb-2 pt-3.5">
         <Pressable hitSlop={12}>
-          <Text className="text-sm text-garland-ink-60">
-            <Trans>Edit</Trans>
-          </Text>
+          <Text className="text-sm text-garland-ink-60">{t('Edit')}</Text>
         </Pressable>
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <CloseIcon width={22} height={22} color={garland.ink} />
@@ -69,57 +67,55 @@ export function ProfileScreen() {
             <Text className="mt-1.5 text-sm text-garland-ink-60">
               {email}
               {email && joinedLabel ? ' · ' : ''}
-              {joinedLabel ? <Trans>Joined {joinedLabel}</Trans> : null}
+              {joinedLabel
+                ? t('Joined {{joinedLabel}}', { joinedLabel })
+                : null}
             </Text>
           ) : null}
         </View>
 
         <View className="mt-7 flex-row gap-6 border-y border-garland-ink-08 py-5">
-          <Stat value="04" label={t`Events`} />
-          <Stat value="17" label={t`Wished`} />
-          <Stat value="09" label={t`Given`} />
+          <Stat value="04" label={t('Events')} />
+          <Stat value="17" label={t('Wished')} />
+          <Stat value="09" label={t('Given')} />
         </View>
 
-        <SectionHeading>
-          <Trans>Settings</Trans>
-        </SectionHeading>
+        <SectionHeading>{t('Settings')}</SectionHeading>
         <View className="border-t border-garland-ink-08">
           <SettingsRow
             Icon={BellIcon}
-            label={t`Notifications`}
-            sublabel={t`Push, email`}
+            label={t('Notifications')}
+            sublabel={t('Push, email')}
           />
           <SettingsRow
             Icon={GlobeIcon}
-            label={t`Language`}
+            label={t('Language')}
             sublabel={localeLabel}
             onPress={openLanguageModal}
           />
           <SettingsRow
             Icon={MoonIcon}
-            label={t`Appearance`}
-            sublabel={t`Light — paper`}
+            label={t('Appearance')}
+            sublabel={t('Light — paper')}
           />
           <SettingsRow
             Icon={CalendarIcon}
-            label={t`Default reminder`}
-            sublabel={t`3 days before`}
+            label={t('Default reminder')}
+            sublabel={t('3 days before')}
             last
           />
         </View>
 
-        <SectionHeading>
-          <Trans>Account</Trans>
-        </SectionHeading>
+        <SectionHeading>{t('Account')}</SectionHeading>
         <View className="border-t border-garland-ink-08">
           <SettingsRow
             Icon={LockIcon}
-            label={t`Sign-in & security`}
-            sublabel={t`Magic link · Google`}
+            label={t('Sign-in & security')}
+            sublabel={t('Magic link · Google')}
           />
           <SettingsRow
             Icon={HeartIcon}
-            label={t`About Prezentowo`}
+            label={t('About Prezentowo')}
             sublabel="v2.4"
             last
           />
@@ -131,7 +127,7 @@ export function ProfileScreen() {
           className="mt-8 self-center"
         >
           <Text className="text-sm font-bold text-garland-berry">
-            <Trans>Sign out</Trans>
+            {t('Sign out')}
           </Text>
         </Pressable>
       </ScrollView>

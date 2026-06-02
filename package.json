@@ -14,7 +14,6 @@
     "dev": "mprocs",
     "lint": "yarn workspace mobile lint",
     "format": "yarn workspaces run format",
-    "lingui": "yarn workspace mobile lingui:all",
     "npkill": "npx npkill",
     "postinstall": "bash scripts/setup-meteor-mcp.sh"
   },

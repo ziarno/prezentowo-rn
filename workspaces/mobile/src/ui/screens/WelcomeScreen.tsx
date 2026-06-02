@@ -1,5 +1,5 @@
-import { Trans } from '@lingui/react/macro'
 import { router } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LocalSvg } from 'react-native-svg/css'
@@ -10,6 +10,7 @@ import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LanguageChangeButton } from '@/ui/components/LanguageChangeButton'
 
 export function WelcomeScreen() {
+  const { t } = useTranslation()
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
       <View className="flex-1 px-7">
@@ -21,26 +22,20 @@ export function WelcomeScreen() {
             <LocalSvg asset={giftMarkAsset} width={44} height={44} />
           </View>
           <Text className="font-garland-display text-[44px] leading-[44px] tracking-[0.2px] text-garland-ink">
-            <Trans>Prezentowo.</Trans>
+            {t('Prezentowo.')}
           </Text>
           <View className="my-6 h-0.5 w-9 bg-garland-green" />
           <Text className="max-w-[280px] text-base leading-[25px] text-garland-ink-60">
-            <Trans>
-              A quiet place to share gift ideas with people you love.
-            </Trans>
+            {t('A quiet place to share gift ideas with people you love.')}
           </Text>
         </View>
 
         <View className="gap-3 pb-9">
           <GarlandButton onPress={() => router.push('/signin')}>
-            <GarlandButtonText>
-              <Trans>Get started</Trans>
-            </GarlandButtonText>
+            <GarlandButtonText>{t('Get started')}</GarlandButtonText>
           </GarlandButton>
           <Text className="text-center text-xs leading-[18px] text-garland-ink-40">
-            <Trans>
-              Sign in or create an account — same place, no password.
-            </Trans>
+            {t('Sign in or create an account — same place, no password.')}
           </Text>
         </View>
       </View>
