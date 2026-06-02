@@ -17,6 +17,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LanguageChangeButton } from '@/ui/components/LanguageChangeButton'
 import { OnboardingIllustration } from '@/ui/components/OnboardingIllustration'
+import { PageDots } from '@/ui/components/PageDots'
 
 type Page = {
   eyebrow: string
@@ -121,16 +122,7 @@ export function OnboardingScreen() {
       />
 
       <View className="flex-row items-center justify-between px-7 pb-9">
-        <View className="flex-row gap-1.5">
-          {pages.map((_, n) => (
-            <View
-              key={n}
-              className={`h-1.5 rounded-full ${
-                n === step ? 'w-6 bg-garland-green' : 'w-1.5 bg-garland-ink-15'
-              }`}
-            />
-          ))}
-        </View>
+        <PageDots count={pages.length} activeIndex={step} />
         <GarlandButton onPress={advance} className="gap-1.5 px-[22px] py-3">
           <GarlandButtonText>
             {step === pages.length - 1
