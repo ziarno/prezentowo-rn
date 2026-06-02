@@ -8,6 +8,7 @@ import {
 import { forwardRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { CheckIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
@@ -21,6 +22,7 @@ import {
 export const LanguageBottomModal = forwardRef<BottomSheetModal>(
   function LanguageBottomModal(_, ref) {
     const { t } = useTranslation()
+    const insets = useSafeAreaInsets()
     const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
         <BottomSheetBackdrop
@@ -40,7 +42,9 @@ export const LanguageBottomModal = forwardRef<BottomSheetModal>(
         backgroundStyle={{ backgroundColor: garland.paper }}
         handleIndicatorStyle={{ backgroundColor: garland.ink40 }}
       >
-        <BottomSheetView style={{ paddingHorizontal: 22, paddingBottom: 32 }}>
+        <BottomSheetView
+          style={{ paddingHorizontal: 22, paddingBottom: insets.bottom }}
+        >
           <Text className="mb-2 mt-1 text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
             {t('common.language')}
           </Text>
