@@ -4,6 +4,8 @@ This file provides guidance when working with code in this repository.
 
 ## Best practices
 
+- this project uses the React Compiler — do NOT add manual memoization (`useMemo`, `useCallback`, `React.memo`)
+- prefer one component per file — give each component its own file rather than defining several in one
 - create shared jsx components to reduce code duplication
 - run `tsc --noEmit` after you're done editing code to check any typescript errors
 - every pressable component should have a visible feedback

@@ -1,5 +1,6 @@
 import { router } from 'expo-router'
 import type { ComponentType, ReactNode } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -15,13 +16,17 @@ import {
   MoonIcon,
 } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
-import { avatar } from '@/constants/avatars'
+import { type AvatarKey, avatar } from '@/constants/avatars'
 import { garland } from '@/constants/colors'
 import { useAuth } from '@/hooks/useAuth'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useLanguageModal } from '@/localization/LanguageModalProvider'
 import { LOCALES } from '@/localization/provider'
 import { Avatar } from '@/ui/components/Avatar'
+import {
+  AvatarPickerModal,
+  type AvatarPickerModalHandle,
+} from '@/ui/components/AvatarPickerModal'
 
 type IconComponent = ComponentType<{
   width?: number
@@ -33,6 +38,8 @@ export function ProfileScreen() {
   const { t, i18n } = useTranslation()
   const { signOut } = useAuth()
   const { open: openLanguageModal } = useLanguageModal()
+  const [avatarKey, setAvatarKey] = useState<AvatarKey>('m1')
+  const avatarPickerRef = useRef<AvatarPickerModalHandle>(null)
 
   const user = useCurrentUser()
 
@@ -61,7 +68,15 @@ export function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="mt-2">
-          <Avatar source={avatar('m1')} size={84} />
+          <Pressable
+            onPress={() => avatarPickerRef.current?.present()}
+            style={({ pressed }) => ({
+              alignSelf: 'flex-start',
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Avatar source={avatar(avatarKey)} size={84} />
+          </Pressable>
           <Text className="mt-4 font-garland-display text-[36px] leading-[38px] text-garland-ink">
             {displayName}.
           </Text>
@@ -131,6 +146,12 @@ export function ProfileScreen() {
           </Text>
         </Pressable>
       </ScrollView>
+
+      <AvatarPickerModal
+        ref={avatarPickerRef}
+        value={avatarKey}
+        onConfirm={setAvatarKey}
+      />
     </SafeAreaView>
   )
 }

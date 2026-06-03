@@ -71,7 +71,14 @@
     "nameLabel": "Your name",
     "namePlaceholder": "Alex Kowalski",
     "profilePicture": "Profile picture",
-    "uploadHint": "Tap the <0>+</0> to upload your own photo, or pick one of ours."
+    "uploadHint": "Tap the <0>+</0> to upload your own photo, or tap your avatar to pick one of ours."
+  },
+  "avatarPicker": {
+    "title": "Choose an avatar",
+    "female": "Female",
+    "male": "Male",
+    "cancel": "Cancel",
+    "accept": "Accept"
   },
   "events": {
     "brand": "Prezentowo",

@@ -21,6 +21,10 @@ import { Text } from '@/components/ui/text'
 import { type AvatarKey, avatar } from '@/constants/avatars'
 import { garland } from '@/constants/colors'
 import { Avatar } from '@/ui/components/Avatar'
+import {
+  AvatarPickerModal,
+  type AvatarPickerModalHandle,
+} from '@/ui/components/AvatarPickerModal'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { GarlandField } from '@/ui/components/GarlandField'
 
@@ -38,6 +42,7 @@ type Participant =
       name: string
       initial: string
       color: string
+      avatar?: AvatarKey
     }
 
 const PLACEHOLDER_COLORS = [garland.berry, garland.amber, garland.green]
@@ -55,7 +60,9 @@ type FormValues = {
 export function CreateEventScreen() {
   const { t } = useTranslation()
   const [newName, setNewName] = useState('')
+  const [avatarTargetId, setAvatarTargetId] = useState<string | null>(null)
   const newNameInputRef = useRef<TextInput>(null)
+  const avatarPickerRef = useRef<AvatarPickerModalHandle>(null)
 
   const validationSchema = Yup.object({
     title: Yup.string().trim().required(t('common.required')),
@@ -135,6 +142,24 @@ export function CreateEventScreen() {
     )
   }
 
+  const setParticipantAvatar = (id: string, key: AvatarKey) => {
+    setFieldValue(
+      'participants',
+      values.participants.map(p =>
+        p.id === id && p.kind === 'placeholder' ? { ...p, avatar: key } : p,
+      ),
+    )
+  }
+
+  const openAvatarPicker = (id: string) => {
+    setAvatarTargetId(id)
+    avatarPickerRef.current?.present()
+  }
+
+  const avatarTarget = values.participants.find(p => p.id === avatarTargetId)
+  const avatarTargetValue =
+    avatarTarget?.kind === 'placeholder' ? (avatarTarget.avatar ?? null) : null
+
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
       <KeyboardAvoidingView
@@ -209,6 +234,11 @@ export function CreateEventScreen() {
                   key={p.id}
                   participant={p}
                   onRemove={() => removeParticipant(p.id)}
+                  onPickAvatar={
+                    p.kind === 'placeholder'
+                      ? () => openAvatarPicker(p.id)
+                      : undefined
+                  }
                 />
               ))}
 
@@ -250,6 +280,14 @@ export function CreateEventScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <AvatarPickerModal
+        ref={avatarPickerRef}
+        value={avatarTargetValue}
+        onConfirm={key => {
+          if (avatarTargetId) setParticipantAvatar(avatarTargetId, key)
+        }}
+      />
     </SafeAreaView>
   )
 }
@@ -257,9 +295,11 @@ export function CreateEventScreen() {
 function ParticipantRow({
   participant,
   onRemove,
+  onPickAvatar,
 }: {
   participant: Participant
   onRemove: () => void
+  onPickAvatar?: () => void
 }) {
   const { t } = useTranslation()
   const isHost = participant.kind === 'real' && participant.host
@@ -268,14 +308,23 @@ function ParticipantRow({
       {participant.kind === 'real' ? (
         <Avatar source={avatar(participant.avatar)} size={36} />
       ) : (
-        <View
-          className="size-9 items-center justify-center rounded-full"
-          style={{ backgroundColor: participant.color }}
+        <Pressable
+          onPress={onPickAvatar}
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
         >
-          <Text className="text-sm font-bold text-white">
-            {participant.initial}
-          </Text>
-        </View>
+          {participant.avatar ? (
+            <Avatar source={avatar(participant.avatar)} size={36} />
+          ) : (
+            <View
+              className="size-9 items-center justify-center rounded-full"
+              style={{ backgroundColor: participant.color }}
+            >
+              <Text className="text-sm font-bold text-white">
+                {participant.initial}
+              </Text>
+            </View>
+          )}
+        </Pressable>
       )}
       <View className="min-w-0 flex-1">
         <View className="flex-row items-center gap-2">

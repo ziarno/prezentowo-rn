@@ -71,7 +71,14 @@
     "nameLabel": "Twoje imię",
     "namePlaceholder": "Jan Kowalski",
     "profilePicture": "Zdjęcie profilowe",
-    "uploadHint": "Kliknij <0>+</0>, aby dodać własne zdjęcie albo wybrać jedno z naszych."
+    "uploadHint": "Kliknij <0>+</0>, aby dodać własne zdjęcie, albo kliknij awatar, by wybrać jeden z naszych."
+  },
+  "avatarPicker": {
+    "title": "Wybierz awatar",
+    "female": "Kobieta",
+    "male": "Mężczyzna",
+    "cancel": "Anuluj",
+    "accept": "Zatwierdź"
   },
   "events": {
     "brand": "Prezentowo",
