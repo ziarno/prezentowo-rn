@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { updateUser } from '@/api/users'
 import {
   BellIcon,
   CalendarIcon,
@@ -38,10 +39,20 @@ export function ProfileScreen() {
   const { t, i18n } = useTranslation()
   const { signOut } = useAuth()
   const { open: openLanguageModal } = useLanguageModal()
-  const [avatarKey, setAvatarKey] = useState<AvatarKey>('m1')
   const avatarPickerRef = useRef<AvatarPickerModalHandle>(null)
+  // Show the saved avatar, but optimistically override it the instant the user
+  // picks a new one (revert if the persist fails).
+  const [avatarOverride, setAvatarOverride] = useState<AvatarKey | null>(null)
 
   const user = useCurrentUser()
+
+  const avatarKey =
+    avatarOverride ?? (user?.profile?.avatar as AvatarKey | undefined) ?? 'm1'
+
+  const pickAvatar = (key: AvatarKey) => {
+    setAvatarOverride(key)
+    updateUser({ avatar: key }).catch(() => setAvatarOverride(null))
+  }
 
   const displayName = user?.profile?.name ?? t('profile.friend')
   const email = user?.emails?.[0]?.address
@@ -150,7 +161,7 @@ export function ProfileScreen() {
       <AvatarPickerModal
         ref={avatarPickerRef}
         value={avatarKey}
-        onConfirm={setAvatarKey}
+        onConfirm={pickAvatar}
       />
     </SafeAreaView>
   )

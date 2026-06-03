@@ -95,7 +95,12 @@ export function CreateEventScreen() {
           .map<EventParticipantInput>(p =>
             p.kind === 'real'
               ? { kind: 'real', userId: p.id }
-              : { kind: 'placeholder', name: p.name, color: p.color },
+              : {
+                  kind: 'placeholder',
+                  name: p.name,
+                  color: p.color,
+                  avatar: p.avatar,
+                },
           ),
       }
       createEvent(args)

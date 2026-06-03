@@ -36,17 +36,25 @@ const registerNewUser = async function (options: RegisterNewUserArgs) {
   return { id: userId, token: stampedToken.token }
 }
 
-const updateUser = async function (options: UpdateUserArgs) {
+const updateUser = async function (
+  this: Meteor.MethodThisType,
+  options: UpdateUserArgs,
+) {
   check(
     options,
     Match.ObjectIncluding({
-      userId: String,
       name: Match.Maybe(String),
       email: Match.Maybe(String),
+      avatar: Match.Maybe(String),
     }),
   )
 
-  const { userId, name, email } = options
+  if (!this.userId) {
+    throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
+  }
+
+  const { name, email, avatar } = options
+  const userId = this.userId
 
   const user = await Meteor.users.findOneAsync(userId)
 
@@ -59,6 +67,10 @@ const updateUser = async function (options: UpdateUserArgs) {
 
   if (name) {
     updates['profile.name'] = name
+  }
+
+  if (avatar) {
+    updates['profile.avatar'] = avatar
   }
 
   if (email && currentEmail !== email) {

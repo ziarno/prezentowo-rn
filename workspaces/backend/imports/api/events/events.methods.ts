@@ -20,7 +20,12 @@ const participantPattern = Match.Where(
     if (p.kind === 'placeholder') {
       check(
         value,
-        Match.ObjectIncluding({ kind: String, name: String, color: String }),
+        Match.ObjectIncluding({
+          kind: String,
+          name: String,
+          color: String,
+          avatar: Match.Maybe(String),
+        }),
       )
       return true
     }
@@ -64,6 +69,7 @@ const createEvent = async function (
             kind: 'placeholder',
             name: p.name.trim(),
             color: p.color,
+            ...(p.avatar ? { avatar: p.avatar } : {}),
           },
     )
 

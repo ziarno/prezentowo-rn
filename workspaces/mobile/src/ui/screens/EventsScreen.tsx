@@ -6,8 +6,9 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import type { EventListItem } from '@/api/events'
 import { ArrowRightIcon, BellIcon, PlusIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
-import { avatar } from '@/constants/avatars'
+import { type AvatarKey, avatar } from '@/constants/avatars'
 import { garland } from '@/constants/colors'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useMyEvents } from '@/hooks/useMyEvents'
 import { Avatar } from '@/ui/components/Avatar'
 
@@ -21,13 +22,15 @@ const ACCENT_PALETTE = [
 export function EventsScreen() {
   const { t } = useTranslation()
   const events = useMyEvents()
+  const user = useCurrentUser()
+  const avatarKey = (user?.profile?.avatar as AvatarKey | undefined) ?? 'm1'
 
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
       <View className="flex-1">
         <View className="flex-row items-center justify-between px-[22px] pb-2 pt-3.5">
           <Pressable onPress={() => router.push('/profile')} hitSlop={8}>
-            <Avatar source={avatar('m1')} size={32} />
+            <Avatar source={avatar(avatarKey)} size={32} />
           </Pressable>
           <Text className="font-garland-display text-lg text-garland-ink">
             {t('events.brand')}

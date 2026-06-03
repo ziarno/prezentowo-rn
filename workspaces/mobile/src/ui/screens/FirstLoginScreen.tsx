@@ -1,3 +1,4 @@
+import type { MeteorError } from '@meteorrn/core'
 import { useFormik } from 'formik'
 import { useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
@@ -6,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { LocalSvg } from 'react-native-svg/css'
 import * as Yup from 'yup'
 
+import { updateUser } from '@/api/users'
 import plusIconAsset from '@/assets/svg/plus-icon.svg'
 import { Text } from '@/components/ui/text'
 import { type AvatarKey, avatar } from '@/constants/avatars'
@@ -40,12 +42,21 @@ export function FirstLoginScreen() {
   } = useFormik({
     initialValues: { name: '' },
     validationSchema,
-    onSubmit: (_, { setSubmitting }) => {
-      // TODO: persist {name, avatar} via Meteor.call('updateUser', …) once
-      // the magic-link sign-in path is in place. For now we just hand the
-      // user off to the app shell.
-      setFirstLoginPending(false)
-      setSubmitting(false)
+    onSubmit: (formValues, { setSubmitting, setFieldError }) => {
+      updateUser({ name: formValues.name.trim(), avatar: selected })
+        .then(() => {
+          setFirstLoginPending(false)
+          setSubmitting(false)
+        })
+        .catch((err: MeteorError) => {
+          setSubmitting(false)
+          setFieldError(
+            'name',
+            err.reason ??
+              err.error?.toString() ??
+              t('common.somethingWentWrong'),
+          )
+        })
     },
   })
 

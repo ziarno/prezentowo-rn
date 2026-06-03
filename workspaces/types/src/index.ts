@@ -5,9 +5,9 @@ export type RegisterNewUserArgs = {
 }
 
 export type UpdateUserArgs = {
-  userId: string
   name?: string
   email?: string
+  avatar?: string
 }
 
 export type LoginCredentials = {
@@ -21,11 +21,17 @@ export type RequestMagicLinkArgs = {
 
 export type EventParticipantInput =
   | { kind: 'real'; userId: string }
-  | { kind: 'placeholder'; name: string; color: string }
+  | { kind: 'placeholder'; name: string; color: string; avatar?: string }
 
 export type EventParticipant =
   | { id: string; kind: 'real'; userId: string }
-  | { id: string; kind: 'placeholder'; name: string; color: string }
+  | {
+      id: string
+      kind: 'placeholder'
+      name: string
+      color: string
+      avatar?: string
+    }
 
 export type CreateEventArgs = {
   title: string
