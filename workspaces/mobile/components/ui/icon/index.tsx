@@ -1,4 +1,4 @@
-import Svg, { Path, Rect } from 'react-native-svg'
+import Svg, { Circle, Path, Rect } from 'react-native-svg'
 
 type IconProps = {
   width?: number
@@ -152,6 +152,80 @@ export function HeartIcon(props: IconProps) {
       {...props}
       strokeWidth={1.6}
       d="M12 21s-7-4.5-9.5-9C1 9 2.5 5 6.5 5c2 0 3.5 1.2 5.5 3.5C13.9 6.2 15.5 5 17.5 5c4 0 5.5 4 4 7-2.5 4.5-9.5 9-9.5 9z"
+    />
+  )
+}
+
+export function HamburgerIcon(props: IconProps) {
+  return <StrokeIcon {...props} strokeWidth={1.8} d="M4 7h16M4 12h16M4 17h16" />
+}
+
+export function MoreIcon({
+  width = 24,
+  height = 24,
+  color = 'currentColor',
+}: IconProps) {
+  return (
+    <Svg width={width} height={height} viewBox="0 0 24 24" fill={color}>
+      <Circle cx={5} cy={12} r={1.6} />
+      <Circle cx={12} cy={12} r={1.6} />
+      <Circle cx={19} cy={12} r={1.6} />
+    </Svg>
+  )
+}
+
+export function LinkIcon(props: IconProps) {
+  return (
+    <StrokeIcon
+      {...props}
+      strokeWidth={1.6}
+      d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"
+    />
+  )
+}
+
+export function GiftIcon({
+  width = 24,
+  height = 24,
+  color = 'currentColor',
+}: IconProps) {
+  return (
+    <Svg width={width} height={height} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M20 12v9H4v-9"
+        stroke={color}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Rect
+        x={2}
+        y={7}
+        width={20}
+        height={5}
+        rx={1}
+        stroke={color}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M12 22V7M12 7c-1 0-3.5-.5-3.5-2.5S10 2.5 12 7zM12 7c1 0 3.5-.5 3.5-2.5S14 2.5 12 7z"
+        stroke={color}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  )
+}
+
+export function ChatIcon(props: IconProps) {
+  return (
+    <StrokeIcon
+      {...props}
+      strokeWidth={1.6}
+      d="M21 12a8 8 0 0 1-8 8 8 8 0 0 1-3.4-.8L3 21l1.4-5A8 8 0 0 1 5 12a8 8 0 0 1 16 0z"
     />
   )
 }

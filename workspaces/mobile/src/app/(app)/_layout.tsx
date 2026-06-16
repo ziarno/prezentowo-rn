@@ -13,6 +13,16 @@ export default function AppLayout() {
         name="join-event"
         options={{ animation: 'slide_from_right' }}
       />
+      <Stack.Screen
+        name="event/[eventId]"
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen name="person" options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="gift" options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen
+        name="add-gift"
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
     </Stack>
   )
 }

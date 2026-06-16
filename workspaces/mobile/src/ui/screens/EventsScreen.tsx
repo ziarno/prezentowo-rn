@@ -93,7 +93,7 @@ function EventRow({ event, accent }: { event: EventListItem; accent: string }) {
   const { t } = useTranslation()
   return (
     <Pressable
-      onPress={() => router.push(`/join-event?eventId=${event._id}`)}
+      onPress={() => router.push(`/event/${event._id}`)}
       className="flex-row items-center gap-3.5 border-t border-garland-ink-08 px-[22px] py-4"
     >
       <View

@@ -47,3 +47,40 @@ export type EventDoc = {
   participants: EventParticipant[]
   createdAt: Date
 }
+
+export type GiftDoc = {
+  _id: string
+  eventId: string
+  // The participant (by EventParticipant.id) this gift is intended for.
+  forParticipantId: string
+  title: string
+  description?: string
+  price?: string
+  url?: string
+  // Present illustration key, e.g. "p3".
+  image?: string
+  // userIds who have reserved this gift. Hidden from the recipient by the
+  // gifts.byEvent publication — "claim quietly".
+  claimedBy: string[]
+  createdBy: string
+  createdAt: Date
+}
+
+export type AddGiftArgs = {
+  eventId: string
+  forParticipantId: string
+  title: string
+  description?: string
+  price?: string
+  url?: string
+  image?: string
+}
+
+export type UpdateGiftArgs = {
+  giftId: string
+  title?: string
+  description?: string
+  price?: string
+  url?: string
+  image?: string
+}
