@@ -57,3 +57,17 @@ yarn workspace backend tsc --noEmit       # backend type check (not scripted)
 - Mobile edit → `yarn workspace mobile lint` → `yarn workspace mobile tsc --noEmit` if types touched
 - Backend edit → `yarn workspace backend tsc --noEmit` → `yarn workspace backend test`
 - Shared types / API contract → verify BOTH workspaces. Root scripts won't do it for you.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues via the `gh` CLI (repo: `ziarno/prezentowo-rn`, inferred automatically by `gh`). See [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md).
+
+### Triage labels
+
+Default five canonical role labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See [docs/agents/triage-labels.md](docs/agents/triage-labels.md).
+
+### Domain docs
+
+Multi-context layout: root `CONTEXT-MAP.md` + per-workspace `CONTEXT.md`/`docs/adr/` under `workspaces/mobile`, `workspaces/backend`, `workspaces/types`, `workspaces/mcp-meteor`. See [docs/agents/domain.md](docs/agents/domain.md).
