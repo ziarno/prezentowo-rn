@@ -1,8 +1,15 @@
 # Prezentowo wireframes — screen inventory
 
-Source of truth: [Claude Design project `d4e1d229`](https://claude.ai/design/p/d4e1d229-1904-4534-8911-808abf57c30a?file=Prezentowo+Wireframes.dc.html),
+**This file is derived, not authoritative.** The canvas is the editable source
+of truth: [Claude Design project `d4e1d229`](https://claude.ai/design/p/d4e1d229-1904-4534-8911-808abf57c30a?file=Prezentowo+Wireframes.dc.html),
 file `Prezentowo Wireframes.dc.html`. Low-fidelity wireframes — layout and flow
 are specified, visual styling is not.
+
+**Captured 2026-09-11.** If the canvas has been edited since, this inventory is
+stale and should be re-derived before it is trusted for anything load-bearing.
+It lives in the repo because reading the canvas needs interactive auth
+(`/design-login`), which agent sessions and CI do not have — so this is the copy
+tickets can actually reference.
 
 Screen ids (`3a`, `5c`, …) are the wireframe's own and are stable. Use them when
 referring to a screen in issues and PRs.
