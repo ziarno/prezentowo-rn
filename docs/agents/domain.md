@@ -25,10 +25,8 @@ This is a multi-context repo (yarn workspaces — see `AGENTS.md` for the worksp
     ├── backend/
     │   ├── CONTEXT.md
     │   └── docs/adr/                  ← backend-specific decisions
-    ├── types/
-    │   └── CONTEXT.md                 ← shared contract vocabulary (@prezentowo/types)
-    └── mcp-meteor/
-        └── CONTEXT.md
+    └── types/
+        └── CONTEXT.md                 ← shared contract vocabulary (@prezentowo/types)
 ```
 
 ## Use the glossary's vocabulary

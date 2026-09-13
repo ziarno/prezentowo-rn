@@ -4,11 +4,6 @@
       "type": "stdio",
       "command": "node",
       "args": ["./node_modules/gluestack-mcp/index.js"]
-    },
-    "meteor": {
-      "type": "stdio",
-      "command": "workspaces/mcp-meteor/.venv/bin/python",
-      "args": ["workspaces/mcp-meteor/local_server.py"]
     }
   }
 }

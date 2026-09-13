@@ -14,8 +14,7 @@
     "dev": "mprocs",
     "lint": "yarn workspace mobile lint",
     "format": "yarn workspaces run format",
-    "npkill": "npx npkill",
-    "postinstall": "bash scripts/setup-meteor-mcp.sh"
+    "npkill": "npx npkill"
   },
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24.0.0"

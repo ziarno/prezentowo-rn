@@ -1,3 +1,0 @@
-[submodule "workspaces/mcp-meteor"]
-	path = workspaces/mcp-meteor
-	url = https://github.com/apitlekays/meteor-mcp
