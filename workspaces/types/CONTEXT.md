@@ -13,4 +13,9 @@ _Avoid_: single-beneficiary event, one-person event
 
 **Beneficiary**:
 The one `EventParticipant` a many-to-one event's presents are for. Identified by `EventParticipant.id`, never a `userId` directly — a beneficiary can be a placeholder participant who has never created an account. The id is stable across a placeholder-to-real upgrade (`events.join`), so a beneficiary reference never needs updating when its placeholder is claimed.
-_Avoid_: recipient
+
+**Recipient**:
+The `EventParticipant` a single gift is for — `GiftDoc.forParticipantId`. Applies to every event kind: a many-to-many event gives each gift its own recipient (typically different per gift), while a many-to-one event's beneficiary is the recipient of every gift on that event.
+
+**Self-added gift** / **Suggested gift**:
+Whether a gift's recipient is also the one who added it (`GiftDoc.createdBy === recipient's userId`, self-added) or someone else added it for them (suggested). Mirrors the wireframes' "your own wishes" vs "Suggested by others" split (`3f`).
