@@ -9,11 +9,15 @@ Yarn v1 workspace. Three parts:
 
 Root `yarn dev` starts both via `mprocs`. Root `lint` = mobile only. No root test or typecheck.
 
+Mobile runs as a **development build**, not Expo Go — see [Running the mobile app](#running-the-mobile-app).
+
 ## Commands
 
 ```
 yarn dev                                  # start everything
-yarn workspace mobile start               # mobile only
+yarn workspace mobile ios                 # build + install the dev client on an iOS simulator (first run / native deps changed)
+yarn workspace mobile android             # same, for an Android emulator
+yarn workspace mobile start               # Metro only — needs a dev client already installed (see below)
 yarn workspace backend start              # backend only
 yarn lint                                 # mobile lint
 yarn workspace mobile lint                # also mobile lint
@@ -25,6 +29,16 @@ yarn workspace backend test-app           # backend full-app watch tests
 yarn workspace mobile tsc --noEmit        # mobile type check (not scripted)
 yarn workspace backend tsc --noEmit       # backend type check (not scripted)
 ```
+
+### Running the mobile app
+
+`expo-dev-client` is a dependency, so Expo Go cannot run this app — `yarn workspace mobile start` alone opens a dev-client pairing screen, not a working app, until a dev client build is on the device.
+
+- **First run, or after a native dependency changes** (any `expo-*` package, `app.json` plugin list, or anything else that touches native code): `yarn workspace mobile ios` / `yarn workspace mobile android`. This runs Expo's Continuous Native Generation (`ios/` and `android/` are generated on demand, gitignored, never committed), builds the native project locally, installs it on a simulator/emulator or connected device, and starts Metro.
+- **Day to day**, once that build is installed: `yarn workspace mobile start` reuses it — Metro-only, no native rebuild.
+- No EAS project is configured; this is a **local** dev build (`expo run:ios` / `expo run:android` under the hood). Needs Xcode + a simulator (or Android Studio + an emulator/device) on the machine running it.
+- The app blocks on its splash screen until it has a live DDP connection to the backend (see `src/ui/SplashScreenController.tsx`) — start `yarn workspace backend start` (or root `yarn dev`) too, or the UI never appears past the splash.
+- `expo-env.d.ts` (ambient types for `expo/types`, needed for the `global.css` side-effect import to typecheck) is gitignored and only written the first time the dev server or a native build runs in a given checkout/worktree — run `yarn workspace mobile start` (or `ios`/`android`) once before `tsc --noEmit` on a fresh checkout.
 
 ## Mobile wiring
 
@@ -49,7 +63,8 @@ yarn workspace backend tsc --noEmit       # backend type check (not scripted)
 
 - Mobile lint = `expo lint` with Prettier warnings from `workspaces/mobile/eslint.config.js` — formatting errors come through ESLint
 - NativeWind: wired via Metro + `global.css`. Gluestack UI wrapped at root in `workspaces/mobile/src/app/_layout.tsx`
-- `workspaces/mobile/app.json` has Expo Router typed routes and React Compiler experiment enabled
+- `workspaces/mobile/app.json` has Expo Router typed routes and React Compiler experiment enabled — both still under `experiments`, unchanged in shape across the Expo 56→57 upgrade
+- Expo SDK 57 / React Native 0.86.3. New Architecture is the only architecture (RN removed the old one; there is no `newArchEnabled` toggle to set). No `ios/`/`android/` folders are committed — they're generated on demand, see [Running the mobile app](#running-the-mobile-app)
 - MCP: `.mcp.json` has `gluestack` (in-project) only. Meteor docs come from Context7, not a local server.
 - Use Context7 **`/websites/meteor`** for Meteor docs — it tracks live docs.meteor.com and is correct on Meteor 3 semantics.
 - **Never use Context7 `/meteor/docs`.** It serves the Meteor 2 docs repo and is wrong on `WebApp` (documents the Connect-era `WebApp.connectHandlers`/`handlers` split backwards; Meteor 3 is Express, and the two names are aliases for the same object).
