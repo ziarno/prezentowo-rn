@@ -167,9 +167,10 @@ export type NotificationDoc = {
   kind: 'invite-deferred' | 'suggestion-claimed' | 'participant-joined'
   createdAt: Date
   read: boolean
-  eventId?: string                // invite-deferred, participant-joined
+  eventId: string                 // every kind (#28: 1e's route needs it for suggestion-claimed)
   giftId?: string                 // suggestion-claimed
   giftTitle?: string              // snapshot
+  recipientParticipantId?: string // suggestion-claimed; snapshot, for the 3f fallback once the gift is gone (#28)
   claimedByParticipantId?: string // suggestion-claimed
   joinedParticipantId?: string    // participant-joined
 }
@@ -221,7 +222,7 @@ All methods are `async`, check `this.userId`, and validate arguments. "Member" m
 | `gifts.add(AddGiftArgs)` | member | Inserts the gift. If `clientId` matches an existing (`createdBy`, `clientId`), returns that gift's id (replay-safe). | Activity `gift-added`; `hiddenFromParticipantId` = the recipient only when the gift is suggested. |
 | `gifts.update(UpdateGiftArgs)` | **gift creator** | Never touches `forParticipantId` or `createdBy`. | — |
 | `gifts.remove({ giftId })` | per [Who may delete a present](https://github.com/ziarno/prezentowo-rn/issues/30) (today: any member) | Hard delete. | — |
-| `gifts.claim({ giftId })` / `gifts.unclaim` | member, not the recipient | `$addToSet` / `$pull`. | Claim: Activity `gift-claimed` with `hiddenFromParticipantId` = the recipient, always. If the gift is suggested and the claimer ≠ the suggester, a Notification `suggestion-claimed` goes to the suggester. |
+| `gifts.claim({ giftId })` / `gifts.unclaim` | member, not the recipient | `$addToSet` / `$pull`. | Claim: Activity `gift-claimed` with `hiddenFromParticipantId` = the recipient, always. If the gift is suggested and the claimer ≠ the suggester, a Notification `suggestion-claimed` goes to the suggester, snapshotting `giftTitle` and `recipientParticipantId`. |
 | `gifts.importLink({ url })` | signed in | §3.2. Returns a `LinkImportOutcome`. Never throws for shop-side failures. | — |
 | `notifications.markAllRead()` | signed in | Marks every unread notification belonging to the caller as read. | — |
 | `stream.token()` | signed in | `createToken(userId, now+1h, iat=now)`. | — |
@@ -352,7 +353,7 @@ src/app/
 | `6a` edit | `invites.forEvent` | `events.update`, `events.removeParticipant`, `events.delete` (confirm dialog), `invites.rotate` | Type and beneficiary rows are disabled once gifts exist. |
 | `5a`–`5d` add | — | `gifts.importLink`, `POST /api/images`, `gifts.add` | See the link-import outcomes below. |
 | `7a` invite | `invites.byCode` | `events.join`, `invites.ignore` | Renders signed out. The placeholder list ends with "no, I'm new". Offline: a blocking error. |
-| Notifications | `notifications.mine` | `notifications.markAllRead` on open | `invite-deferred` → `7a` (code derived live from the event's `InviteDoc`), `suggestion-claimed` → `1e`, `participant-joined` → `3c`. |
+| Notifications | `notifications.mine`, `events.mine` (names, titles) | `notifications.markAllRead` on open | Layout per [#28](https://github.com/ziarno/prezentowo-rn/issues/28): flat inbox (New / Earlier this week / Older), same-event joins coalesced, unread styling from a snapshot taken at open. `invite-deferred` → `7a` (code derived live from the event's `InviteDoc`), `suggestion-claimed` → `1e` (deleted gift → `3f`, or `3c` if the recipient is gone), `participant-joined` → `3c`. |
 | `8a`/`8b` chat | `chatThreads.byEvent`, `stream.token` | Stream | Connect lazily, only when a chat screen opens. |
 | Profile | current user | `profile.name`, `profile.avatar` | Unchanged. |
 
@@ -422,7 +423,6 @@ Link-import outcomes on `5a`–`5d`:
 - `price`
 
 **Still being decided on the map** (the backlog slices that depend on them are blocked):
-- [Design the notifications screen](https://github.com/ziarno/prezentowo-rn/issues/28).
 - [Design the web invite landing page](https://github.com/ziarno/prezentowo-rn/issues/29): layout, copy, OG image.
 - [Who may delete a present](https://github.com/ziarno/prezentowo-rn/issues/30).
 - [Stock backgrounds and present illustrations](https://github.com/ziarno/prezentowo-rn/issues/31): `4c` and `5b`, count, style, location.
