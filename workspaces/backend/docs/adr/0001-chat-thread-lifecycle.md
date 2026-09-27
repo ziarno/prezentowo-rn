@@ -1,0 +1,17 @@
+# Chat threads: random channel ids, eager creation, retire instead of edit
+
+Each event has one `event_thread` and one `secret_thread` per recipient; the recipient is never a member of their own secret thread. `ChatThreads` in Mongo records which random Stream channel id backs which thread. The server creates channels eagerly in whichever method changes membership, and `create-channel` is revoked from Stream's `user` role. When someone must lose access to a thread (a beneficiary change, or the removal of its recipient), the thread is **retired** and replaced by a fresh channel. It is never edited.
+
+Stream delivers `notification.removed_from_channel` to the removed user. A derivable channel id would let a giftee tell a 403 from a 404 and learn that a thread about them exists. With `create-channel` held by users, a giftee who guessed an id first would own the channel. Each of these would reveal the secret thread's existence to the one person it is hidden from.
+
+## Considered Options
+
+- **Derived channel ids** (`eventId` + `participantId`). This removes the need for `ChatThreads`, but it creates an existence oracle.
+- **Editing membership on a beneficiary change.** Simpler, but the removal is observable.
+- **Mirroring messages into Mongo via webhook** (for activity items). Rejected. Server-side calls bypass Stream's permissions, so secret-thread content would land where only our own filters protect it.
+
+## Consequences
+
+- Retired threads keep their history in Stream but drop out of the UI.
+- A beneficiary change starts that recipient's secret conversation from empty.
+- Chat never feeds the activity feed or notifications.
