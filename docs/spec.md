@@ -164,12 +164,12 @@ export type ActivityDoc = {
 export type NotificationDoc = {
   _id: string
   userId: string // always account-level
-  kind: 'invite-deferred' | 'suggestion-claimed' | 'participant-joined'
+  kind: 'invite-deferred' | 'suggestion-claimed' | 'participant-joined' | 'claimed-gift-removed'
   createdAt: Date
   read: boolean
   eventId: string                 // every kind (#28: 1e's route needs it for suggestion-claimed)
   giftId?: string                 // suggestion-claimed
-  giftTitle?: string              // snapshot
+  giftTitle?: string              // snapshot; suggestion-claimed, claimed-gift-removed
   recipientParticipantId?: string // suggestion-claimed; snapshot, for the 3f fallback once the gift is gone (#28)
   claimedByParticipantId?: string // suggestion-claimed
   joinedParticipantId?: string    // participant-joined
@@ -221,7 +221,7 @@ All methods are `async`, check `this.userId`, and validate arguments. "Member" m
 | `invites.rotate({ eventId })` | creator | Replaces `code` in place. The old code is dead immediately. | — |
 | `gifts.add(AddGiftArgs)` | member | Inserts the gift. If `clientId` matches an existing (`createdBy`, `clientId`), returns that gift's id (replay-safe). | Activity `gift-added`; `hiddenFromParticipantId` = the recipient only when the gift is suggested. |
 | `gifts.update(UpdateGiftArgs)` | **gift creator** | Never touches `forParticipantId` or `createdBy`. | — |
-| `gifts.remove({ giftId })` | per [Who may delete a present](https://github.com/ziarno/prezentowo-rn/issues/30) (today: any member) | Hard delete. | — |
+| `gifts.remove({ giftId })` | **gift creator or event creator** ([#30](https://github.com/ziarno/prezentowo-rn/issues/30)) | Hard delete, whether or not it has claims. Rejects the event creator on a gift hidden from them by the own-list visibility rule, with the same `notFound` as a missing gift, so the method never confirms a hidden gift exists. | Activity: deletes every doc for the gift. Notification `claimed-gift-removed` to each claimer except the caller, snapshotting `giftTitle`; the deleter is not named. Image cleanup per §3.1. `events.removeParticipant`'s gift deletions send no notification. |
 | `gifts.claim({ giftId })` / `gifts.unclaim` | member, not the recipient | `$addToSet` / `$pull`. | Claim: Activity `gift-claimed` with `hiddenFromParticipantId` = the recipient, always. If the gift is suggested and the claimer ≠ the suggester, a Notification `suggestion-claimed` goes to the suggester, snapshotting `giftTitle` and `recipientParticipantId`. |
 | `gifts.importLink({ url })` | signed in | §3.2. Returns a `LinkImportOutcome`. Never throws for shop-side failures. | — |
 | `notifications.markAllRead()` | signed in | Marks every unread notification belonging to the caller as read. | — |
@@ -353,12 +353,12 @@ src/app/
 | `3c`–`3c4` feed | `events.byId`, `gifts.byEvent`, `activity.byEvent` | — | "X of Y have a buyer" is computed client-side. |
 | `3d`/`3d2` event drawer | `events.byId`, `gifts.byEvent` (counts) | — | Counts are shown for everyone in `3d` and for the beneficiary only in `3d2`. Includes "＋ Invite people" (share link). |
 | `3e`/`3f` person | `gifts.byEvent` | `gifts.claim`/`unclaim` | `3f` groups the list into own wishes and suggested by others. Chat recap: §7. |
-| `1e` detail | `gifts.byEvent` | claim/unclaim, `gifts.update` (creator), `gifts.remove` | |
+| `1e` detail | `gifts.byEvent` | claim/unclaim, `gifts.update` (creator), `gifts.remove` (gift creator or event creator) | Delete always goes through a confirm dialog, which adds "N people claimed this" only when the viewer's copy carries `claimedBy` (never for the recipient's own self-added gift). |
 | `4a`–`4e` create | — | `events.create`, `POST /api/images` | `4e` appears only for many-to-one. Stock backgrounds in `4c` follow [Stock backgrounds and present illustrations](https://github.com/ziarno/prezentowo-rn/issues/31). |
 | `6a` edit | `invites.forEvent` | `events.update`, `events.removeParticipant`, `events.delete` (confirm dialog), `invites.rotate` | Type and beneficiary rows are disabled once gifts exist. |
 | `5a`–`5d` add | — | `gifts.importLink`, `POST /api/images`, `gifts.add` | See the link-import outcomes below. |
 | `7a` invite | `invites.byCode` | `events.join`, `invites.ignore` | Renders signed out. The placeholder list ends with "no, I'm new". Offline: a blocking error. |
-| Notifications | `notifications.mine`, `events.mine` (names, titles) | `notifications.markAllRead` on open | Layout per [#28](https://github.com/ziarno/prezentowo-rn/issues/28): flat inbox (New / Earlier this week / Older), same-event joins coalesced, unread styling from a snapshot taken at open. `invite-deferred` → `7a` (code derived live from the event's `InviteDoc`), `suggestion-claimed` → `1e` (deleted gift → `3f`, or `3c` if the recipient is gone), `participant-joined` → `3c`. |
+| Notifications | `notifications.mine`, `events.mine` (names, titles) | `notifications.markAllRead` on open | Layout per [#28](https://github.com/ziarno/prezentowo-rn/issues/28): flat inbox (New / Earlier this week / Older), same-event joins coalesced, unread styling from a snapshot taken at open. `invite-deferred` → `7a` (code derived live from the event's `InviteDoc`), `suggestion-claimed` → `1e` (deleted gift → `3f`, or `3c` if the recipient is gone), `participant-joined` → `3c`, `claimed-gift-removed` → `3f` ("{present} in {event} was removed"). |
 | `8a`/`8b` chat | `chatThreads.byEvent`, `stream.token` | Stream | Connect lazily, only when a chat screen opens. |
 | Profile | current user | `profile.name`, `profile.avatar` | Unchanged. |
 
@@ -428,7 +428,6 @@ Link-import outcomes on `5a`–`5d`:
 - `price`
 
 **Still being decided on the map** (the backlog slices that depend on them are blocked):
-- [Who may delete a present](https://github.com/ziarno/prezentowo-rn/issues/30).
 - [Stock backgrounds and present illustrations](https://github.com/ziarno/prezentowo-rn/issues/31): `4c` and `5b`, count, style, location.
 
 **Calls made while consolidating** (mechanical consequences of locked decisions, not new product decisions — reopen on the map if any is wrong):
