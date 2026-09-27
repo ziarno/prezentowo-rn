@@ -1,0 +1,454 @@
+# Prezentowo v1 — implementation spec
+
+The locked output of the wayfinder map [Prezentowo, from wireframes to an implementation-ready spec](https://github.com/ziarno/prezentowo-rn/issues/1). It states each decision in its final form; the ticket linked beside each section holds the reasoning. Build work is sliced under [Build Prezentowo v1](https://github.com/ziarno/prezentowo-rn/issues/32) (see [§9](#9-build-order)).
+
+- **Brief**: the wireframes, [`docs/wireframes/README.md`](wireframes/README.md). Screens are referred to by their ids (`3a`, `5c`, …).
+- **Vocabulary**: [`workspaces/types/CONTEXT.md`](../workspaces/types/CONTEXT.md). Terms in **bold** below are defined there.
+- **ADRs**: [`docs/adr/`](adr/) (system-wide), [`workspaces/backend/docs/adr/`](../workspaces/backend/docs/adr/).
+
+Nothing in this document is open. If building reveals a missing decision, raise it as a new ticket on the map instead of deciding it inside a slice.
+
+---
+
+## 1. Shared contract — `@prezentowo/types`
+
+Change `workspaces/types/src/index.ts` **before** either side ships code that depends on the change, and verify **both** workspaces (`AGENTS.md`). Unchanged types (`RegisterNewUserArgs`, `UpdateUserArgs`, `LoginCredentials`, `RequestMagicLinkArgs`, `EventParticipantInput`, `EventParticipant`) are omitted.
+
+### 1.1 Images — [#5](https://github.com/ziarno/prezentowo-rn/issues/5), [#12](https://github.com/ziarno/prezentowo-rn/issues/12)
+
+```ts
+export type ImageRef =
+  | { kind: 'upload'; id: string }       // self-hosted upload, see §3.1
+  | { kind: 'illustration'; id: string } // bundled stock key, e.g. "p3"
+```
+
+There is no `provider` field.
+
+### 1.2 Events — [#2](https://github.com/ziarno/prezentowo-rn/issues/2), [#13](https://github.com/ziarno/prezentowo-rn/issues/13)
+
+```ts
+export type EventKind =
+  | { type: 'many-to-many' }
+  | { type: 'many-to-one'; beneficiaryParticipantId: string } // an EventParticipant.id, never a userId
+
+// Participant ids are minted server-side, so create names the beneficiary by index into `participants`.
+export type CreateEventKindInput =
+  | { type: 'many-to-many' }
+  | { type: 'many-to-one'; beneficiaryIndex: number }
+
+export type CreateEventArgs = {
+  title: string
+  date: string
+  background?: ImageRef
+  participants: EventParticipantInput[]
+} & CreateEventKindInput
+
+export type EventDoc = {
+  _id: string
+  title: string
+  date: string
+  background?: ImageRef
+  ownerId: string
+  participants: EventParticipant[]
+  createdAt: Date
+} & EventKind
+
+export type UpdateEventArgs = {
+  eventId: string
+  title?: string
+  date?: string
+  background?: ImageRef | null // null clears it
+  kind?: EventKind             // rejected once any GiftDoc exists for the event
+}
+
+export type RemoveParticipantArgs = { eventId: string; participantId: string }
+export type JoinEventArgs = { code: string; participantId?: string } // participantId = the placeholder being claimed
+```
+
+### 1.3 Invites — [#3](https://github.com/ziarno/prezentowo-rn/issues/3), [#13](https://github.com/ziarno/prezentowo-rn/issues/13), [#21](https://github.com/ziarno/prezentowo-rn/issues/21)
+
+```ts
+export type InviteDoc = {
+  _id: string
+  code: string    // 4 chars, crypto-random, alphabet = [A-Za-z0-9] minus 0 O 1 l I (57 symbols); unique index
+  eventId: string // exactly one InviteDoc per event
+  ownerId: string
+  createdAt: Date
+}
+
+/** What a signed-out or not-yet-member viewer may see on 7a / the web landing page. */
+export type InvitePreview = {
+  code: string
+  eventId: string
+  title: string
+  date: string
+  background?: ImageRef
+  inviterName: string
+  unclaimedPlaceholders: { id: string; name: string; color: string; avatar?: string }[]
+}
+```
+
+### 1.4 Presents — [#12](https://github.com/ziarno/prezentowo-rn/issues/12)
+
+```ts
+export type GiftDoc = {
+  _id: string
+  eventId: string
+  forParticipantId: string // the recipient — write-once
+  title: string
+  description?: string
+  url?: string
+  image?: ImageRef
+  claimedBy: string[]      // userIds; stripped for the recipient (claim-quietly rule)
+  createdBy: string        // userId — write-once
+  createdAt: Date
+}
+
+export type AddGiftArgs = {
+  eventId: string
+  forParticipantId: string
+  title: string
+  description?: string
+  url?: string
+  image?: ImageRef
+  clientId?: string // idempotency key for offline replay, §6.3
+}
+
+export type UpdateGiftArgs = {
+  giftId: string
+  title?: string
+  description?: string
+  url?: string
+  image?: ImageRef | null // null clears; undefined leaves unchanged
+}
+```
+
+`price` is removed from all three types. There is no draft gift, no import-provenance field, and no self-added/suggested field (that is derived).
+
+### 1.5 Link import — [#7](https://github.com/ziarno/prezentowo-rn/issues/7), [#17](https://github.com/ziarno/prezentowo-rn/issues/17)
+
+```ts
+export type ImportedFields = {
+  title?: string
+  description?: string
+  url: string          // the canonical product URL, falling back to the pasted one
+  imageUrl?: string    // a remote image; the client uploads it before Add present, see §3.3
+  missing: ('title' | 'description' | 'image')[] // structurally unfillable → field-specific review hint
+}
+
+export type LinkImportOutcome =
+  | { outcome: 'success'; fields: ImportedFields }
+  | { outcome: 'unreadable'; blockedShop?: string } // blockedShop set = matched the blocked shop list
+  | { outcome: 'infra-failure' }
+```
+
+### 1.6 Activity — [#10](https://github.com/ziarno/prezentowo-rn/issues/10)
+
+```ts
+export type ActivityDoc = {
+  _id: string
+  eventId: string
+  kind: 'gift-added' | 'gift-claimed' | 'participant-joined'
+  actorParticipantId: string
+  createdAt: Date
+  giftId?: string                 // gift-* only
+  giftTitle?: string              // snapshot at write time
+  recipientParticipantId?: string // gift-* only
+  hiddenFromParticipantId?: string // precomputed at insert, never re-evaluated; never published
+}
+```
+
+### 1.7 Notifications — [#11](https://github.com/ziarno/prezentowo-rn/issues/11)
+
+```ts
+export type NotificationDoc = {
+  _id: string
+  userId: string // always account-level
+  kind: 'invite-deferred' | 'suggestion-claimed' | 'participant-joined'
+  createdAt: Date
+  read: boolean
+  eventId?: string                // invite-deferred, participant-joined
+  giftId?: string                 // suggestion-claimed
+  giftTitle?: string              // snapshot
+  claimedByParticipantId?: string // suggestion-claimed
+  joinedParticipantId?: string    // participant-joined
+}
+```
+
+### 1.8 Chat — [#14](https://github.com/ziarno/prezentowo-rn/issues/14)
+
+```ts
+export type ChatThreadDoc = {
+  _id: string
+  eventId: string
+  kind: 'event' | 'secret'
+  recipientParticipantId?: string // secret only
+  streamChannelType: 'event_thread' | 'secret_thread'
+  streamChannelId: string         // random, never derived
+  retiredAt?: Date
+}
+```
+
+---
+
+## 2. Backend — methods and publications
+
+All methods are `async`, check `this.userId`, and validate arguments. "Member" means `ownerId` or a `kind: 'real'` participant with this `userId`, which is today's `assertEventMember`. **Creator** means `EventDoc.ownerId`.
+
+### 2.1 Collections
+
+| Collection | Doc | New? | Indexes |
+|---|---|---|---|
+| `Events` | `EventDoc` | changed | — |
+| `Gifts` | `GiftDoc` | changed | `eventId`; `createdBy + clientId` unique sparse |
+| `Invites` | `InviteDoc` | new | `code` unique; `eventId` unique |
+| `Activity` | `ActivityDoc` | new | `eventId + createdAt` |
+| `Notifications` | `NotificationDoc` | new | `userId + createdAt`; `userId + eventId + kind` unique partial on `invite-deferred` |
+| `ChatThreads` | `ChatThreadDoc` | new | `eventId` |
+| `Images` | `{ _id, ownerId, createdAt }` | new | — (records who uploaded; used for cleanup) |
+
+### 2.2 Methods
+
+| Method | Who | Behaviour | Writes Activity / Notification / Chat |
+|---|---|---|---|
+| `events.create(CreateEventArgs)` | signed in | Mints participant ids and resolves `beneficiaryIndex`. Inserts the `InviteDoc` eagerly. | Chat: creates the `event_thread` and a `secret_thread` per real recipient (§2.4). |
+| `events.update(UpdateEventArgs)` | creator | Title, date and background are always editable. `kind` is rejected if `Gifts.find({eventId}).countAsync() > 0`. | Chat: a beneficiary change retires and replaces the secret thread. |
+| `events.removeParticipant(RemoveParticipantArgs)` | creator | Rejects removing the current beneficiary. Hard-deletes gifts where they are the recipient. Keeps gifts they created. Pulls their `userId` from every `claimedBy`. | Activity: deletes docs whose `recipientParticipantId` is theirs and keeps docs where they are the actor. Chat: retires their secret thread and removes them from the others. |
+| `events.delete({ eventId })` | creator | Hard cascade: `Events`, `Gifts`, `Invites`, `Activity`, `Notifications` with that `eventId`, `ChatThreads` (and their Stream channels), and the images referenced by the event and its gifts. | — |
+| `events.join(JoinEventArgs)` | signed in | Resolves `code` to an event. If `participantId` is given, claims that placeholder; the id is preserved. Otherwise appends a new real participant. Rejects users who are already real participants. | Activity `participant-joined`. Notification `participant-joined` to the creator. Deletes the joiner's `invite-deferred` for the event. Chat: joins every thread except their own secret thread. |
+| `invites.ignore({ code })` | signed in | Upserts `invite-deferred` for (`userId`, `eventId`). Never touches `Invites`. | Notification |
+| `invites.rotate({ eventId })` | creator | Replaces `code` in place. The old code is dead immediately. | — |
+| `gifts.add(AddGiftArgs)` | member | Inserts the gift. If `clientId` matches an existing (`createdBy`, `clientId`), returns that gift's id (replay-safe). | Activity `gift-added`; `hiddenFromParticipantId` = the recipient only when the gift is suggested. |
+| `gifts.update(UpdateGiftArgs)` | **gift creator** | Never touches `forParticipantId` or `createdBy`. | — |
+| `gifts.remove({ giftId })` | per [Who may delete a present](https://github.com/ziarno/prezentowo-rn/issues/30) (today: any member) | Hard delete. | — |
+| `gifts.claim({ giftId })` / `gifts.unclaim` | member, not the recipient | `$addToSet` / `$pull`. | Claim: Activity `gift-claimed` with `hiddenFromParticipantId` = the recipient, always. If the gift is suggested and the claimer ≠ the suggester, a Notification `suggestion-claimed` goes to the suggester. |
+| `gifts.importLink({ url })` | signed in | §3.2. Returns a `LinkImportOutcome`. Never throws for shop-side failures. | — |
+| `notifications.markAllRead()` | signed in | Marks every unread notification belonging to the caller as read. | — |
+| `stream.token()` | signed in | `createToken(userId, now+1h, iat=now)`. | — |
+| `profile.name`, `profile.avatar` | unchanged | | |
+
+The Dev login is **not** a method. It is an `Accounts.registerLoginHandler` for `{ devLogin: true }`, registered only when `Meteor.isDevelopment`. It logs in as `dev@prezentowo.local` (created on first use with a first name already set) ([#4](https://github.com/ziarno/prezentowo-rn/issues/4)).
+
+### 2.3 Publications
+
+| Publication | Audience | Filter |
+|---|---|---|
+| `events.mine` | signed in | Events where the caller is a member. |
+| `events.byId(eventId)` | members | Unchanged. It is no longer an invite path: `eventId` is retired as a join capability. |
+| `invites.byCode(code)` | anyone, including signed out | Publishes one `InvitePreview`-shaped doc into a client-only collection. Never publishes participants' userIds or any gift data. |
+| `invites.forEvent(eventId)` | creator | The `InviteDoc`, for `6a`'s link row. |
+| `gifts.byEvent(eventId)` | members | **Own-list visibility rule**: a gift whose recipient is the viewer and whose creator isn't the viewer is never `added`, and its `changed`/`removed` are skipped too (a `hiddenIds` set). **Claim-quietly rule**: for the viewer's self-added gifts, `claimedBy` is stripped. No owner exemption ([#9](https://github.com/ziarno/prezentowo-rn/issues/9)). |
+| `users.inEvent(eventId)` | members | Unchanged. |
+| `activity.byEvent(eventId)` | members | Excludes docs where `hiddenFromParticipantId` is the viewer's participant id. Omits the `hiddenFromParticipantId` field. |
+| `activity.recentForUser()` | signed in | The same filter helper, capped at **3 per event** across the caller's events (`3a`). |
+| `notifications.mine()` | signed in | The caller's `NotificationDoc`s, newest first, capped at 50. |
+| `chatThreads.byEvent(eventId)` | members | Live threads the viewer belongs to. The viewer's own secret thread is never published. |
+
+**Invariant the rules lean on:** a gift's `forParticipantId` and `createdBy` are write-once. Any future method that reassigns either must also fire `added`/`removed` in `gifts.byEvent` and re-derive activity visibility.
+
+### 2.4 Chat lifecycle — [#6](https://github.com/ziarno/prezentowo-rn/issues/6), [#14](https://github.com/ziarno/prezentowo-rn/issues/14), [backend ADR 0001](../workspaces/backend/docs/adr/0001-chat-thread-lifecycle.md)
+
+- Stream app setup: two custom channel types, `event_thread` and `secret_thread`, both inheriting `messaging` grants. **`create-channel` revoked from `user`.** Channel ids come from `Random.secret()`.
+- One `event_thread` per event. One `secret_thread` per **recipient**: every participant in many-to-many, only the beneficiary in many-to-one. Each secret thread's members are every real participant except its recipient.
+- Channels are created eagerly by whichever method changes membership: `events.create`, `events.join`, `events.update` (beneficiary change), `events.removeParticipant`. Placeholders cause no Stream calls.
+- A new member sees full history (`hide_history: false`).
+- **Retire, don't edit** when someone must lose access (a beneficiary change, removal of that recipient). Set `retiredAt`, mint a replacement, and never remove the person the thread concerns from a live channel.
+- No webhook ingestion into Mongo, ever. Chat is online-only.
+
+---
+
+## 3. Backend — HTTP routes and server capabilities
+
+### 3.1 Image upload — [#5](https://github.com/ziarno/prezentowo-rn/issues/5), [ADR 0002](adr/0002-self-hosted-images.md)
+
+- `POST /api/images`: an `accounts-express`-authenticated Express route on `WebApp.handlers`, single-file multipart. The client downscales before upload to at most 1600 px on the long edge (JPEG q≈0.7, `expo-image-manipulator`). The server generates **three WebP derivatives with `sharp`**: `400` (present tile), `1000` (present detail, `5d`), and `1600` (event cover). They are written to `IMAGES_DIR/<id>/<size>.webp`, where `<id>` is `Random.secret()` and acts as a bearer capability. The route inserts an `Images` record and returns `{ id }`. The original upload is not kept.
+- Serving: `GET /images/<id>/<size>.webp` as static files. **Caddy** serves them in production, and a Meteor static handler does so in development only. URLs are unguessable, not authenticated.
+- `IMAGES_DIR` comes from `settings.json` and must be a dedicated filesystem, not the Mongo volume (disk-full behaviour is undocumented). It is backed up off-site by **restic** (infra slice).
+- Cleanup: `events.delete`, `gifts.remove`, `gifts.update` with a new or cleared image, and `events.update` with a new or cleared background delete the replaced upload's directory and its `Images` record.
+
+### 3.2 Link import — [#7](https://github.com/ziarno/prezentowo-rn/issues/7), [#16](https://github.com/ziarno/prezentowo-rn/issues/16), [#17](https://github.com/ziarno/prezentowo-rn/issues/17)
+
+- `gifts.importLink` takes the URL's host and checks it first against the **blocked shop list**: a code constant, `mediaexpert.pl` and `allegro.pl`, **not** Zalando. A match returns `unreadable` with `blockedShop`.
+- Otherwise: global `fetch` with a browser-like UA and a 10 s timeout, then `open-graph-scraper`, merging JSON-LD `Product` and OG, with JSON-LD winning.
+  - A network error, timeout, or 5xx from our side is `infra-failure`.
+  - A shop 4xx or bot-wall, or no product data (a non-product page), is `unreadable`.
+  - Anything else is `success` (full or partial).
+- Behind a `LinkImportProvider` interface. Only the self-hosted provider is implemented. The Firecrawl provider is **not built** and nothing auto-retries.
+- Logs **domain + outcome class only**: never the URL, never the user.
+
+### 3.3 Imported images
+
+`ImportedFields.imageUrl` is a remote URL. When the user keeps it on `5d`, the client downloads it locally and uploads it through §3.1, the same path as a camera photo. There is no server-side fetch-and-store. That keeps a single upload path, keeps an offline-queued add's photo as a local file (§6.3), and stops the server fetching arbitrary URLs a second time.
+
+### 3.4 Web invite landing — [#21](https://github.com/ziarno/prezentowo-rn/issues/21), [ADR 0005](adr/0005-web-is-an-invite-landing-page.md)
+
+- `GET /e/:code` is served by Meteor's own client bundle (Rspack, plain React; no react-native-web, no shared components).
+- It shows the event title, inviter name and App Store / Play Store buttons, using the same `InvitePreview` data minus the placeholders. It has no interactivity.
+- Layout, copy and OG image come from [Design the web invite landing page](https://github.com/ziarno/prezentowo-rn/issues/29).
+- `GET /.well-known/apple-app-site-association` and `GET /.well-known/assetlinks.json` enable Universal Links and App Links for `https://prezentowo.pl/e/*`.
+
+---
+
+## 4. Mobile — shell and navigation — [#4](https://github.com/ziarno/prezentowo-rn/issues/4)
+
+### 4.1 Route tree
+
+```
+src/app/
+  _layout.tsx                 root Stack + Protected guards (unchanged) + pending-invite hook
+  onboarding / welcome / signin / check-email / first-login   (unchanged; welcome gains a __DEV__ Dev login button)
+  e/[code].tsx                7a invite (modal, outside the guards)
+  (app)/
+    _layout.tsx               Drawer.Navigator (@react-navigation/drawer, drawerType 'front') → one screen → the Stack
+    index.tsx                 3a Home
+    profile.tsx               3b item
+    notifications.tsx         notifications screen (layout from #28)
+    create-event.tsx          4a–4e wizard (modal); 6a opens it in edit mode at a given step
+    event/[eventId]/
+      index.tsx               3c–3c4 feed (drawer "Activity")
+      edit.tsx                6a
+      chat.tsx                8b
+      add-gift.tsx            5a–5d wizard (modal)
+      person/[participantId].tsx        3e / 3f
+      person/[participantId]/chat.tsx   8a
+      gift/[giftId].tsx       1e
+```
+
+`privacy.tsx` is **not built**: the Settings screens are out of scope (§8), so the drawer has no Privacy or dark-mode rows. The person route is keyed by **`participantId`**, not `userId`, because placeholders have no userId and #4's `[userId]` predates that constraint.
+
+### 4.2 Rules
+
+- **The drawer is contextual.** `drawerContent` shows the event menu (`3d`/`3d2`) when `useSegments()` includes `event/[eventId]`, and the Home menu (`3b`) otherwise. Screens open it from their own header. `EventTabs` is deleted.
+- **Wizards** hold their step in state. `beforeRemove`/`BackHandler` steps back and dismisses only from step 1. `5a` import success jumps to `5d` by setting the step.
+- **Collapsing cover**: the feed owns an absolutely positioned header driven by Reanimated `useAnimatedScrollHandler`, collapsing from `3c` to `3c3`.
+- **Pending invite**: when signed out, `7a` Join stores `{ code, participantId? }` in SecureStore and routes to `welcome`. When the `(app)` guard opens, the join runs and the app replaces into `event/[eventId]`.
+- **Harvested components**:
+  - `Avatar`, `ParticipantAvatar`, `GarlandButton` and `GarlandField` stay as they are.
+  - `ParticipantRow` gains a present-count prop.
+  - `PeopleDrawer` keeps its list only, which becomes the people section of the event drawer.
+  - `PresentTile` renders `ImageRef`: an upload uses the `400` derivative and an illustration uses the bundled asset.
+  - `GiftRow` stays.
+  - Old screens (`add-gift.tsx`, `gift.tsx`, `person.tsx`, `join-event.tsx`, `event/[eventId].tsx`) are deleted.
+
+### 4.3 Deep links
+
+- v1 slice: `prezentowo://e/<code>`.
+- Once Universal Links and App Links land: `https://prezentowo.pl/e/<code>`, with the app's associated domains set in `app.json`.
+- Invite share text always uses the current best form.
+
+---
+
+## 5. Mobile — screens → contract
+
+| Screens | Reads | Writes | Notes |
+|---|---|---|---|
+| `3a` Home | `events.mine`, `activity.recentForUser`, `notifications.mine` (bell dot = unread count) | — | The bell shows only our notifications, never Stream's unread count. |
+| `3b` Home drawer | — | — | Rows: Profile, Notifications, sign out, language. |
+| `3c`–`3c4` feed | `events.byId`, `gifts.byEvent`, `activity.byEvent` | — | "X of Y have a buyer" is computed client-side. |
+| `3d`/`3d2` event drawer | `events.byId`, `gifts.byEvent` (counts) | — | Counts are shown for everyone in `3d` and for the beneficiary only in `3d2`. Includes "＋ Invite people" (share link). |
+| `3e`/`3f` person | `gifts.byEvent` | `gifts.claim`/`unclaim` | `3f` groups the list into own wishes and suggested by others. Chat recap: §7. |
+| `1e` detail | `gifts.byEvent` | claim/unclaim, `gifts.update` (creator), `gifts.remove` | |
+| `4a`–`4e` create | — | `events.create`, `POST /api/images` | `4e` appears only for many-to-one. Stock backgrounds in `4c` follow [Stock backgrounds and present illustrations](https://github.com/ziarno/prezentowo-rn/issues/31). |
+| `6a` edit | `invites.forEvent` | `events.update`, `events.removeParticipant`, `events.delete` (confirm dialog), `invites.rotate` | Type and beneficiary rows are disabled once gifts exist. |
+| `5a`–`5d` add | — | `gifts.importLink`, `POST /api/images`, `gifts.add` | See the link-import outcomes below. |
+| `7a` invite | `invites.byCode` | `events.join`, `invites.ignore` | Renders signed out. The placeholder list ends with "no, I'm new". Offline: a blocking error. |
+| Notifications | `notifications.mine` | `notifications.markAllRead` on open | `invite-deferred` → `7a` (code derived live from the event's `InviteDoc`), `suggestion-claimed` → `1e`, `participant-joined` → `3c`. |
+| `8a`/`8b` chat | `chatThreads.byEvent`, `stream.token` | Stream | Connect lazily, only when a chat screen opens. |
+| Profile | current user | `profile.name`, `profile.avatar` | Unchanged. |
+
+Link-import outcomes on `5a`–`5d`:
+- **success** → `5d` with the **import review hint**: a field note per `missing` entry, plus one generic "double-check" note. The hint is client-only.
+- **unreadable** → stay on `5a` with the URL kept in the link field and a one-line inline note. The note is shop-named when `blockedShop` is set.
+- **infra-failure** → the same inline treatment plus "Try again".
+
+**i18n:** every UI slice adds its own `en` and `pl` keys under `src/localization/locales`. No slice leaves a hard-coded string.
+
+---
+
+## 6. Mobile — sync layer, offline cache and queue — [#18](https://github.com/ziarno/prezentowo-rn/issues/18), [#19](https://github.com/ziarno/prezentowo-rn/issues/19), [#22](https://github.com/ziarno/prezentowo-rn/issues/22), [#27](https://github.com/ziarno/prezentowo-rn/issues/27), [ADR 0001](adr/0001-stay-on-meteor.md), [ADR 0004](adr/0004-read-mostly-offline.md)
+
+### 6.1 Sync layer (built before any feature)
+
+- The layer lives in `src/sync/` and is the **only** importer of `@meteorrn/core`, enforced with an ESLint `no-restricted-imports` rule. `src/api/*` and hooks go through it. The existing `@meteorrn/core` patch stays.
+- It fixes the four confirmed defects ([#22](https://github.com/ziarno/prezentowo-rn/issues/22)):
+  - **(A)** No method call is dropped when the socket closes; unsent calls are retained and resent.
+  - **(B)** Nothing is sent or replayed before the resume-token login completes.
+  - **(C)** Every call has a timeout (default 15 s) and rejects with a typed `NetworkError`, so nothing hangs forever.
+  - **(D)** Reconnect wipes the collections. The layer re-subscribes and exposes each subscription's `ready` state so the UI doesn't flash empty. Once the cache exists (§6.2), it replaces rather than merges.
+- It exposes `status: 'connected' | 'offline'` for the banner.
+
+### 6.2 Encrypted cache (after the features)
+
+- `expo-sqlite` with SQLCipher, **encrypted from the first write**. The key is random and stored in SecureStore.
+- It mirrors exactly what the publications send. On reconnect it **replaces per subscription**, never merges, and has no TTL.
+- A full wipe on sign-out. Any event absent from a fresh `events.mine` is wiped on reconnect.
+- `SplashScreenController.tsx` stops gating on DDP. The splash holds only until fonts, onboarding state and the cache are ready.
+
+### 6.3 Offline queue
+
+- Only `gifts.add`, `gifts.claim` and `gifts.unclaim` queue. The queue is persisted in the same encrypted DB and replayed in order after login resumes.
+- A queued `gifts.add` carries a `clientId` and any photo as a local file URI. On replay, the photo is uploaded first, then `gifts.add` runs with the resulting `ImageRef`.
+- A replay rejected by the server marks the entry **failed**. Failed entries stay flagged across reconnects until the user discards them. There is no retry.
+- Every other write is disabled while offline: dimmed, not hidden. An invite tap offline is a blocking error.
+
+### 6.4 Offline UI — Variant A ([#27](https://github.com/ziarno/prezentowo-rn/issues/27))
+
+- **Banner:** an ink strip under the status bar that pushes content down. It reads "Offline — showing saved data", adding "· N waiting to send" when writes are queued.
+- **Pending add:** the row stays in its group, dimmed to about 55%, with a dashed tile and the caption "⏱ Will add when back online".
+- **Pending claim:** a dashed "🛍 You · ⏱" chip.
+- **Failed write:** a berry inset left rule, a caption, and an inline **Discard**.
+- The prototype is at `workspaces/mobile/prototypes/offline-ui-states.html` on branch `prototype/offline-ui-states`.
+
+---
+
+## 7. Chat UI — [#14](https://github.com/ziarno/prezentowo-rn/issues/14)
+
+- `stream-chat-expo` with a token provider backed by `stream.token`. `connectUser` runs only when `8a`/`8b` opens, never on app start, because billing counts MAU and peak connections.
+- `8b` is the event thread. `8a` is a person's secret thread and is opened from `3f`'s 💬 button. The recipient never has a button for their own thread.
+- Recap boxes (`3f`, `1e`) call `queryChannels({ type, members: { $in: [userId] } }, …, { state: false, watch: false, message_limit: 3 })` without `connectUser` where the SDK allows it. If it doesn't, the recap box is hidden until the viewer has opened chat once in the session. This is a build-time fallback, not a product change.
+- When Stream is unreachable, show a plain "can't load messages" state.
+
+---
+
+## 8. Scope boundaries
+
+**Out of scope for v1** (map "Out of scope"):
+- barcode import
+- event date reminders and any push transport
+- retheming
+- Settings screens (dark mode, Privacy & visibility)
+- chat offline support
+- combining the bell with Stream's unread count
+- `price`
+
+**Still being decided on the map** (the backlog slices that depend on them are blocked):
+- [Design the notifications screen](https://github.com/ziarno/prezentowo-rn/issues/28).
+- [Design the web invite landing page](https://github.com/ziarno/prezentowo-rn/issues/29): layout, copy, OG image.
+- [Who may delete a present](https://github.com/ziarno/prezentowo-rn/issues/30).
+- [Stock backgrounds and present illustrations](https://github.com/ziarno/prezentowo-rn/issues/31): `4c` and `5b`, count, style, location.
+
+**Calls made while consolidating** (mechanical consequences of locked decisions, not new product decisions — reopen on the map if any is wrong):
+- `CreateEventArgs` names the beneficiary by `beneficiaryIndex`, since participant ids are minted server-side.
+- The person route is keyed by `participantId`, not `userId` as #4 drew it — placeholders have no userId.
+- `events.join` takes `code`, not `eventId`, since #3 retired `eventId` as a join capability.
+- `gifts.add` takes an optional `clientId` so an offline replay after a lost acknowledgement can't duplicate the present.
+- An imported image is downloaded by the client and uploaded through the normal route, not fetched and stored by the server (§3.3).
+- An `Images` record per upload, deleted along with the files whenever the referencing gift/event drops it.
+- `1e`'s `✎ Edit` reopens the `add-gift` wizard in edit mode at `5d` (mirroring how `6a` reuses `create-event`), saving via `gifts.update`.
+- Caps: `activity.recentForUser` 3 per event (per `3a`), `notifications.mine` 50.
+- If Stream's SDK can't `queryChannels` without `connectUser`, recap boxes hide until chat has been opened once that session.
+
+**Existing data:** there is no production data. The dev database is wiped when the new contract lands (the present contract reset slice). No migration code is written.
+
+**Existing screens:** the shell slice deletes every old `(app)` screen at once. Until the feature slices land, the app is signed-in-but-empty. This is accepted, since there are no users.
+
+---
+
+## 9. Build order
+
+The backlog is the sub-issues of [Build Prezentowo v1](https://github.com/ziarno/prezentowo-rn/issues/32), each sized to one agent session, with native `blocked_by` edges. Each issue names its spec section, the wireframe ids it satisfies, its acceptance criteria, and its verification.
+
+**Verification bar (every slice):**
+- Mobile: `yarn workspace mobile lint`, then `yarn workspace mobile tsc --noEmit`, then an `agent-device` simulator walkthrough of the slice's screens with the backend running.
+- Backend: `yarn workspace backend tsc --noEmit` and `yarn workspace backend test`, with new Mocha tests for every rule the slice enforces (visibility, claim-quietly, creator-only checks, cascades).
+- Any `@prezentowo/types` change: **both** workspaces.
