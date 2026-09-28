@@ -1,4 +1,4 @@
-import { router, useNavigation } from 'expo-router'
+import { router, useNavigation, useRoute } from 'expo-router'
 import { DrawerActions } from 'expo-router/react-navigation'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -24,12 +24,17 @@ export function ScreenHeader({
 }: ScreenHeaderProps) {
   const { t } = useTranslation()
   const navigation = useNavigation()
+  const route = useRoute()
+  // Only this stack counts: `canGoBack()` also consults parent navigators, so
+  // it's true on Home itself. A screen's position in its stack never changes
+  // while it's mounted, so reading it once per render is enough.
+  const hasScreenBeneath = navigation.getState()?.routes[0]?.key !== route.key
 
   return (
     <View className="min-h-12 flex-row items-center gap-3 px-[22px] pb-2 pt-3.5">
       {variant === 'drawer' ? (
         <>
-          {navigation.canGoBack() ? (
+          {hasScreenBeneath ? (
             <Pressable
               onPress={() => router.back()}
               hitSlop={12}

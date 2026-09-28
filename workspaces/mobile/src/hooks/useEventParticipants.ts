@@ -1,13 +1,16 @@
 import Meteor from '@meteorrn/core'
-import type { EventDoc } from '@prezentowo/types'
 import { useEffect } from 'react'
 
+import { findEventById } from '@/api/events'
 import {
   type ResolvedParticipant,
   resolveParticipants,
 } from '@/api/participants'
-import { findUserById, subscribeToEventUsers } from '@/api/users'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
+import {
+  findUserById,
+  getCurrentUser,
+  subscribeToEventUsers,
+} from '@/api/users'
 
 export type EventParticipantsResult = {
   participants: ResolvedParticipant[]
@@ -16,12 +19,13 @@ export type EventParticipantsResult = {
 
 // Subscribes to the event's participant profiles and returns the participants
 // resolved to display names/avatars, plus a lookup by participant id.
+//
+// `Meteor.useTracker` keeps the closure from its first render (no deps), so
+// everything that changes is read reactively inside it; only `eventId` is
+// captured, and callers remount (`key={eventId}`) to switch events.
 export function useEventParticipants(
-  event: EventDoc | undefined,
+  eventId: string | undefined,
 ): EventParticipantsResult {
-  const user = useCurrentUser()
-  const eventId = event?._id
-
   useEffect(() => {
     if (!eventId) return
     const sub = subscribeToEventUsers(eventId)
@@ -29,8 +33,9 @@ export function useEventParticipants(
   }, [eventId])
 
   const participants = Meteor.useTracker(() => {
+    const event = eventId ? findEventById(eventId) : undefined
     if (!event) return [] as ResolvedParticipant[]
-    return resolveParticipants(event, user?._id, findUserById)
+    return resolveParticipants(event, getCurrentUser()?._id, findUserById)
   })
 
   return {

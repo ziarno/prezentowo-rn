@@ -52,7 +52,9 @@ export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
         showsVerticalScrollIndicator={false}
       >
         {inEvent && eventId ? (
-          <EventMenu eventId={eventId} go={go} />
+          // Keyed so switching events remounts it: its Meteor trackers keep
+          // the eventId they were first rendered with.
+          <EventMenu key={eventId} eventId={eventId} go={go} />
         ) : (
           <HomeMenu go={go} />
         )}
@@ -132,7 +134,7 @@ function HomeMenu({ go }: MenuProps) {
 function EventMenu({ eventId, go }: MenuProps & { eventId: string }) {
   const { t } = useTranslation()
   const event = useEventById(eventId)
-  const { participants } = useEventParticipants(event)
+  const { participants } = useEventParticipants(eventId)
 
   return (
     <>
