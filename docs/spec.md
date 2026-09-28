@@ -19,10 +19,24 @@ Change `workspaces/types/src/index.ts` **before** either side ships code that de
 ```ts
 export type ImageRef =
   | { kind: 'upload'; id: string }       // self-hosted upload, see §3.1
-  | { kind: 'illustration'; id: string } // bundled stock key, e.g. "p3"
+  | { kind: 'illustration'; id: string } // bundled stock key, e.g. "p3" or "b2"
 ```
 
 There is no `provider` field.
+
+**Stock art** — [#31](https://github.com/ziarno/prezentowo-rn/issues/31). `kind` says where the bytes live, not what they depict, so presents and backgrounds share `'illustration'` and are told apart by id prefix:
+
+```ts
+export const PRESENT_ILLUSTRATION_IDS = ['p1', /* … */ 'p40'] as const    // GiftDoc.image
+export const BACKGROUND_ILLUSTRATION_IDS = ['b1', /* … */ 'b10'] as const // EventDoc.background
+```
+
+- Both lists are append-only: an id is never reused or renumbered. The server rejects an `illustration` id that isn't in the list for its field (`gifts.add|update` take `p*`, `events.create|update` take `b*`).
+- Everything is bundled in the app, never served. New art ships with a release.
+- **Presents**: `p1`–`p20` are the existing paid stock art, ids unchanged. About 20 more (`p21`+, about 40 in total) are drawn in-house to match. Sources are SVG in `assets/images/presents/src/`. Only a 600 px PNG export ships, and the 150/200/800/1000 px variants are dropped.
+- **Backgrounds**: about 10 in-house SVG patterns in the garland palette, 2 or 3 of them occasion motifs (Christmas, birthday). They're rendered at runtime with `react-native-svg` and must keep the `3c` title, date and countdown legible.
+- **Fallback**: an empty `image`/`background`, or an id this build doesn't bundle (an older client reading newer data), renders a stable pseudo-random pick from the matching list, hashed from the gift/event `_id`. It's computed at render time and never stored, so an empty field stays distinguishable from a chosen one.
+- The art direction is settled by [Prototype the in-house stock backgrounds and new present illustrations](https://github.com/ziarno/prezentowo-rn/issues/66) before the build slice draws the full set.
 
 ### 1.2 Events — [#2](https://github.com/ziarno/prezentowo-rn/issues/2), [#13](https://github.com/ziarno/prezentowo-rn/issues/13)
 
@@ -331,7 +345,7 @@ src/app/
   - `Avatar`, `ParticipantAvatar`, `GarlandButton` and `GarlandField` stay as they are.
   - `ParticipantRow` gains a present-count prop.
   - `PeopleDrawer` keeps its list only, which becomes the people section of the event drawer.
-  - `PresentTile` renders `ImageRef`: an upload uses the `400` derivative and an illustration uses the bundled asset.
+  - `PresentTile` renders `ImageRef`: an upload uses the `400` derivative and an illustration uses the bundled asset, and an empty or unknown one the fallback (§1.1).
   - `GiftRow` stays.
   - Old screens (`add-gift.tsx`, `gift.tsx`, `person.tsx`, `join-event.tsx`, `event/[eventId].tsx`) are deleted.
 
@@ -354,7 +368,7 @@ src/app/
 | `3d`/`3d2` event drawer | `events.byId`, `gifts.byEvent` (counts) | — | Counts are shown for everyone in `3d` and for the beneficiary only in `3d2`. Includes "＋ Invite people" (share link). |
 | `3e`/`3f` person | `gifts.byEvent` | `gifts.claim`/`unclaim` | `3f` groups the list into own wishes and suggested by others. Chat recap: §7. |
 | `1e` detail | `gifts.byEvent` | claim/unclaim, `gifts.update` (creator), `gifts.remove` (gift creator or event creator) | Delete always goes through a confirm dialog, which adds "N people claimed this" only when the viewer's copy carries `claimedBy` (never for the recipient's own self-added gift). |
-| `4a`–`4e` create | — | `events.create`, `POST /api/images` | `4e` appears only for many-to-one. Stock backgrounds in `4c` follow [Stock backgrounds and present illustrations](https://github.com/ziarno/prezentowo-rn/issues/31). |
+| `4a`–`4e` create | — | `events.create`, `POST /api/images` | `4e` appears only for many-to-one. `4c` and `5b` share one picker grid: "Upload photo" first, then the stock tiles (§1.1), with a ring on the selected tile. No pick in `4c`, or Skip in `5b`, leaves the field empty. `6a` reuses the grid and adds "Remove". |
 | `6a` edit | `invites.forEvent` | `events.update`, `events.removeParticipant`, `events.delete` (confirm dialog), `invites.rotate` | Type and beneficiary rows are disabled once gifts exist. |
 | `5a`–`5d` add | — | `gifts.importLink`, `POST /api/images`, `gifts.add` | See the link-import outcomes below. |
 | `7a` invite | `invites.byCode` | `events.join`, `invites.ignore` | Renders signed out. The placeholder list ends with "no, I'm new". Offline: a blocking error. |
@@ -428,7 +442,7 @@ Link-import outcomes on `5a`–`5d`:
 - `price`
 
 **Still being decided on the map** (the backlog slices that depend on them are blocked):
-- [Stock backgrounds and present illustrations](https://github.com/ziarno/prezentowo-rn/issues/31): `4c` and `5b`, count, style, location.
+- [Prototype the in-house stock backgrounds and new present illustrations](https://github.com/ziarno/prezentowo-rn/issues/66): the art direction for the in-house backgrounds and presents.
 
 **Calls made while consolidating** (mechanical consequences of locked decisions, not new product decisions — reopen on the map if any is wrong):
 - `CreateEventArgs` names the beneficiary by `beneficiaryIndex`, since participant ids are minted server-side.
