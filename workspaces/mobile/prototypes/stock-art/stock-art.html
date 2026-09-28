@@ -1,0 +1,277 @@
+<!doctype html>
+<!--
+  PROTOTYPE — throwaway. Lives on branch prototype/stock-art only.
+  Question (issue #66): can in-house vector art sit next to the stock presents
+  and fit the garland palette?
+    · Covers: 10 draft backgrounds (b1–b10) behind the 3c cover and the
+      collapsed 3c3 header, with a real title, date and countdown over them.
+      ← → or the bottom bar cycles backgrounds (?bg=b1…b10). ?text= switches
+      the legibility treatment (bare | scrim | card).
+    · Presents: 6 draft presents (p21–p26, 600 px PNGs from ./presents,
+      regenerate with gen_presents.py) shuffled in among p1–p20.
+  Open by double-clicking — no build, no server.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stock art prototype</title>
+<link rel="stylesheet" href="font.css" />
+<style>
+  :root {
+    --paper:#fffaf2; --paper2:#f5ede0; --ink:#1d1a14; --ink60:rgba(29,26,20,.6);
+    --ink40:rgba(29,26,20,.4); --ink15:rgba(29,26,20,.15); --ink08:rgba(29,26,20,.08);
+    --green:#2f5b3a; --amber:#c7973d; --berry:#9a3a25;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#e9e4da; font:14px/1.35 -apple-system, system-ui, sans-serif; color:var(--ink); padding:16px 16px 90px; }
+  .controls { max-width:1100px; margin:0 auto 12px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .controls b { font-size:12px; color:#555; margin:0 4px 0 10px; }
+  .controls b:first-child { margin-left:0; }
+  .controls button { font:inherit; font-size:12px; padding:6px 10px; border-radius:6px; border:1px solid #bbb; background:#fff; cursor:pointer; }
+  .controls button.on { background:#222; color:#fff; border-color:#222; }
+  .note { max-width:1100px; margin:0 auto 14px; font-size:12px; color:#555; }
+  .stage { display:flex; gap:28px; justify-content:center; flex-wrap:wrap; }
+  .cap { text-align:center; font-size:11px; color:#666; margin-top:6px; }
+
+  /* phone */
+  .phone { width:360px; height:720px; background:var(--paper); border-radius:36px; border:10px solid #111; position:relative; overflow:hidden; }
+  .cover { position:relative; overflow:hidden; }
+  .cover > svg.bg { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .cover .layer { position:relative; height:100%; display:flex; flex-direction:column; }
+  .status { height:28px; flex:none; display:flex; justify-content:space-between; padding:6px 20px 0; font-size:11px; font-weight:600; }
+  .chip { width:34px; height:34px; border-radius:17px; display:grid; place-items:center; font-size:16px; background:rgba(255,250,242,.88); color:var(--ink); flex:none; }
+  .topbar { display:flex; justify-content:space-between; padding:6px 14px; }
+  .people { display:flex; }
+  .people i { width:26px; height:26px; border-radius:13px; border:2px solid var(--paper); margin-left:-8px; display:block; }
+  .t-title { font-family:Foglihten, Georgia, serif; line-height:1.02; }
+  .big .t-title { font-size:40px; }
+  .meta { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; font-size:13px; font-weight:600; margin-top:8px; }
+  .count { padding:3px 9px; border-radius:10px; background:var(--green); color:var(--paper); font-size:12px; }
+  .textblock { margin-top:auto; padding:0 18px 18px; }
+  /* tone-aware text colour for bare + scrim */
+  .tone-light .textblock, .tone-light .mini { color:var(--ink); }
+  .tone-dark .textblock, .tone-dark .mini, .tone-dark .status { color:var(--paper); }
+  .tone-dark .count { background:var(--paper); color:var(--green); }
+  /* scrim */
+  .text-scrim.tone-light .scrim { background:linear-gradient(to bottom, rgba(255,250,242,0) 25%, rgba(255,250,242,.92) 85%); }
+  .text-scrim.tone-dark  .scrim { background:linear-gradient(to bottom, rgba(29,26,20,0) 25%, rgba(29,26,20,.7) 90%); }
+  .text-scrim.tone-light.collapsed .scrim { background:rgba(255,250,242,.8); }
+  .text-scrim.tone-dark.collapsed .scrim { background:rgba(29,26,20,.55); }
+  .scrim { position:absolute; inset:0; }
+  /* card */
+  .text-card .textblock .inner { background:var(--paper); color:var(--ink); padding:12px 14px; border-radius:14px; box-shadow:0 2px 10px rgba(0,0,0,.12); display:inline-block; max-width:100%; }
+  .text-card .count { background:var(--green); color:var(--paper); }
+  .text-card .mini .inner { background:var(--paper); color:var(--ink); padding:5px 10px; border-radius:10px; }
+  /* collapsed header */
+  .mini { display:flex; align-items:center; gap:10px; padding:4px 14px 12px; }
+  .mini .inner { min-width:0; }
+  .mini .t-title { font-size:22px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mini .sub { font-size:11px; font-weight:600; opacity:.85; }
+  /* feed under the cover */
+  .feed { padding:14px 16px; }
+  .feed h4 { margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink60); }
+  .buyer { font-size:12px; color:var(--ink60); margin-bottom:10px; }
+  .row { display:flex; gap:10px; align-items:center; padding:9px 0; border-bottom:1px solid var(--ink08); }
+  .row .av { width:32px; height:32px; border-radius:16px; flex:none; }
+  .row .tx { flex:1; font-size:13px; }
+  .row .tm { font-size:11px; color:var(--ink40); }
+  .row img { width:36px; height:36px; background:var(--paper2); border-radius:8px; padding:3px; }
+
+  /* picker strip */
+  .strip { max-width:1100px; margin:22px auto 0; display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:12px; }
+  .thumb { cursor:pointer; border-radius:12px; overflow:hidden; outline:3px solid transparent; outline-offset:2px; background:#fff; }
+  .thumb.on { outline-color:var(--green); }
+  .thumb .cover { height:96px; }
+  .thumb .lbl { font-size:11px; padding:5px 8px; display:flex; justify-content:space-between; }
+  .thumb .lbl em { font-style:normal; color:var(--berry); }
+
+  /* presents */
+  .pgrid { max-width:1100px; margin:0 auto; display:grid; gap:12px; }
+  .pgrid.s56 { grid-template-columns:repeat(auto-fill, 56px); }
+  .pgrid.s120 { grid-template-columns:repeat(auto-fill, 120px); }
+  .pgrid.s220 { grid-template-columns:repeat(auto-fill, 220px); }
+  .ptile { background:var(--paper2); border-radius:12px; display:grid; place-items:center; position:relative; }
+  .ptile img { width:88%; height:88%; object-fit:contain; }
+  .ptile .id { position:absolute; left:6px; top:4px; font-size:10px; color:var(--ink40); }
+  .ptile .id, .s56 .ptile .id { display:none; }
+  .reveal .ptile .id { display:block; }
+  .reveal .ptile.new { outline:3px solid var(--berry); outline-offset:1px; }
+  .reveal .ptile.new .id { color:var(--berry); font-weight:700; display:block; }
+  .panel { max-width:1100px; margin:0 auto 18px; background:var(--paper); padding:14px; border-radius:14px; }
+
+  /* switcher */
+  .switcher { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); display:flex; align-items:center; gap:8px; background:#111; color:#fff; padding:8px 10px; border-radius:999px; box-shadow:0 6px 20px rgba(0,0,0,.3); font-size:13px; z-index:10; }
+  .switcher button { background:#333; color:#fff; border:0; width:32px; height:32px; border-radius:16px; font-size:16px; cursor:pointer; }
+  .switcher span { min-width:220px; text-align:center; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <b>View</b>
+  <button data-set="view=covers">Covers</button>
+  <button data-set="view=presents">Presents</button>
+  <span data-for="covers" style="display:contents">
+    <b>Text</b>
+    <button data-set="text=bare">Bare</button>
+    <button data-set="text=scrim">Scrim</button>
+    <button data-set="text=card">Paper card</button>
+    <b>Event</b>
+    <button data-set="ev=0">Wigilia</button>
+    <button data-set="ev=1">Urodziny</button>
+    <button data-set="ev=2">Long title</button>
+  </span>
+  <span data-for="presents" style="display:contents">
+    <b>Order</b>
+    <button data-set="order=shuffled">Shuffled</button>
+    <button data-set="order=ordered">p1 → p26</button>
+    <b>Size</b>
+    <button data-set="size=56">56 (list)</button>
+    <button data-set="size=120">120</button>
+    <button data-set="size=220">220 (5d-ish)</button>
+    <b></b>
+    <button data-toggle="reveal">Reveal new ones</button>
+  </span>
+</div>
+
+<section data-for="covers">
+  <div class="note">Draft backgrounds b1–b10 in the garland palette. b1–b7 are neutral, b8–b10 occasion motifs. The pattern draws at the same scale in both headers, as <code>react-native-svg</code> would. Judge the title, date, countdown, the ☰ chip and the avatars, then flip <b>Text</b>.</div>
+  <div class="stage">
+    <div><div class="phone" id="ph-big"></div><div class="cap">3c — cover</div></div>
+    <div><div class="phone" id="ph-mini"></div><div class="cap">3c3 — scrolled, collapsed</div></div>
+  </div>
+  <div class="strip" id="strip"></div>
+</section>
+
+<section data-for="presents">
+  <div class="note">p1–p20 are the paid stock art. Six in-house drafts (p21–p26) are mixed in. Can you spot them before revealing? Rendered as 600 px PNG in <code>PresentTile</code>'s paper2 tile at 88%.</div>
+  <div class="panel"><div class="pgrid" id="pgrid"></div></div>
+</section>
+
+<div class="switcher" id="sw"><button id="prev">←</button><span id="swl"></span><button id="next">→</button></div>
+
+<script>
+const C = { paper:'#fffaf2', paper2:'#f5ede0', ink:'#1d1a14', green:'#2f5b3a', amber:'#c7973d', berry:'#9a3a25' };
+let uid = 0;
+const wrap = (fill, defs, extra='') => { return `<svg class="bg" xmlns="http://www.w3.org/2000/svg">${defs}<rect width="100%" height="100%" fill="${fill}"/>${extra}</svg>`; };
+const pat = (id, w, h, body, tr='') => `<defs><pattern id="${id}" width="${w}" height="${h}" patternUnits="userSpaceOnUse" ${tr ? `patternTransform="${tr}"` : ''}>${body}</pattern></defs>`;
+
+// Each background: tone decides text colour for bare/scrim. Pure rect/circle/path/polygon + <pattern>, all react-native-svg-safe.
+const BGS = [
+  { id:'b1', name:'Dots', tone:'light', svg(){ const p='p'+(uid++); return wrap(C.paper, pat(p,28,28,
+      `<circle cx="7" cy="7" r="3.6" fill="${C.green}"/><circle cx="21" cy="21" r="3.6" fill="${C.green}"/>`),
+      `<rect width="100%" height="100%" fill="url(#${p})" opacity=".55"/>`); } },
+  { id:'b2', name:'Candy stripe', tone:'light', svg(){ const p='p'+(uid++); return wrap(C.paper, pat(p,34,34,
+      `<rect width="15" height="34" fill="${C.amber}" opacity=".45"/>`, 'rotate(45)'),
+      `<rect width="100%" height="100%" fill="url(#${p})"/>`); } },
+  { id:'b3', name:'Confetti', tone:'light', svg(){ const p='p'+(uid++);
+      const bits = [
+        ['r',12,14,10,5,20,'green'],['c',44,30,4,0,0,'berry'],['s',70,12,0,0,15,'amber'],['r',110,26,10,5,-35,'berry'],
+        ['c',128,64,3.5,0,0,'green'],['r',86,56,9,5,60,'amber'],['s',24,58,0,0,-20,'berry'],['c',58,84,4.5,0,0,'amber'],
+        ['r',20,108,10,5,-15,'amber'],['s',98,100,0,0,40,'green'],['c',132,120,4,0,0,'berry'],['r',60,124,9,5,30,'green'],
+        ['c',8,84,3,0,0,'green'],['r',120,96,8,4,10,'berry']];
+      const b = bits.map(([k,x,y,a,b2,rot,col]) => k==='c' ? `<circle cx="${x}" cy="${y}" r="${a}" fill="${C[col]}"/>`
+        : k==='r' ? `<rect x="${x}" y="${y}" width="${a}" height="${b2}" rx="1.5" fill="${C[col]}" transform="rotate(${rot} ${x} ${y})"/>`
+        : `<path d="M${x} ${y} q5 -6 10 0 t10 0" fill="none" stroke="${C[col]}" stroke-width="2.5" stroke-linecap="round" transform="rotate(${rot} ${x} ${y})"/>`).join('');
+      return wrap(C.paper, pat(p,140,140,b), `<rect width="100%" height="100%" fill="url(#${p})" opacity=".8"/>`); } },
+  { id:'b4', name:'Bunting', tone:'light', svg(){ const p='p'+(uid++);
+      const y = x => { const t = x/160; return 10 + 60*t*(1-t); };
+      const cols = [C.berry, C.green, C.amber, C.green, C.berry];
+      const flags = [16,48,80,112,144].map((x,i) => { const y0=y(x-9), y1=y(x+9); return `<polygon points="${x-9},${y0} ${x+9},${y1} ${x},${(y0+y1)/2+22}" fill="${cols[i]}"/>`; }).join('');
+      return wrap(C.paper, pat(p,160,64,`<path d="M0 10 Q80 40 160 10" fill="none" stroke="${C.ink}" stroke-opacity=".35" stroke-width="1.4"/>${flags}`),
+        `<rect width="100%" height="100%" fill="url(#${p})" opacity=".75"/>`); } },
+  { id:'b5', name:'Evergreen field', tone:'dark', svg(){ const p='p'+(uid++); return wrap(C.green, pat(p,10,10,
+      `<rect width="3" height="10" fill="#244a2e"/>`, 'rotate(35)'), `<rect width="100%" height="100%" fill="url(#${p})"/>`); } },
+  { id:'b6', name:'Gingham', tone:'light', svg(){ const p='p'+(uid++); return wrap(C.paper, pat(p,36,36,
+      `<rect width="18" height="36" fill="${C.green}" opacity=".16"/><rect width="36" height="18" fill="${C.green}" opacity=".16"/>`),
+      `<rect width="100%" height="100%" fill="url(#${p})"/>`); } },
+  { id:'b7', name:'Waves', tone:'light', svg(){ const p='p'+(uid++); return wrap(C.paper, pat(p,80,22,
+      `<path d="M0 11 Q20 1 40 11 T80 11" fill="none" stroke="${C.berry}" stroke-opacity=".45" stroke-width="2.6"/>`),
+      `<rect width="100%" height="100%" fill="url(#${p})"/>`); } },
+  { id:'b8', name:'Snowfall', tone:'dark', occasion:'Christmas', svg(){ const p='p'+(uid++);
+      const flake = (x,y,r,o) => `<g transform="translate(${x} ${y})" stroke="${C.paper}" stroke-opacity="${o}" stroke-width="1.6" stroke-linecap="round">${[0,60,120].map(a=>`<path d="M${-r} 0 L${r} 0" transform="rotate(${a})"/>`).join('')}</g>`;
+      const star = (x,y) => `<circle cx="${x}" cy="${y}" r="2.2" fill="${C.amber}"/>`;
+      return wrap(C.green, pat(p,120,120, flake(20,24,8,.9)+flake(78,14,5,.6)+flake(100,70,9,.85)+flake(44,88,6,.7)+flake(12,72,4,.5)+flake(72,108,5,.6)+star(56,46)+star(110,110)+star(28,120)+star(96,34)),
+        `<rect width="100%" height="100%" fill="url(#${p})"/>`); } },
+  { id:'b9', name:'Baubles', tone:'dark', occasion:'Christmas', svg(){ const p='p'+(uid++);
+      const bl = (x,len,r,col) => `<path d="M${x} 0 L${x} ${len}" stroke="${C.paper}" stroke-opacity=".5" stroke-width="1.2"/><rect x="${x-3}" y="${len-2}" width="6" height="5" fill="${C.amber}"/><circle cx="${x}" cy="${len+r+2}" r="${r}" fill="${col}"/><path d="M${x-r*.6} ${len+r} q${r*.3} ${-r*.3} ${r*.6} ${-r*.4}" stroke="${C.paper}" stroke-opacity=".6" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+      return wrap(C.berry, pat(p,120,150, bl(18,40,11,C.amber)+bl(52,78,9,C.green)+bl(84,24,12,C.paper)+bl(108,62,8,C.amber)),
+        `<rect width="100%" height="150" fill="url(#${p})"/>`); } },
+  { id:'b10', name:'Balloons', tone:'light', occasion:'Birthday', svg(){ const p='p'+(uid++);
+      const ba = (x,y,col,rot) => `<g transform="rotate(${rot} ${x} ${y})"><path d="M${x} ${y+26} q-5 12 2 22 t-2 22" fill="none" stroke="${C.ink}" stroke-opacity=".3" stroke-width="1.2"/><ellipse cx="${x}" cy="${y}" rx="17" ry="21" fill="${col}"/><polygon points="${x-3},${y+22} ${x+3},${y+22} ${x},${y+18}" fill="${col}"/><ellipse cx="${x-6}" cy="${y-8}" rx="4" ry="6" fill="#fff" opacity=".35"/></g>`;
+      const sp = (x,y,r,col) => `<rect x="${x}" y="${y}" width="7" height="2.6" rx="1.3" fill="${col}" transform="rotate(${r} ${x} ${y})"/>`;
+      return wrap(C.paper, pat(p,150,150, ba(30,34,C.berry,-8)+ba(104,20,C.amber,6)+ba(74,104,C.green,-4)+ba(136,118,C.berry,10)+sp(66,40,30,C.green)+sp(14,110,-40,C.amber)+sp(120,76,60,C.berry)+sp(40,140,10,C.green)),
+        `<rect width="100%" height="100%" fill="url(#${p})" opacity=".85"/>`); } },
+];
+
+const EVENTS = [
+  { title:'Wigilia u babci', date:'Thu, 24 Dec', countdown:'87 days', people:8 },
+  { title:'Urodziny Kasi', date:'Sat, 7 Nov', countdown:'40 days', people:5 },
+  { title:'Mikołajki w biurze — dział sprzedaży', date:'Fri, 4 Dec', countdown:'67 days', people:14 },
+];
+const AV = ['#c7973d','#2f5b3a','#9a3a25','#6b8f71','#d9b77a'];
+
+const q = new URLSearchParams(location.search);
+const S = { view:q.get('view')||'covers', bg:q.get('bg')||'b1', text:q.get('text')||'scrim', ev:q.get('ev')||'0',
+            order:q.get('order')||'shuffled', size:q.get('size')||'120', reveal:q.get('reveal')==='1' };
+function push(){ const u=new URLSearchParams(); for (const [k,v] of Object.entries(S)) u.set(k, typeof v==='boolean' ? (v?'1':'0') : v); history.replaceState(null,'','?'+u); render(); }
+
+function coverHTML(bg, ev, collapsed){
+  const people = `<div class="people">${AV.slice(0,4).map(c=>`<i style="background:${c}"></i>`).join('')}</div>`;
+  const cls = `cover tone-${bg.tone} text-${S.text} ${collapsed?'collapsed':''}`;
+  if (collapsed) return `<div class="${cls}" style="height:92px">${bg.svg()}<div class="scrim"></div><div class="layer">
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="mini"><div class="chip">☰</div><div class="inner"><div class="t-title">${ev.title}</div><div class="sub">${ev.date} · ${ev.countdown} to go</div></div></div></div></div>`;
+  return `<div class="${cls} big" style="height:300px">${bg.svg()}<div class="scrim"></div><div class="layer">
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="topbar"><div class="chip">☰</div>${people}</div>
+      <div class="textblock"><div class="inner"><div class="t-title">${ev.title}</div>
+        <div class="meta"><span>${ev.date}</span><span class="count">${ev.countdown} to go</span><span>${ev.people} people</span></div></div></div></div></div>`;
+}
+function feedHTML(n){
+  const rows = [['Ola','added <b>Kubek termiczny</b> for Babcia','2h','p12'],['Marek','claimed a present for Tomek','5h',null],
+                ['Zosia','joined the event','1d',null],['Tomek','added <b>Słuchawki</b> for Ola','2d','p24'],['Babcia','added <b>Szal</b>','3d','p7'],
+                ['Kasia','claimed a present for Marek','4d',null],['Ola','added <b>Puzzle</b> for Zosia','5d','p26']].slice(0,n);
+  const src = id => +id.slice(1) > 20 ? `presents/${id}-600px.png` : `../../assets/images/presents/${id}-600px.png`;
+  return `<div class="feed"><h4>Activity</h4><div class="buyer">5 of 8 have a buyer</div>${rows.map(([who,what,t,img],i)=>`
+    <div class="row"><div class="av" style="background:${AV[i%5]}"></div><div class="tx"><b>${who}</b> ${what}</div>${img?`<img src="${src(img)}">`:''}<div class="tm">${t}</div></div>`).join('')}</div>`;
+}
+function renderCovers(){
+  const bg = BGS.find(b=>b.id===S.bg) || BGS[0], ev = EVENTS[+S.ev];
+  document.getElementById('ph-big').innerHTML = coverHTML(bg, ev, false) + feedHTML(5);
+  document.getElementById('ph-mini').innerHTML = coverHTML(bg, ev, true) + feedHTML(7);
+  document.getElementById('strip').innerHTML = BGS.map(b => `<div class="thumb ${b.id===bg.id?'on':''}" data-bg="${b.id}">
+      <div class="cover tone-${b.tone} text-${S.text}">${b.svg()}<div class="scrim"></div><div class="layer"><div class="textblock" style="padding:0 10px 8px"><div class="inner"><div class="t-title" style="font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ev.title}</div></div></div></div></div>
+      <div class="lbl"><span>${b.id} · ${b.name}</span>${b.occasion?`<em>${b.occasion}</em>`:''}</div></div>`).join('');
+  document.querySelectorAll('.thumb').forEach(t => t.onclick = () => { S.bg = t.dataset.bg; push(); });
+  document.getElementById('swl').textContent = `${bg.id} — ${bg.name}${bg.occasion ? ' · '+bg.occasion : ''}`;
+}
+// fixed shuffle so reloads keep the same order
+const SHUF = [3,22,15,8,25,1,19,11,24,6,13,21,17,2,9,26,14,5,20,23,10,4,16,12,18,7];
+function renderPresents(){
+  const ids = S.order==='ordered' ? Array.from({length:26},(_,i)=>i+1) : SHUF;
+  const g = document.getElementById('pgrid');
+  g.className = `pgrid s${S.size} ${S.reveal?'reveal':''}`;
+  g.innerHTML = ids.map(n => `<div class="ptile ${n>20?'new':''}" style="width:${S.size}px;height:${S.size}px"><span class="id">p${n}</span>
+      <img src="${n>20 ? `presents/p${n}-600px.png` : `../../assets/images/presents/p${n}-600px.png`}"></div>`).join('');
+}
+function render(){
+  document.querySelectorAll('[data-for]').forEach(el => el.hidden = el.dataset.for !== S.view);
+  document.getElementById('sw').hidden = S.view !== 'covers';
+  document.querySelectorAll('[data-set]').forEach(b => { const [k,v]=b.dataset.set.split('='); b.classList.toggle('on', S[k]===v); });
+  document.querySelectorAll('[data-toggle]').forEach(b => b.classList.toggle('on', !!S[b.dataset.toggle]));
+  S.view==='covers' ? renderCovers() : renderPresents();
+}
+document.querySelectorAll('[data-set]').forEach(b => b.onclick = () => { const [k,v]=b.dataset.set.split('='); S[k]=v; push(); });
+document.querySelectorAll('[data-toggle]').forEach(b => b.onclick = () => { S[b.dataset.toggle]=!S[b.dataset.toggle]; push(); });
+const step = d => { const i = BGS.findIndex(b=>b.id===S.bg); S.bg = BGS[(i+d+BGS.length)%BGS.length].id; push(); };
+document.getElementById('prev').onclick = () => step(-1);
+document.getElementById('next').onclick = () => step(1);
+addEventListener('keydown', e => { if (S.view!=='covers' || e.target.closest('input,textarea,[contenteditable]')) return;
+  if (e.key==='ArrowLeft') step(-1); if (e.key==='ArrowRight') step(1); });
+render();
+</script>
+</body>
+</html>
