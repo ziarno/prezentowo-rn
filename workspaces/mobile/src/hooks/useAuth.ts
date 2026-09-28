@@ -20,6 +20,9 @@ type LoginWithDevAccountParams = {
   onError: (err: MeteorError) => void
 }
 
+// What the `login` DDP method resolves with.
+type LoginResult = { id: string; token: string }
+
 type SignOutParams = {
   onError: (err: MeteorError) => void
 }
@@ -77,10 +80,7 @@ export const useAuth = () => {
           selector: { email: normalizeEmail(email) },
           token: normalizeToken(token),
         },
-        (
-          err: MeteorError | undefined,
-          result: { id: string; token: string },
-        ) => {
+        (err: MeteorError | undefined, result: LoginResult) => {
           if (err) return onError(err)
           Meteor._handleLoginCallback(null, result)
           onSuccess()
@@ -94,10 +94,7 @@ export const useAuth = () => {
       Meteor.call(
         'login',
         { devLogin: true },
-        (
-          err: MeteorError | undefined,
-          result: { id: string; token: string },
-        ) => {
+        (err: MeteorError | undefined, result: LoginResult) => {
           if (err) return onError(err)
           Meteor._handleLoginCallback(null, result)
         },

@@ -30,7 +30,8 @@ async function devLoginHandler(options: DevLoginOptions) {
  */
 export function registerDevLogin(isDevelopment: boolean) {
   if (!isDevelopment) return
-  // accounts-base awaits handlers; @types/meteor still types them as sync.
+  // accounts-base (3.3.1, _runLoginHandlers) awaits handlers; @types/meteor
+  // still types them as sync.
   Accounts.registerLoginHandler(
     'devLogin',
     devLoginHandler as unknown as (options: DevLoginOptions) => undefined,
