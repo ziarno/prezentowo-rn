@@ -79,6 +79,12 @@ function RootNavigator() {
       <Stack.Protected guard={showApp}>
         <Stack.Screen name="(app)" />
       </Stack.Protected>
+
+      {/* 7a invite: reachable signed in or out, so it sits outside the guards. */}
+      <Stack.Screen
+        name="e/[code]"
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
     </Stack>
   )
 }

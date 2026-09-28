@@ -80,89 +80,13 @@
     "cancel": "Anuluj",
     "accept": "Zatwierdź"
   },
-  "events": {
-    "brand": "Prezentowo",
-    "yourEvents": "Twoje wydarzenia",
-    "empty": "Brak ereigneń. Kliknij przycisk +, aby utworzyć pierwsze.",
-    "peopleCount": "{{personCount}} osób"
-  },
-  "createEvent": {
-    "cancel": "Anuluj",
-    "headerTitle": "Nowe wydarzenie",
-    "create": "Utwórz",
-    "title": "Nowe wydarzenie.",
-    "titleLabel": "Tytuł",
-    "titlePlaceholder": "Nazwij swoje wydarzenie",
-    "dateLabel": "Data",
-    "datePlaceholder": "24 grudnia 2026",
-    "peopleCount": "Osoby · {{peopleCount}}",
-    "participantPlaceholder": "Imię, e-mail lub @użytkownik…",
-    "add": "Dodaj",
-    "placeholderInfo": "Zastępcze imiona pozwalają planować dla osób, które nie są jeszcze na Prezentowo. Każdy, z kim podzielisz się linkiem zaproszenia, może przejąć zastępcze miejsce.",
-    "host": "— gospodarz",
-    "placeholderRole": "Zastępczy · można go przejąć poprzez link zaproszenia"
-  },
-  "join": {
-    "invitedTo": "Zostałeś zaproszony na",
-    "signInToJoin": "Zaloguj się, aby dołączyć do tego wydarzenia.",
-    "signInToContinue": "Zaloguj się, aby kontynuować",
-    "areYouOneOfThese": "Czy jesteś jedną z tych osób?",
-    "placeholderNotClaimed": "Zastępczy · jeszcze nie przejęty",
-    "addMeAsNew": "Dodaj mnie jako nową osobę",
-    "joinTheEvent": "Dołącz do wydarzenia"
-  },
   "eventDetail": {
-    "tabEvent": "Wydarzenie",
-    "tabChat": "Czat",
-    "tabActivity": "Aktywność",
-    "tabGifts": "Prezenty",
-    "tabPeople": "Osoby",
-    "you": "— ty",
-    "forName": "Dla {{name}}",
-    "invite": "Zaproś",
-    "peopleGifts": "{{people}} osób · {{gifts}} prezentów",
-    "onYourWishlist": "{{count}} na Twojej liście",
-    "giftsClaimed": "{{count}} prezentów · {{claimed}} przejętych",
-    "noGifts": "Brak prezentów. Kliknij +, aby dodać pierwszy."
-  },
-  "person": {
-    "yourWishlist": "Twoja lista",
-    "theirWishlist": "Lista: {{name}}",
-    "giftsClaimed": "{{count}} prezentów · {{claimed}} przejętych",
-    "secretHint": "{{name}} nie widzi, kto co przejął.",
-    "empty": "Ta lista jest jeszcze pusta.",
-    "emptyYours": "Twoja lista jest pusta. Kliknij +, aby dodać prezent."
+    "forName": "Dla {{name}}"
   },
   "giftDetail": {
-    "loading": "Wczytywanie prezentu…",
     "open": "Wolny",
     "claimed": "Przejęty",
-    "claimedCount": "Przejęty · {{count}}",
-    "forName": "Dla {{name}}",
-    "forNamePrice": "Dla {{name}} · {{price}}",
-    "claimThis": "Przejmij ten prezent",
-    "unclaim": "Zrezygnuj",
-    "onYourWishlist": "Ten prezent jest na Twojej liście — inni przejmują go po cichu, więc nie zobaczysz kto.",
-    "edit": "Edytuj prezent"
-  },
-  "addGift": {
-    "cancel": "Anuluj",
-    "newTitle": "Nowy prezent",
-    "editTitle": "Edytuj prezent",
-    "save": "Zapisz",
-    "heading": "Co chcesz podarować?",
-    "fieldTitle": "Tytuł",
-    "titlePlaceholder": "Wełniany koc",
-    "fieldFor": "Dla",
-    "fieldDescription": "Opis (opcjonalnie)",
-    "descriptionPlaceholder": "Coś miękkiego do kącika do czytania.",
-    "fieldPrice": "Cena",
-    "pricePlaceholder": "~80 zł",
-    "fieldLink": "Link",
-    "linkPlaceholder": "lutowy.pl",
-    "secretHint": "{{name}} nie zobaczy tego prezentu, nawet po otwarciu wydarzenia.",
-    "suggested": "Sugestie wydarzenia",
-    "pickRecipient": "Wybierz, dla kogo jest ten prezent."
+    "claimedCount": "Przejęty · {{count}}"
   },
   "profile": {
     "friend": "Znajomy",
@@ -183,5 +107,28 @@
     "securitySub": "Magiczny link · Google",
     "about": "O Prezentowo",
     "signOut": "Wyloguj się"
+  },
+  "shell": {
+    "home": "Prezentowo",
+    "backHome": "Strona główna",
+    "profile": "Profil",
+    "notifications": "Powiadomienia",
+    "createEvent": "Nowe wydarzenie",
+    "activity": "Aktywność",
+    "editEvent": "Edytuj wydarzenie",
+    "chat": "Czat",
+    "eventChat": "Czat wydarzenia",
+    "addPresent": "Dodaj prezent",
+    "person": "Prezenty",
+    "personChat": "Czat o prezentach",
+    "present": "Prezent",
+    "invite": "Zaproszenie",
+    "people": "Osoby",
+    "invitePeople": "Zaproś osoby",
+    "you": "— ty",
+    "comingSoon": "Już wkrótce.",
+    "openMenu": "Otwórz menu",
+    "back": "Wstecz",
+    "close": "Zamknij"
   }
 }

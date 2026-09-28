@@ -1,4 +1,3 @@
-import { router } from 'expo-router'
 import type { ComponentType, ReactNode } from 'react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -10,7 +9,6 @@ import {
   BellIcon,
   CalendarIcon,
   ChevronIcon,
-  CloseIcon,
   GlobeIcon,
   HeartIcon,
   LockIcon,
@@ -28,6 +26,7 @@ import {
   AvatarPickerModal,
   type AvatarPickerModalHandle,
 } from '@/ui/components/AvatarPickerModal'
+import { ScreenHeader } from '@/ui/components/ScreenHeader'
 
 type IconComponent = ComponentType<{
   width?: number
@@ -62,16 +61,16 @@ export function ProfileScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
-      <View className="flex-row items-center justify-between px-[22px] pb-2 pt-3.5">
-        <Pressable hitSlop={12}>
-          <Text className="text-sm text-garland-ink-60">
-            {t('profile.edit')}
-          </Text>
-        </Pressable>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <CloseIcon width={22} height={22} color={garland.ink} />
-        </Pressable>
-      </View>
+      <ScreenHeader
+        title={t('shell.profile')}
+        right={
+          <Pressable hitSlop={12}>
+            <Text className="text-sm text-garland-ink-60">
+              {t('profile.edit')}
+            </Text>
+          </Pressable>
+        }
+      />
 
       <ScrollView
         className="flex-1"
