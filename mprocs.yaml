@@ -8,3 +8,17 @@ procs:
     shell: "yarn workspace mobile start"
     stop:
       send-keys: ["<C-c>"]
+
+  "mobile - iOS build":
+    shell: "yarn run ios"
+    cwd: "<CONFIG_DIR>/workspaces/mobile"
+    autostart: false
+    stop:
+      send-keys: ["<C-c>"]
+
+  "mobile - Android build":
+    shell: "yarn run android"
+    cwd: "<CONFIG_DIR>/workspaces/mobile"
+    autostart: false
+    stop:
+      send-keys: ["<C-c>"]
