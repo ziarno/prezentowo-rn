@@ -31,7 +31,13 @@ The rule that a suggested gift is invisible to its recipient entirely, not merel
 The rule that a gift's claim state is always hidden from its recipient — self-added or suggested alike — so a recipient never learns who is buying their gift, or that it is being bought at all. Distinct from the own-list visibility rule: this one governs claim state, not the gift's existence, and applies even to gifts the recipient can see.
 
 **`ImageRef`**:
-The shape of `GiftDoc.image` (and `AddGiftArgs`/`UpdateGiftArgs`): a discriminated union, `{ kind: 'upload'; id } | { kind: 'illustration'; id }`. `'upload'` points at a self-hosted, session-authenticated upload with three fixed derivatives generated at upload time; `'illustration'` reuses today's bundled stock-illustration keys (e.g. `"p3"`). Carries no `provider` field — there is currently only one upload provider, so a discriminant with a single live value would be dead weight; add it back only if a second provider is ever introduced.
+The shape of `GiftDoc.image` (and `AddGiftArgs`/`UpdateGiftArgs`): a discriminated union, `{ kind: 'upload'; id } | { kind: 'illustration'; id }`. `'upload'` points at a self-hosted, session-authenticated upload with three fixed derivatives generated at upload time; `'illustration'` points at **stock art** bundled in the app. The kind names where the bytes live, not what they depict. Carries no `provider` field — there is currently only one upload provider, so a discriminant with a single live value would be dead weight; add it back only if a second provider is ever introduced.
+
+**Stock art**:
+The images Prezentowo offers instead of an upload ("or use one of ours"): **present illustrations** for a gift's image, and **stock backgrounds** for an event's cover. It's always bundled with the app, never uploaded, and each piece has a permanent id: a letter for its role (`p` for presents, `b` for backgrounds) plus a number that is never reused.
+
+**Fallback art**:
+The stock art shown when a gift or event has no image (or one this version of the app doesn't have). It's picked from the gift's or event's identity, so it always looks the same for that gift or event, but it isn't stored. The field stays empty, and "no image chosen" stays distinguishable from a chosen one.
 
 **Notification**:
 An account-level record telling one user something they personally need to catch up on — distinct from an activity item, which is a per-event record the whole room can see. Keyed on `userId`, never `EventParticipant.id`, because the person being notified may not be a participant of the relevant event at all (someone who ignored an invite hasn't joined). Carries its own read/unread state and a `kind` discriminant, following the same denormalized-snapshot pattern as an activity item — but the two are separate collections, since a notification's per-viewer mutable state does not belong bolted onto an append-only shared log.
