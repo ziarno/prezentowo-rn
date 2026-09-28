@@ -9,7 +9,10 @@ type ParticipantRowProps = {
   name: string
   avatarKey?: string
   color?: string
-  subtitle: string
+  subtitle?: string
+  // How many presents are listed for this person; omitted where the count
+  // isn't shown (e.g. non-beneficiaries in a many-to-one event, `3d2`).
+  presentCount?: number
   isYou?: boolean
   youLabel?: string
   onPress?: () => void
@@ -20,6 +23,7 @@ export function ParticipantRow({
   avatarKey,
   color,
   subtitle,
+  presentCount,
   isYou = false,
   youLabel,
   onPress,
@@ -47,8 +51,15 @@ export function ParticipantRow({
             </Text>
           ) : null}
         </View>
-        <Text className="mt-0.5 text-xs text-garland-ink-60">{subtitle}</Text>
+        {subtitle ? (
+          <Text className="mt-0.5 text-xs text-garland-ink-60">{subtitle}</Text>
+        ) : null}
       </View>
+      {presentCount !== undefined ? (
+        <Text className="text-[13px] font-bold text-garland-ink-60">
+          {presentCount}
+        </Text>
+      ) : null}
       <ArrowRightIcon width={20} height={20} color={garland.ink40} />
     </Pressable>
   )

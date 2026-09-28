@@ -44,8 +44,9 @@ yarn workspace backend tsc --noEmit       # backend type check (not scripted)
 
 - Router entry: `workspaces/mobile/src/app` — NOT default `app/`
 - Route guards: `workspaces/mobile/src/app/_layout.tsx`
-- Authenticated stack: `workspaces/mobile/src/app/(app)/*`
-- Modal vs push: `workspaces/mobile/src/app/(app)/_layout.tsx`
+- Authenticated shell: `workspaces/mobile/src/app/(app)/_layout.tsx` is a Drawer with one screen, the `(stack)` group; its menu is `src/ui/drawer/AppDrawerContent.tsx`
+- Authenticated stack: `workspaces/mobile/src/app/(app)/(stack)/*`
+- Modal vs push: `workspaces/mobile/src/app/(app)/(stack)/_layout.tsx`
 - `@/*` alias maps to both `./src/*` and `./*` — see `workspaces/mobile/tsconfig.json` and `babel.config.js`
 - DDP connects at module load: `workspaces/mobile/src/hooks/useConnection.ts` using `workspaces/mobile/config.json`
 - Auth/onboarding stored in Expo SecureStore

@@ -156,6 +156,16 @@ export function HeartIcon(props: IconProps) {
   )
 }
 
+export function PencilIcon(props: IconProps) {
+  return (
+    <StrokeIcon
+      {...props}
+      strokeWidth={1.6}
+      d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"
+    />
+  )
+}
+
 export function HamburgerIcon(props: IconProps) {
   return <StrokeIcon {...props} strokeWidth={1.8} d="M4 7h16M4 12h16M4 17h16" />
 }

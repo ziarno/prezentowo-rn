@@ -1,28 +1,24 @@
-import { Stack } from 'expo-router'
+import { Drawer } from 'expo-router/drawer'
 
+import { garland } from '@/constants/colors'
+import { AppDrawerContent } from '@/ui/drawer/AppDrawerContent'
+
+// A single drawer screen wrapping the whole authenticated Stack in `(stack)/`,
+// so every screen shares one drawer whose menu follows the current route (see
+// AppDrawerContent). Screens open it from their own header; edge-swipe stays
+// off so it never fights the stack's swipe-back gesture.
 export default function AppLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="profile" options={{ animation: 'ios_from_left' }} />
-      <Stack.Screen
-        name="create-event"
-        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
-      />
-      <Stack.Screen
-        name="join-event"
-        options={{ animation: 'slide_from_right' }}
-      />
-      <Stack.Screen
-        name="event/[eventId]"
-        options={{ animation: 'slide_from_right' }}
-      />
-      <Stack.Screen name="person" options={{ animation: 'slide_from_right' }} />
-      <Stack.Screen name="gift" options={{ animation: 'slide_from_right' }} />
-      <Stack.Screen
-        name="add-gift"
-        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
-      />
-    </Stack>
+    <Drawer
+      drawerContent={props => <AppDrawerContent {...props} />}
+      screenOptions={{
+        headerShown: false,
+        drawerType: 'front',
+        swipeEnabled: false,
+        drawerStyle: { backgroundColor: garland.paper, width: '82%' },
+      }}
+    >
+      <Drawer.Screen name="(stack)" />
+    </Drawer>
   )
 }
