@@ -133,7 +133,7 @@ function HomeMenu({ go }: MenuProps) {
 
 function EventMenu({ eventId, go }: MenuProps & { eventId: string }) {
   const { t } = useTranslation()
-  const event = useEventById(eventId)
+  const { event } = useEventById(eventId)
   const { participants } = useEventParticipants(eventId)
 
   return (

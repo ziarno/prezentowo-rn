@@ -1,7 +1,6 @@
-import Meteor from '@meteorrn/core'
-
 import { type CurrentUser, getCurrentUser } from '@/api/users'
+import { useTracker } from '@/sync'
 
 export function useCurrentUser(): CurrentUser | undefined {
-  return Meteor.useTracker(() => getCurrentUser())
+  return useTracker(() => getCurrentUser())
 }

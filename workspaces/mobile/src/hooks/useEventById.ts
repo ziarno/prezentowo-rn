@@ -1,17 +1,16 @@
-import Meteor from '@meteorrn/core'
 import type { EventDoc } from '@prezentowo/types'
-import { useEffect } from 'react'
 
-import { findEventById, subscribeToEventById } from '@/api/events'
+import { findEventById } from '@/api/events'
+import { useSubscription, useTracker } from '@/sync'
 
-export function useEventById(eventId: string | undefined): EventDoc | undefined {
-  useEffect(() => {
-    if (!eventId) return
-    const sub = subscribeToEventById(eventId)
-    return () => sub.stop()
-  }, [eventId])
-
-  return Meteor.useTracker(() =>
-    eventId ? findEventById(eventId) : undefined,
+export function useEventById(eventId: string | undefined): {
+  event: EventDoc | undefined
+  ready: boolean
+} {
+  const ready = useSubscription('events.byId', eventId ? [eventId] : null)
+  const event = useTracker(
+    () => (eventId ? findEventById(eventId) : undefined),
+    [eventId],
   )
+  return { event, ready }
 }

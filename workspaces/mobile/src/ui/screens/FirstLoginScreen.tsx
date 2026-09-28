@@ -1,4 +1,3 @@
-import type { MeteorError } from '@meteorrn/core'
 import { useFormik } from 'formik'
 import { useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
@@ -11,6 +10,7 @@ import { updateUser } from '@/api/users'
 import plusIconAsset from '@/assets/svg/plus-icon.svg'
 import { Text } from '@/components/ui/text'
 import { type AvatarKey, avatar } from '@/constants/avatars'
+import { errorMessage } from '@/localization/errorMessage'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AuthField } from '@/ui/components/AuthField'
 import { Avatar } from '@/ui/components/Avatar'
@@ -48,13 +48,11 @@ export function FirstLoginScreen() {
           setFirstLoginPending(false)
           setSubmitting(false)
         })
-        .catch((err: MeteorError) => {
+        .catch((err: unknown) => {
           setSubmitting(false)
           setFieldError(
             'name',
-            err.reason ??
-              err.error?.toString() ??
-              t('common.somethingWentWrong'),
+            errorMessage(err, t('common.somethingWentWrong')),
           )
         })
     },

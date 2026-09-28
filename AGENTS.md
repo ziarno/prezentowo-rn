@@ -26,6 +26,7 @@ yarn workspace mobile format              # format mobile
 yarn workspace backend format             # format backend
 yarn workspace backend test               # backend tests
 yarn workspace backend test-app           # backend full-app watch tests
+yarn workspace mobile test                # mobile Jest tests (Node only; sync layer vs a fake DDP server)
 yarn workspace mobile tsc --noEmit        # mobile type check (not scripted)
 yarn workspace backend tsc --noEmit       # backend type check (not scripted)
 ```
@@ -50,7 +51,7 @@ yarn workspace backend tsc --noEmit       # backend type check (not scripted)
 - `@/*` alias maps to both `./src/*` and `./*` — see `workspaces/mobile/tsconfig.json` and `babel.config.js`
 - DDP connects at module load: `workspaces/mobile/src/hooks/useConnection.ts` using `workspaces/mobile/config.json`
 - Auth/onboarding stored in Expo SecureStore
-- Mobile talks to Meteor via `@meteorrn/core`, `ddp.sub`, and `Mongo.Collection` in `workspaces/mobile/src/api/*`
+- `workspaces/mobile/src/sync/` is the **only** importer of `@meteorrn/core` (ESLint `no-restricted-imports` enforces it). Everything else — `src/api/*`, hooks, screens — imports `@/sync`: `call` (15 s timeout, rejects with `NetworkError`), `subscribe`/`useSubscription` (re-subscribed after every reconnect, with `ready`), `collection`, `useTracker`, `useSyncStatus`, and the account helpers. See `docs/spec.md` §6.1
 
 ## Meteor / types quirks
 
@@ -73,7 +74,7 @@ yarn workspace backend tsc --noEmit       # backend type check (not scripted)
 
 ## Verify before done
 
-- Mobile edit → `yarn workspace mobile lint` → `yarn workspace mobile tsc --noEmit` if types touched
+- Mobile edit → `yarn workspace mobile lint` → `yarn workspace mobile tsc --noEmit` if types touched → `yarn workspace mobile test` if `src/sync/` touched
 - Backend edit → `yarn workspace backend tsc --noEmit` → `yarn workspace backend test`
 - Shared types / API contract → verify BOTH workspaces. Root scripts won't do it for you.
 

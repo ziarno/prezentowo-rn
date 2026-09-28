@@ -1,17 +1,10 @@
-import Meteor from '@meteorrn/core'
-import { useEffect } from 'react'
+import { type EventListItem, findMyEvents } from '@/api/events'
+import { useSubscription, useTracker } from '@/sync'
 
-import {
-  type EventListItem,
-  findMyEvents,
-  subscribeToMyEvents,
-} from '@/api/events'
-
-export function useMyEvents(): EventListItem[] {
-  useEffect(() => {
-    const sub = subscribeToMyEvents()
-    return () => sub.stop()
-  }, [])
-
-  return Meteor.useTracker(() => findMyEvents())
+// `ready` is false until the list has arrived, including after every
+// reconnect — show a loading state, not an empty list, while it is.
+export function useMyEvents(): { events: EventListItem[]; ready: boolean } {
+  const ready = useSubscription('events.mine', [])
+  const events = useTracker(() => findMyEvents())
+  return { events, ready }
 }

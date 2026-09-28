@@ -9,6 +9,7 @@ import backArrowAsset from '@/assets/svg/back-arrow.svg'
 import sendIconAsset from '@/assets/svg/send-icon.svg'
 import { Text } from '@/components/ui/text'
 import { useAuth } from '@/hooks/useAuth'
+import { errorMessage } from '@/localization/errorMessage'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AuthField } from '@/ui/components/AuthField'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
@@ -57,9 +58,7 @@ export function CheckEmailScreen() {
       token: code,
       onSuccess: () => setCode(''),
       onError: err =>
-        setCodeError(
-          err.reason ?? err.error?.toString() ?? t('checkEmail.codeDidntWork'),
-        ),
+        setCodeError(errorMessage(err, t('checkEmail.codeDidntWork'))),
     })
   }
 

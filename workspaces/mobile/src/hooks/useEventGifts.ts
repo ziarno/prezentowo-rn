@@ -1,17 +1,16 @@
-import Meteor from '@meteorrn/core'
 import type { GiftDoc } from '@prezentowo/types'
-import { useEffect } from 'react'
 
-import { findGiftsByEvent, subscribeToEventGifts } from '@/api/gifts'
+import { findGiftsByEvent } from '@/api/gifts'
+import { useSubscription, useTracker } from '@/sync'
 
-export function useEventGifts(eventId: string | undefined): GiftDoc[] {
-  useEffect(() => {
-    if (!eventId) return
-    const sub = subscribeToEventGifts(eventId)
-    return () => sub.stop()
-  }, [eventId])
-
-  return Meteor.useTracker(() =>
-    eventId ? findGiftsByEvent(eventId) : ([] as GiftDoc[]),
+export function useEventGifts(eventId: string | undefined): {
+  gifts: GiftDoc[]
+  ready: boolean
+} {
+  const ready = useSubscription('gifts.byEvent', eventId ? [eventId] : null)
+  const gifts = useTracker(
+    () => (eventId ? findGiftsByEvent(eventId) : []),
+    [eventId],
   )
+  return { gifts, ready }
 }

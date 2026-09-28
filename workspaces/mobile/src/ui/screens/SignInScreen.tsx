@@ -9,6 +9,7 @@ import * as Yup from 'yup'
 import backArrowAsset from '@/assets/svg/back-arrow.svg'
 import { Text } from '@/components/ui/text'
 import { useAuth } from '@/hooks/useAuth'
+import { errorMessage } from '@/localization/errorMessage'
 import { AuthField } from '@/ui/components/AuthField'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LanguageChangeButton } from '@/ui/components/LanguageChangeButton'
@@ -45,10 +46,7 @@ export function SignInScreen() {
         onError: err => {
           setSubmitting(false)
           setErrors({
-            email:
-              err.reason ??
-              err.error?.toString() ??
-              t('common.somethingWentWrong'),
+            email: errorMessage(err, t('common.somethingWentWrong')),
           })
         },
       })

@@ -1,8 +1,7 @@
-import Meteor from '@meteorrn/core'
 import type { GiftDoc } from '@prezentowo/types'
-import { useEffect } from 'react'
 
-import { findGiftById, subscribeToEventGifts } from '@/api/gifts'
+import { findGiftById } from '@/api/gifts'
+import { useSubscription, useTracker } from '@/sync'
 
 // Subscribes via the event's gift list (which enforces the recipient-secrecy
 // rule), then picks out the single gift. `eventId` is required to open the
@@ -10,12 +9,11 @@ import { findGiftById, subscribeToEventGifts } from '@/api/gifts'
 export function useGiftById(
   giftId: string | undefined,
   eventId: string | undefined,
-): GiftDoc | undefined {
-  useEffect(() => {
-    if (!eventId) return
-    const sub = subscribeToEventGifts(eventId)
-    return () => sub.stop()
-  }, [eventId])
-
-  return Meteor.useTracker(() => (giftId ? findGiftById(giftId) : undefined))
+): { gift: GiftDoc | undefined; ready: boolean } {
+  const ready = useSubscription('gifts.byEvent', eventId ? [eventId] : null)
+  const gift = useTracker(
+    () => (giftId ? findGiftById(giftId) : undefined),
+    [giftId],
+  )
+  return { gift, ready }
 }

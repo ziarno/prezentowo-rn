@@ -5,7 +5,8 @@
     "skip": "Skip",
     "continue": "Continue",
     "getStarted": "Get started",
-    "language": "Language"
+    "language": "Language",
+    "networkError": "Couldn't reach the server. Check your connection and try again."
   },
   "onboarding": {
     "page1": {

@@ -5,7 +5,8 @@
     "skip": "Pomiń",
     "continue": "Dalej",
     "getStarted": "Zaczynajmy",
-    "language": "Język"
+    "language": "Język",
+    "networkError": "Nie udało się połączyć z serwerem. Sprawdź połączenie i spróbuj ponownie."
   },
   "onboarding": {
     "page1": {

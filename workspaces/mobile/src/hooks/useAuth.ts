@@ -1,33 +1,43 @@
-import Meteor, { type MeteorError } from '@meteorrn/core'
-import { useCallback, useEffect } from 'react'
+import { useEffect } from 'react'
 
 import { useAuthStore } from '@/store/useAuthStore'
+import {
+  type LoginResult,
+  type MeteorError,
+  type NetworkError,
+  authToken,
+  call,
+  completeLogin,
+  loggingIn,
+  logout,
+  onLogin,
+  useTracker,
+} from '@/sync'
+
+// Calls reject with the server's error, or a `NetworkError` when the server
+// couldn't be reached in time.
+export type AuthError = MeteorError | NetworkError
 
 type RequestMagicLinkParams = {
   email: string
   onSuccess: () => void
-  onError: (err: MeteorError) => void
+  onError: (err: AuthError) => void
 }
 
 type LoginWithMagicTokenParams = {
   email: string
   token: string
   onSuccess: () => void
-  onError: (err: MeteorError) => void
+  onError: (err: AuthError) => void
 }
 
 type LoginWithDevAccountParams = {
-  onError: (err: MeteorError) => void
+  onError: (err: AuthError) => void
 }
-
-// What the `login` DDP method resolves with.
-type LoginResult = { id: string; token: string }
 
 type SignOutParams = {
-  onError: (err: MeteorError) => void
+  onError: (err: AuthError) => void
 }
-
-const Data = Meteor.getData()
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase()
 const normalizeToken = (token: string) => token.trim().toUpperCase()
@@ -35,16 +45,9 @@ const normalizeToken = (token: string) => token.trim().toUpperCase()
 export const useAuth = () => {
   const setUserToken = useAuthStore(s => s.setUserToken)
   const setPendingEmail = useAuthStore(s => s.setPendingEmail)
-  const isLoading = Meteor.useTracker(() => Meteor.loggingIn() === true)
+  const isLoading = useTracker(() => loggingIn())
 
-  const onLogin = useCallback(() => {
-    setUserToken(Meteor.getAuthToken())
-  }, [setUserToken])
-
-  useEffect(() => {
-    Data.on('onLogin', onLogin)
-    return () => Data.off('onLogin', onLogin)
-  }, [onLogin])
+  useEffect(() => onLogin(() => setUserToken(authToken())), [setUserToken])
 
   return {
     isLoading,
@@ -55,58 +58,44 @@ export const useAuth = () => {
     }: RequestMagicLinkParams) => {
       const normalized = normalizeEmail(email)
       setPendingEmail(normalized)
-      Meteor.call(
-        'requestMagicLink',
-        { email: normalized },
-        (err: MeteorError | undefined) => {
-          if (err) return onError(err)
-          onSuccess()
-        },
-      )
+      call('requestMagicLink', { email: normalized }).then(onSuccess, onError)
     },
     // Finish the passwordless flow: hand the 6-digit token + email back to
     // accounts-passwordless via the standard `login` DDP method. On success
-    // `_handleLoginCallback` saves the auth token and fires `onLogin`, which
-    // writes the token to our Zustand store.
+    // `completeLogin` saves the auth token and fires `onLogin`, which writes
+    // the token to our Zustand store.
     loginWithMagicToken: ({
       email,
       token,
       onSuccess,
       onError,
     }: LoginWithMagicTokenParams) => {
-      Meteor.call(
-        'login',
-        {
-          selector: { email: normalizeEmail(email) },
-          token: normalizeToken(token),
-        },
-        (err: MeteorError | undefined, result: LoginResult) => {
-          if (err) return onError(err)
-          Meteor._handleLoginCallback(null, result)
-          onSuccess()
-        },
-      )
+      call<LoginResult>('login', {
+        selector: { email: normalizeEmail(email) },
+        token: normalizeToken(token),
+      }).then(result => {
+        completeLogin(result)
+        onSuccess()
+      }, onError)
     },
     // Development only: the backend registers a `{ devLogin: true }` login
     // handler under `Meteor.isDevelopment` that signs in as a fixed dev user
     // whose name is already set, so first-login is skipped.
     loginWithDevAccount: ({ onError }: LoginWithDevAccountParams) => {
-      Meteor.call(
-        'login',
-        { devLogin: true },
-        (err: MeteorError | undefined, result: LoginResult) => {
-          if (err) return onError(err)
-          Meteor._handleLoginCallback(null, result)
-        },
+      call<LoginResult>('login', { devLogin: true }).then(
+        completeLogin,
+        onError,
       )
     },
+    // The local session is cleared even when the server call fails.
     signOut: ({ onError }: SignOutParams) => {
-      Meteor.logout(err => {
-        if (err) {
-          return onError(err as MeteorError)
-        }
-        setUserToken(null)
-      })
+      logout().then(
+        () => setUserToken(null),
+        err => {
+          setUserToken(null)
+          onError(err)
+        },
+      )
     },
   }
 }
