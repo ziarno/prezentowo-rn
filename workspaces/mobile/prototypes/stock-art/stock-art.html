@@ -3,11 +3,11 @@
   PROTOTYPE — throwaway. Lives on branch prototype/stock-art only.
   Question (issue #66): can in-house vector art sit next to the stock presents
   and fit the garland palette?
-    · Covers: 10 draft backgrounds (b1–b10) behind the 3c cover and the
+    · Covers: 20 draft backgrounds (b1–b20) behind the 3c cover and the
       collapsed 3c3 header, with a real title, date and countdown over them.
-      ← → or the bottom bar cycles backgrounds (?bg=b1…b10). ?text= switches
+      ← → or the bottom bar cycles backgrounds (?bg=b1…b20). ?text= switches
       the legibility treatment (bare | scrim | card).
-    · Presents: 6 draft presents (p21–p26, 600 px PNGs from ./presents,
+    · Presents: 20 draft presents (p21–p40, 600 px PNGs from ./presents,
       regenerate with gen_presents.py) shuffled in among p1–p20.
   Open by double-clicking — no build, no server.
 -->
@@ -126,7 +126,7 @@
   <span data-for="presents" style="display:contents">
     <b>Order</b>
     <button data-set="order=shuffled">Shuffled</button>
-    <button data-set="order=ordered">p1 → p26</button>
+    <button data-set="order=ordered">p1 → p40</button>
     <b>Size</b>
     <button data-set="size=56">56 (list)</button>
     <button data-set="size=120">120</button>
@@ -137,7 +137,7 @@
 </div>
 
 <section data-for="covers">
-  <div class="note">Draft backgrounds b1–b10 in the garland palette. b1–b7 are neutral, b8–b10 occasion motifs. The pattern draws at the same scale in both headers, as <code>react-native-svg</code> would. Judge the title, date, countdown, the ☰ chip and the avatars, then flip <b>Text</b>.</div>
+  <div class="note">Draft backgrounds b1–b20 in the garland palette. Occasion motifs: b8 Snowfall, b9 Baubles, b18 Fir trees (Christmas); b10 Balloons, b19 Party hats (birthday). The rest are neutral. The pattern draws at the same scale in both headers, as <code>react-native-svg</code> would. Judge the title, date, countdown, the ☰ chip and the avatars, then flip <b>Text</b>.</div>
   <div class="stage">
     <div><div class="phone" id="ph-big"></div><div class="cap">3c — cover</div></div>
     <div><div class="phone" id="ph-mini"></div><div class="cap">3c3 — scrolled, collapsed</div></div>
@@ -146,7 +146,7 @@
 </section>
 
 <section data-for="presents">
-  <div class="note">p1–p20 are the paid stock art. Six in-house drafts (p21–p26) are mixed in. Can you spot them before revealing? Rendered as 600 px PNG in <code>PresentTile</code>'s paper2 tile at 88%.</div>
+  <div class="note">p1–p20 are the paid stock art. Twenty in-house drafts (p21–p40) are mixed in. Can you spot them before revealing? Rendered as 600 px PNG in <code>PresentTile</code>'s paper2 tile at 88%.</div>
   <div class="panel"><div class="pgrid" id="pgrid"></div></div>
 </section>
 
@@ -204,7 +204,46 @@ const BGS = [
       const sp = (x,y,r,col) => `<rect x="${x}" y="${y}" width="7" height="2.6" rx="1.3" fill="${col}" transform="rotate(${r} ${x} ${y})"/>`;
       return wrap(C.paper, pat(p,150,150, ba(30,34,C.berry,-8)+ba(104,20,C.amber,6)+ba(74,104,C.green,-4)+ba(136,118,C.berry,10)+sp(66,40,30,C.green)+sp(14,110,-40,C.amber)+sp(120,76,60,C.berry)+sp(40,140,10,C.green)),
         `<rect width="100%" height="100%" fill="url(#${p})" opacity=".85"/>`); } },
+  { id:'b11', name:'Stars', tone:'light', svg(){ const p='p'+(uid++);
+      const b = [[18,20,8,10],[64,14,5,-12],[46,56,9,22],[84,70,6,0],[16,78,5,30]].map(([x,y,r,rot])=>starP(x,y,r,rot,C.amber)).join('')
+        + [[38,30],[74,44],[30,98],[70,96]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2" fill="${C.green}"/>`).join('');
+      return wrap(C.paper, pat(p,100,110,b), `<rect width="100%" height="100%" fill="url(#${p})" opacity=".8"/>`); } },
+  { id:'b12', name:'Chevron', tone:'light', svg(){ const p='p'+(uid++); return wrap(C.paper, pat(p,40,26,
+      `<path d="M0 19 L20 7 L40 19" fill="none" stroke="${C.green}" stroke-opacity=".32" stroke-width="3.2" stroke-linejoin="round"/>`),
+      `<rect width="100%" height="100%" fill="url(#${p})"/>`); } },
+  { id:'b13', name:'Amber field', tone:'light', svg(){ const p='p'+(uid++); return wrap('#dcb56a', pat(p,30,30,
+      `<circle cx="7" cy="7" r="2.6" fill="${C.paper}" opacity=".5"/><circle cx="22" cy="22" r="2.6" fill="${C.paper}" opacity=".5"/>`),
+      `<rect width="100%" height="100%" fill="url(#${p})"/>`); } },
+  { id:'b14', name:'Berry pinstripe', tone:'dark', svg(){ const p='p'+(uid++); return wrap(C.berry, pat(p,18,18,
+      `<rect width="5" height="18" fill="#86301e"/>`), `<rect width="100%" height="100%" fill="url(#${p})"/>`); } },
+  { id:'b15', name:'Scallops', tone:'light', svg(){ const p='p'+(uid++); return wrap(C.paper, pat(p,40,40,
+      `<path d="M0 20 A20 20 0 0 1 40 20 M-20 40 A20 20 0 0 1 20 40 M20 40 A20 20 0 0 1 60 40" fill="none" stroke="${C.green}" stroke-opacity=".32" stroke-width="2.2"/>`),
+      `<rect width="100%" height="100%" fill="url(#${p})"/>`); } },
+  { id:'b16', name:'Hearts', tone:'light', svg(){ const p='p'+(uid++);
+      const h = (x,y,s,rot) => `<path transform="rotate(${rot} ${x} ${y})" d="M${x} ${y+s*.9} C${x-s*1.4} ${y} ${x-s*.9} ${y-s*.9} ${x} ${y-s*.3} C${x+s*.9} ${y-s*.9} ${x+s*1.4} ${y} ${x} ${y+s*.9}Z" fill="${C.berry}"/>`;
+      return wrap(C.paper, pat(p,64,64, h(16,16,7,-12)+h(48,48,7,14)), `<rect width="100%" height="100%" fill="url(#${p})" opacity=".5"/>`); } },
+  { id:'b17', name:'Night sky', tone:'dark', svg(){ const p='p'+(uid++);
+      const sp = (x,y,r) => `<path d="M${x} ${y-r} Q${x} ${y} ${x+r} ${y} Q${x} ${y} ${x} ${y+r} Q${x} ${y} ${x-r} ${y} Q${x} ${y} ${x} ${y-r}Z" fill="${C.paper}" opacity=".85"/>`;
+      const d = [[40,12],[96,40],[18,64],[70,92],[112,104],[52,118]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1.6" fill="${C.amber}"/>`).join('');
+      return wrap(C.ink, pat(p,130,130, sp(24,26,7)+sp(88,74,5)+sp(116,14,4)+sp(34,100,4)+d), `<rect width="100%" height="100%" fill="url(#${p})"/>`); } },
+  { id:'b18', name:'Fir trees', tone:'light', occasion:'Christmas', svg(){ const p='p'+(uid++);
+      const tree = (x,y,s) => `<rect x="${x-3*s}" y="${y+34*s}" width="${6*s}" height="${8*s}" fill="${C.berry}"/>`
+        + [0,11,22].map((o,i)=>`<polygon points="${x},${y+o*s} ${x+(10+i*5)*s},${y+(o+16)*s} ${x-(10+i*5)*s},${y+(o+16)*s}" fill="${C.green}"/>`).join('')
+        + `<circle cx="${x}" cy="${y-2*s}" r="${3*s}" fill="${C.amber}"/>`;
+      const snow = [[70,16],[14,60],[100,92],[44,104],[82,58]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2" fill="${C.green}" opacity=".35"/>`).join('');
+      return wrap(C.paper, pat(p,110,120, tree(28,14,1)+tree(82,66,.85)+snow), `<rect width="100%" height="100%" fill="url(#${p})" opacity=".85"/>`); } },
+  { id:'b19', name:'Party hats', tone:'light', occasion:'Birthday', svg(){ const p='p'+(uid++);
+      const hat = (x,y,col,rot) => `<g transform="rotate(${rot} ${x} ${y+20})"><polygon points="${x},${y} ${x+15},${y+40} ${x-15},${y+40}" fill="${col}"/>`
+        + `<path d="M${x-6} ${y+16} L${x+6} ${y+16} M${x-11} ${y+29} L${x+11} ${y+29}" stroke="${C.paper}" stroke-width="3"/><circle cx="${x}" cy="${y-2}" r="5" fill="${C.amber}"/></g>`;
+      const bit = (x,y,col,rot) => `<rect x="${x}" y="${y}" width="8" height="3" rx="1.5" fill="${col}" transform="rotate(${rot} ${x} ${y})"/>`;
+      return wrap(C.paper, pat(p,130,130, hat(28,14,C.berry,-10)+hat(96,64,C.green,12)+hat(40,84,C.amber,4)+bit(76,22,C.green,30)+bit(112,20,C.berry,-40)+bit(10,70,C.green,60)+bit(84,118,C.berry,10)),
+        `<rect width="100%" height="100%" fill="url(#${p})" opacity=".85"/>`); } },
+  { id:'b20', name:'Streamers', tone:'light', svg(){ const p='p'+(uid++);
+      const st = (x,y,col,rot) => `<path transform="rotate(${rot} ${x} ${y})" d="M${x} ${y} c8 -12 16 12 24 0 s16 12 24 0 s16 12 24 0" fill="none" stroke="${col}" stroke-width="3.4" stroke-linecap="round"/>`;
+      return wrap(C.paper, pat(p,160,140, st(10,24,C.berry,-8)+st(90,50,C.green,14)+st(24,96,C.amber,20)+st(100,118,C.berry,-18)),
+        `<rect width="100%" height="100%" fill="url(#${p})" opacity=".6"/>`); } },
 ];
+function starP(cx,cy,r,rot,fill){ const pts=[]; for (let i=0;i<10;i++){ const a=(rot-90+i*36)*Math.PI/180, rr=i%2?r*.45:r; pts.push(`${(cx+rr*Math.cos(a)).toFixed(1)},${(cy+rr*Math.sin(a)).toFixed(1)}`); } return `<polygon points="${pts.join(' ')}" fill="${fill}"/>`; }
 
 const EVENTS = [
   { title:'Wigilia u babci', date:'Thu, 24 Dec', countdown:'87 days', people:8 },
@@ -249,9 +288,9 @@ function renderCovers(){
   document.getElementById('swl').textContent = `${bg.id} — ${bg.name}${bg.occasion ? ' · '+bg.occasion : ''}`;
 }
 // fixed shuffle so reloads keep the same order
-const SHUF = [3,22,15,8,25,1,19,11,24,6,13,21,17,2,9,26,14,5,20,23,10,4,16,12,18,7];
+const SHUF = [39,10,24,9,13,2,38,8,37,11,18,22,25,33,21,4,35,1,36,30,14,31,12,27,3,23,26,40,34,15,6,32,7,17,19,29,16,28,20,5];
 function renderPresents(){
-  const ids = S.order==='ordered' ? Array.from({length:26},(_,i)=>i+1) : SHUF;
+  const ids = S.order==='ordered' ? Array.from({length:40},(_,i)=>i+1) : SHUF;
   const g = document.getElementById('pgrid');
   g.className = `pgrid s${S.size} ${S.reveal?'reveal':''}`;
   g.innerHTML = ids.map(n => `<div class="ptile ${n>20?'new':''}" style="width:${S.size}px;height:${S.size}px"><span class="id">p${n}</span>

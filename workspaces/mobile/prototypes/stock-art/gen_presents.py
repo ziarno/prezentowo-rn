@@ -1,4 +1,4 @@
-# PROTOTYPE — throwaway (issue #66). Writes draft in-house presents p21–p26 as
+# PROTOTYPE — throwaway (issue #66). Writes draft in-house presents p21–p40 as
 # SVG into ./presents/, then exports each to a transparent 600 px PNG with
 # headless Chrome, the same render path the app would bundle.
 #   python3 gen_presents.py
@@ -9,11 +9,11 @@ OUT = HERE / "presents"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 
-def star(cx, cy, r, rot=0):
+def star(cx, cy, r, rot=0, inner=0.45):
     pts = []
     for i in range(10):
         a = math.radians(rot - 90 + i * 36)
-        rr = r if i % 2 == 0 else r * 0.45
+        rr = r if i % 2 == 0 else r * inner
         pts.append(f"{cx + rr * math.cos(a):.1f},{cy + rr * math.sin(a):.1f}")
     return f'<polygon points="{" ".join(pts)}"/>'
 
@@ -137,6 +137,165 @@ P["p26"] = svg(
     '<circle cx="226" cy="284" r="8" fill="#233f80"/><circle cx="294" cy="284" r="8" fill="#233f80"/>'
     '<circle cx="306" cy="284" r="8" fill="#233f80"/><circle cx="374" cy="284" r="8" fill="#233f80"/>'
     + heart(300, 430, 42).replace('"/>', '" fill="#ec2b6c"/>'), 1.19, 300, 326, -4)
+
+# p27 — red tube with yellow spiral bands, blue ribbon
+tube = "M220 200 L380 200 L380 540 A80 20 0 0 1 220 540Z"
+bands = "".join(f'<rect x="{x}" y="-200" width="26" height="1000" transform="rotate(-62 300 370)"/>' for x in range(-400, 1000, 64))
+P["p27"] = svg(
+    f'<defs><clipPath id="c"><path d="{tube}"/></clipPath></defs>'
+    f'<path d="{tube}" fill="#e0252b"/><g clip-path="url(#c)" fill="#ffc61a">{bands}</g>'
+    '<ellipse cx="300" cy="200" rx="80" ry="20" fill="#f25a4d"/>'
+    '<path d="M288 184 L312 184 L312 559 L288 559Z" fill="#2c6cd4"/>'
+    + bow(300, 190, "#2c6cd4", .9), 1.15, 300, 325, 3)
+
+# p28 — flat wide sky-blue plaid box, lime cross ribbon
+body = "M90 330 L510 322 L514 500 L86 508Z"
+plaid = ("".join(f'<rect x="{x}" y="0" width="30" height="600" fill="#fff" opacity=".2"/>' for x in range(100, 520, 80))
+         + "".join(f'<rect x="0" y="{y}" width="600" height="22" fill="#fff" opacity=".2"/>' for y in (350, 440))
+         + "".join(f'<rect x="{x}" y="0" width="4" height="600" fill="#1d4f8f" opacity=".35"/>' for x in range(140, 520, 80)))
+P["p28"] = svg(
+    f'<defs><clipPath id="c"><path d="{body}"/></clipPath></defs>'
+    f'<path d="{body}" fill="#3fa9e8"/><g clip-path="url(#c)">{plaid}'
+    '<rect x="0" y="398" width="600" height="32" fill="#9ccb38"/></g>'
+    '<path d="M78 296 L522 288 L524 340 L76 348Z" fill="#2585c9"/>'
+    '<path d="M282 292 L322 291 L324 504 L280 506Z" fill="#9ccb38"/>'
+    + bow(302, 290, "#9ccb38", 1.3, 15), 1.25, 300, 340, 2)
+
+# p29 — orange cube in three-quarter view, purple ribbon over the faces
+P["p29"] = svg(
+    '<polygon points="180,230 290,285 290,530 180,470" fill="#f47a1e"/>'
+    '<polygon points="290,285 440,240 440,480 290,530" fill="#d85f0e"/>'
+    '<polygon points="180,230 330,190 440,240 290,285" fill="#ffa24a"/>'
+    '<polygon points="224.3,252.1 245.7,262.9 245.7,505.4 224.3,494.6" fill="#8a4bb0"/>'
+    '<polygon points="353.5,265.9 376.5,259.1 376.5,501.6 353.5,508.4" fill="#6a338e"/>'
+    '<path d="M235 257.5 L385 215 M365 262.5 L255 210" stroke="#a570c9" stroke-width="24"/>'
+    + bow(310, 237, "#8a4bb0", .9), 1.3, 310, 345)
+
+# p30 — chubby star-shaped box, yellow, red ribbon and a middle bow
+P["p30"] = svg(
+    f'<defs><clipPath id="c">{star(300, 350, 240, 0, .56)}</clipPath></defs>'
+    f'<g fill="#ffc61a">{star(300, 350, 240, 0, .56)}</g>{sheen("c", 60, 20, .22)}'
+    '<g clip-path="url(#c)"><rect x="285" y="0" width="32" height="600" fill="#e2261c"/></g>'
+    + bow(301, 330, "#e2261c", 1.0), 1.12, 300, 330, -6)
+
+# p31 — tall slim magenta box with an argyle pattern, teal ribbon
+body = "M235 170 L380 180 L372 560 L228 555Z"
+arg = "".join(f'<polygon points="{x},{y - 35} {x + 25},{y} {x},{y + 35} {x - 25},{y}"/>'
+              for y in range(170, 600, 70) for x in range(210 + (25 if (y // 70) % 2 else 0), 420, 50))
+P["p31"] = svg(
+    f'<defs><clipPath id="c"><path d="{body}"/></clipPath></defs>'
+    f'<path d="{body}" fill="#d6206f"/><g clip-path="url(#c)" fill="#ec4f90">{arg}</g>'
+    '<path d="M222 150 L392 160 L392 205 L220 196Z" fill="#a8134f"/>'
+    '<path d="M294 154 L324 156 L320 558 L292 557Z" fill="#16a89a"/>'
+    + bow(308, 155, "#16a89a", .95), 1.08, 305, 315, 5)
+
+# p32 — teal striped gift bag, yellow and pink tissue, pink handles
+bag = "M180 262 L420 262 L440 560 L160 560Z"
+stripes = "".join(f'<rect x="0" y="{y}" width="600" height="22"/>' for y in (330, 390, 450, 510))
+P["p32"] = svg(
+    f'<defs><clipPath id="c"><path d="{bag}"/></clipPath></defs>'
+    '<path d="M205 266 L245 140 L285 262Z" fill="#ffd21f"/>'
+    '<path d="M270 266 L330 115 L360 262Z" fill="#ff8db2"/>'
+    '<path d="M335 266 L380 165 L400 262Z" fill="#ffe066"/>'
+    '<path d="M228 270 C220 176 296 174 290 270 M312 270 C306 176 382 176 374 270" fill="none" '
+    'stroke="#ec2b6c" stroke-width="12" stroke-linecap="round"/>'
+    f'<path d="{bag}" fill="#13a393"/><g clip-path="url(#c)" fill="#45c9b6">{stripes}</g>'
+    '<path d="M180 262 L420 262 L423 300 L177 300Z" fill="#0b7a6d"/>'
+    '<circle cx="228" cy="282" r="8" fill="#ec2b6c"/><circle cx="290" cy="282" r="8" fill="#ec2b6c"/>'
+    '<circle cx="312" cy="282" r="8" fill="#ec2b6c"/><circle cx="374" cy="282" r="8" fill="#ec2b6c"/>',
+    1.18, 300, 335, 3)
+
+# p33 — lime box widening to the bottom, pink waves, purple ribbon
+body = "M210 230 L390 236 L470 555 L130 552Z"
+waves = "".join(f'<path d="M80 {y} ' + "q25 -22 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0"
+                + '" fill="none" stroke="#ee3f7a" stroke-width="12"/>' for y in (300, 370, 440, 510))
+P["p33"] = svg(
+    f'<defs><clipPath id="c"><path d="{body}"/></clipPath></defs>'
+    f'<path d="{body}" fill="#8cc63f"/><g clip-path="url(#c)">{waves}</g>'
+    '<path d="M286 232 L316 233 L322 555 L280 555Z" fill="#7b3fa0"/>'
+    + bow(301, 230, "#7b3fa0", 1.0), 1.2, 300, 340, -2)
+
+# p34 — pyramid of three small boxes
+P["p34"] = svg(
+    '<defs><clipPath id="a"><polygon points="110,380 290,376 292,560 108,562"/></clipPath>'
+    '<clipPath id="b"><polygon points="310,376 490,380 492,562 308,560"/></clipPath>'
+    '<clipPath id="t"><polygon points="210,205 390,200 392,374 208,378"/></clipPath></defs>'
+    '<polygon points="110,380 290,376 292,560 108,562" fill="#e2261c"/>' + sheen("a", 56, 18, .18)
+    + '<g clip-path="url(#a)"><rect x="186" y="0" width="28" height="600" fill="#ffc61a"/></g>'
+    '<polygon points="310,376 490,380 492,562 308,560" fill="#2c6cd4"/>' + sheen("b", 56, 18, .18)
+    + '<g clip-path="url(#b)"><rect x="386" y="0" width="28" height="600" fill="#ff8db2"/></g>'
+    '<polygon points="210,205 390,200 392,374 208,378" fill="#ffc61a"/>' + sheen("t", 56, 18, .22)
+    + '<g clip-path="url(#t)"><rect x="286" y="0" width="28" height="600" fill="#13a393"/></g>'
+    + bow(300, 202, "#13a393", .85), 1.15, 300, 330, 2)
+
+# p35 — round pouch gathered at the top, pink with white dots
+pouch = "M300 250 C150 250 110 400 160 480 C200 550 400 550 440 480 C490 400 450 250 300 250Z"
+dots = "".join(f'<circle cx="{x + (26 if (y // 52) % 2 else 0)}" cy="{y}" r="9"/>'
+               for y in range(270, 560, 52) for x in range(120, 500, 52))
+P["p35"] = svg(
+    f'<defs><clipPath id="c"><path d="{pouch}"/></clipPath></defs>'
+    '<path d="M300 256 L212 150 Q256 176 272 140 Q300 170 328 140 Q344 176 388 150Z" fill="#ff7aa8"/>'
+    f'<path d="{pouch}" fill="#ee3f7a"/><g clip-path="url(#c)" fill="#fff" opacity=".35">{dots}</g>'
+    + bow(300, 250, "#ffc61a", .9), 1.18, 300, 340, -3)
+
+# p36 — candy-wrapped gift with twisted ends
+P["p36"] = svg(
+    '<defs><clipPath id="c"><rect x="180" y="250" width="240" height="140" rx="56"/></clipPath></defs>'
+    '<path d="M185 320 L90 236 Q112 320 90 404Z" fill="#ffc61a"/>'
+    '<path d="M415 320 L510 236 Q488 320 510 404Z" fill="#ffc61a"/>'
+    '<rect x="180" y="250" width="240" height="140" rx="56" fill="#16a89a"/>'
+    + sheen("c", 52, 22, .35)
+    + '<rect x="168" y="288" width="22" height="64" rx="8" fill="#f4a100"/>'
+    '<rect x="410" y="288" width="22" height="64" rx="8" fill="#f4a100"/>',
+    1.25, 300, 320, -12)
+
+# p37 — yellow box with blue triangles, off-centre red ribbon, side bow
+body = "M130 250 L470 244 L476 540 L124 548Z"
+tri = "".join((f'<polygon points="{x},{y + 34} {x + 20},{y} {x + 40},{y + 34}"/>' if ((x // 60) + (y // 60)) % 2 == 0 else
+               f'<polygon points="{x},{y} {x + 20},{y + 34} {x + 40},{y}"/>')
+              for y in range(260, 560, 60) for x in range(110, 500, 60))
+P["p37"] = svg(
+    f'<defs><clipPath id="c"><path d="{body}"/></clipPath></defs>'
+    f'<path d="{body}" fill="#ffc61a"/><g clip-path="url(#c)"><g fill="#2c6cd4">{tri}</g>'
+    '<rect x="0" y="380" width="600" height="34" fill="#e2261c"/><rect x="378" y="0" width="32" height="600" fill="#e2261c"/></g>'
+    '<path d="M116 220 L484 214 L486 268 L114 274Z" fill="#f4a100"/>'
+    '<path d="M378 216 L410 215 L410 268 L378 269Z" fill="#e2261c"/>'
+    + bow(394, 216, "#e2261c", .9), 1.2, 300, 340, -2)
+
+# p38 — wrapped bottle, purple with a gathered neck
+bottle = "M250 560 L350 560 Q380 560 380 520 L380 330 Q380 280 330 250 L325 170 L275 170 L270 250 Q220 280 220 330 L220 520 Q220 560 250 560Z"
+P["p38"] = svg(
+    f'<defs><clipPath id="c"><path d="{bottle}"/></clipPath></defs>'
+    '<path d="M275 176 L244 118 L285 136 L300 100 L315 136 L356 118 L325 176Z" fill="#b684d6"/>'
+    f'<path d="{bottle}" fill="#8a4bb0"/>'
+    '<g clip-path="url(#c)" fill="#a570c9">' + "".join(
+        f'<rect x="{x}" y="-200" width="18" height="1000" transform="rotate(28 300 360)"/>' for x in range(0, 700, 48)) + '</g>'
+    + heart(300, 420, 34).replace('"/>', '" fill="#ffc61a"/>')
+    + '<rect x="268" y="188" width="64" height="20" rx="4" fill="#9ccb38"/>'
+    + bow(300, 196, "#9ccb38", .8, 11), 1.2, 300, 333, 4)
+
+# p39 — sky-blue box, yellow dots, red diagonal cross, bow in the middle
+body = "M150 200 L450 212 L440 540 L160 530Z"
+dots = "".join(f'<circle cx="{x + (30 if (y // 60) % 2 else 0)}" cy="{y}" r="12"/>'
+               for y in range(210, 560, 60) for x in range(140, 480, 60))
+P["p39"] = svg(
+    f'<defs><clipPath id="c"><path d="{body}"/></clipPath></defs>'
+    f'<path d="{body}" fill="#4fc3f7"/><g clip-path="url(#c)"><g fill="#ffd21f">{dots}</g>'
+    '<path d="M150 200 L440 540 M450 212 L160 530" stroke="#e2261c" stroke-width="28"/></g>'
+    + bow(300, 368, "#e2261c", 1.0), 1.4, 300, 370, -4)
+
+# p40 — red box with a paper gift tag on a string
+body = "M160 260 L440 252 L446 540 L154 548Z"
+P["p40"] = svg(
+    f'<defs><clipPath id="c"><path d="{body}"/></clipPath></defs>'
+    f'<path d="{body}" fill="#d62718"/>{sheen("c", 70, 26, .16)}'
+    '<path d="M146 230 L454 222 L456 280 L144 288Z" fill="#a8150f"/>'
+    '<path d="M285 226 L320 225 L322 544 L283 545Z" fill="#ffc61a"/>'
+    '<path d="M302 226 C380 232 420 276 440 312" fill="none" stroke="#6b4a1f" stroke-width="4"/>'
+    '<path d="M430 305 L500 315 L495 395 L425 385Z" fill="#fff3d6"/>'
+    '<circle cx="461" cy="324" r="6" fill="#d62718"/>'
+    + heart(460, 360, 14).replace('"/>', '" fill="#d62718"/>')
+    + bow(302, 226, "#ffc61a", 1.0), 1.2, 320, 330, -2)
 
 OUT.mkdir(exist_ok=True)
 for name, s in P.items():
