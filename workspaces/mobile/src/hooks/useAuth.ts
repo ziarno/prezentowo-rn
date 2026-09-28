@@ -16,6 +16,10 @@ type LoginWithMagicTokenParams = {
   onError: (err: MeteorError) => void
 }
 
+type LoginWithDevAccountParams = {
+  onError: (err: MeteorError) => void
+}
+
 type SignOutParams = {
   onError: (err: MeteorError) => void
 }
@@ -80,6 +84,22 @@ export const useAuth = () => {
           if (err) return onError(err)
           Meteor._handleLoginCallback(null, result)
           onSuccess()
+        },
+      )
+    },
+    // Development only: the backend registers a `{ devLogin: true }` login
+    // handler under `Meteor.isDevelopment` that signs in as a fixed dev user
+    // whose name is already set, so first-login is skipped.
+    loginWithDevAccount: ({ onError }: LoginWithDevAccountParams) => {
+      Meteor.call(
+        'login',
+        { devLogin: true },
+        (
+          err: MeteorError | undefined,
+          result: { id: string; token: string },
+        ) => {
+          if (err) return onError(err)
+          Meteor._handleLoginCallback(null, result)
         },
       )
     },

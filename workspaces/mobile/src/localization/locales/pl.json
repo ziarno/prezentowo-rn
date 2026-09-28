@@ -30,7 +30,9 @@
   "welcome": {
     "title": "Prezentowo.",
     "tagline": "Spokojne miejsce, w którym dzielisz się pomysłami na prezenty z bliskimi.",
-    "signInHint": "Zaloguj się lub utwórz konto — w tym samym miejscu, bez hasła."
+    "signInHint": "Zaloguj się lub utwórz konto — w tym samym miejscu, bez hasła.",
+    "devLogin": "Logowanie deweloperskie",
+    "devLoginFailed": "Logowanie deweloperskie nie powiodło się. Czy backend działa w trybie deweloperskim?"
   },
   "signin": {
     "invalidEmail": "Nieprawidłowy adres e-mail",

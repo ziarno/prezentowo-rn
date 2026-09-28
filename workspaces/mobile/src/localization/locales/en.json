@@ -30,7 +30,9 @@
   "welcome": {
     "title": "Prezentowo.",
     "tagline": "A quiet place to share gift ideas with people you love.",
-    "signInHint": "Sign in or create an account — same place, no password."
+    "signInHint": "Sign in or create an account — same place, no password.",
+    "devLogin": "Dev login",
+    "devLoginFailed": "Dev login failed. Is the backend running in development?"
   },
   "signin": {
     "invalidEmail": "Invalid email",

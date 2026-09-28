@@ -1,4 +1,5 @@
 import { router } from 'expo-router'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -6,6 +7,7 @@ import { LocalSvg } from 'react-native-svg/css'
 
 import giftMarkAsset from '@/assets/svg/gift-mark.svg'
 import { Text } from '@/components/ui/text'
+import { useAuth } from '@/hooks/useAuth'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LanguageChangeButton } from '@/ui/components/LanguageChangeButton'
 
@@ -37,8 +39,33 @@ export function WelcomeScreen() {
           <Text className="text-center text-xs leading-[18px] text-garland-ink-40">
             {t('welcome.signInHint')}
           </Text>
+          {__DEV__ ? <DevLoginButton /> : null}
         </View>
       </View>
     </SafeAreaView>
+  )
+}
+
+function DevLoginButton() {
+  const { t } = useTranslation()
+  const { loginWithDevAccount, isLoading } = useAuth()
+  const [failed, setFailed] = useState(false)
+
+  const login = () => {
+    setFailed(false)
+    loginWithDevAccount({ onError: () => setFailed(true) })
+  }
+
+  return (
+    <>
+      <GarlandButton variant="outline" onPress={login} loading={isLoading}>
+        <GarlandButtonText>{t('welcome.devLogin')}</GarlandButtonText>
+      </GarlandButton>
+      {failed ? (
+        <Text className="text-center text-xs leading-[18px] text-garland-berry">
+          {t('welcome.devLoginFailed')}
+        </Text>
+      ) : null}
+    </>
   )
 }
