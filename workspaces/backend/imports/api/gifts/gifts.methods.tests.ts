@@ -1,9 +1,14 @@
 import assert from 'assert'
 
-import { addGift, createFamilyEvent } from '../../../tests/fixtures'
+import { addGiftAs, createFamilyEvent } from '../../../tests/fixtures'
 import { callAsUser, resetDatabase } from '../../../tests/helpers'
 import { Gifts, createGiftIndexes } from './gifts.collection'
 import './gifts.methods'
+
+const pickError = (e: Error) => {
+  const { error, reason } = e as Error & { error?: unknown; reason?: unknown }
+  return { error, reason, message: e.message }
+}
 
 describe('gifts methods', function () {
   let family: Awaited<ReturnType<typeof createFamilyEvent>>
@@ -22,14 +27,14 @@ describe('gifts methods', function () {
       const { users, participants, eventId } = family
       const args = { clientId: 'offline-1' }
 
-      const first = await addGift(
+      const first = await addGiftAs(
         users.celina,
         eventId,
         participants.bartek,
         'Scarf',
         args,
       )
-      const replay = await addGift(
+      const replay = await addGiftAs(
         users.celina,
         eventId,
         participants.bartek,
@@ -46,8 +51,8 @@ describe('gifts methods', function () {
       const args = { clientId: 'offline-1' }
 
       const [a, b] = await Promise.all([
-        addGift(users.celina, eventId, participants.bartek, 'Scarf', args),
-        addGift(users.celina, eventId, participants.bartek, 'Scarf', args),
+        addGiftAs(users.celina, eventId, participants.bartek, 'Scarf', args),
+        addGiftAs(users.celina, eventId, participants.bartek, 'Scarf', args),
       ])
 
       assert.strictEqual(a, b)
@@ -58,14 +63,14 @@ describe('gifts methods', function () {
       const { users, participants, eventId } = family
       const args = { clientId: 'offline-1' }
 
-      const celinas = await addGift(
+      const celinaGift = await addGiftAs(
         users.celina,
         eventId,
         participants.bartek,
         'Scarf',
         args,
       )
-      const olas = await addGift(
+      const olaGift = await addGiftAs(
         users.ola,
         eventId,
         participants.bartek,
@@ -73,7 +78,7 @@ describe('gifts methods', function () {
         args,
       )
 
-      assert.notStrictEqual(olas, celinas)
+      assert.notStrictEqual(olaGift, celinaGift)
       assert.strictEqual(await Gifts.find({ eventId }).countAsync(), 2)
     })
 
@@ -81,7 +86,7 @@ describe('gifts methods', function () {
       const { users, participants, eventId } = family
       const image = { kind: 'illustration', id: 'p3' }
 
-      const gift = await addGift(
+      const gift = await addGiftAs(
         users.celina,
         eventId,
         participants.bartek,
@@ -101,7 +106,7 @@ describe('gifts methods', function () {
         { kind: 'upload' },
       ]) {
         await assert.rejects(
-          addGift(users.celina, eventId, participants.bartek, 'Scarf', {
+          addGiftAs(users.celina, eventId, participants.bartek, 'Scarf', {
             image,
           }),
           /Match error/,
@@ -112,7 +117,7 @@ describe('gifts methods', function () {
     it('no longer stores a price', async function () {
       const { users, participants, eventId } = family
 
-      const gift = await addGift(
+      const gift = await addGiftAs(
         users.celina,
         eventId,
         participants.bartek,
@@ -128,8 +133,8 @@ describe('gifts methods', function () {
     it('never deduplicates gifts added without a clientId', async function () {
       const { users, participants, eventId } = family
 
-      await addGift(users.celina, eventId, participants.bartek, 'Scarf')
-      await addGift(users.celina, eventId, participants.bartek, 'Scarf')
+      await addGiftAs(users.celina, eventId, participants.bartek, 'Scarf')
+      await addGiftAs(users.celina, eventId, participants.bartek, 'Scarf')
 
       assert.strictEqual(await Gifts.find({ eventId }).countAsync(), 2)
     })
@@ -138,7 +143,7 @@ describe('gifts methods', function () {
   describe('gifts.update', function () {
     it('lets the gift creator edit it', async function () {
       const { users, participants, eventId } = family
-      const gift = await addGift(
+      const gift = await addGiftAs(
         users.celina,
         eventId,
         participants.bartek,
@@ -156,7 +161,7 @@ describe('gifts methods', function () {
     it('clears the image on null and keeps it when image is left out', async function () {
       const { users, participants, eventId } = family
       const image = { kind: 'upload', id: 'abc123' }
-      const gift = await addGift(
+      const gift = await addGiftAs(
         users.celina,
         eventId,
         participants.bartek,
@@ -179,7 +184,7 @@ describe('gifts methods', function () {
 
     it('rejects any other member, the event creator included', async function () {
       const { users, participants, eventId } = family
-      const gift = await addGift(
+      const gift = await addGiftAs(
         users.celina,
         eventId,
         participants.dziadek,
@@ -199,7 +204,7 @@ describe('gifts methods', function () {
   describe('gifts.remove', function () {
     it('lets the gift creator delete it', async function () {
       const { users, participants, eventId } = family
-      const gift = await addGift(
+      const gift = await addGiftAs(
         users.celina,
         eventId,
         participants.bartek,
@@ -213,7 +218,7 @@ describe('gifts methods', function () {
 
     it("lets the event creator delete someone else's gift, even with claims", async function () {
       const { users, participants, eventId } = family
-      const gift = await addGift(
+      const gift = await addGiftAs(
         users.celina,
         eventId,
         participants.bartek,
@@ -228,7 +233,7 @@ describe('gifts methods', function () {
 
     it('rejects any other member, the recipient included', async function () {
       const { users, participants, eventId } = family
-      const gift = await addGift(
+      const gift = await addGiftAs(
         users.celina,
         eventId,
         participants.dziadek,
@@ -244,7 +249,7 @@ describe('gifts methods', function () {
 
     it('answers the event creator on a gift hidden from them exactly as on a missing one', async function () {
       const { users, participants, eventId } = family
-      const hidden = await addGift(
+      const hidden = await addGiftAs(
         users.bartek,
         eventId,
         participants.ola,
@@ -264,9 +269,30 @@ describe('gifts methods', function () {
       assert.ok(await Gifts.findOneAsync(hidden))
     })
   })
-})
 
-const pickError = (e: Error) => {
-  const { error, reason } = e as Error & { error?: unknown; reason?: unknown }
-  return { error, reason, message: e.message }
-}
+  describe('a gift hidden from the caller', function () {
+    it('is not found by update, claim, unclaim or remove, even by its recipient', async function () {
+      const { users, participants, eventId } = family
+      const hidden = await addGiftAs(
+        users.celina,
+        eventId,
+        participants.bartek,
+        'Scarf',
+      )
+      const calls: [string, object][] = [
+        ['gifts.update', { giftId: hidden, title: 'Hat' }],
+        ['gifts.claim', { giftId: hidden }],
+        ['gifts.unclaim', { giftId: hidden }],
+        ['gifts.remove', { giftId: hidden }],
+      ]
+
+      for (const [method, args] of calls) {
+        await assert.rejects(callAsUser(users.bartek, method, args), {
+          error: 'notFound',
+          reason: 'giftNotFound',
+        })
+      }
+      assert.strictEqual((await Gifts.findOneAsync(hidden))?.title, 'Scarf')
+    })
+  })
+})

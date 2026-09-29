@@ -52,7 +52,7 @@ export async function createFamilyEvent() {
   }
 }
 
-export async function addGift(
+export async function addGiftAs(
   userId: string,
   eventId: string,
   forParticipantId: string,

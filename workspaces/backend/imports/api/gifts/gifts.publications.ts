@@ -4,6 +4,7 @@ import { Meteor } from 'meteor/meteor'
 
 import { Events } from '../events/events.collection'
 import { Gifts } from './gifts.collection'
+import { isHiddenFrom, isRecipient } from './gifts.visibility'
 
 // Meteor 3.4 exposes `observeChangesAsync` on cursors, but the bundled type
 // defs lag behind — narrow the cursor to the shape we use.
@@ -23,25 +24,22 @@ const isMemberOf = (
   event.ownerId === userId ||
   event.participants.some(p => p.kind === 'real' && p.userId === userId)
 
-// Gifts for an event. The core "claim quietly" rule lives here: a gift that is
-// for the current user has its `claimedBy` field stripped before it reaches the
-// client, so the recipient can never see whether — or by whom — their own gifts
-// have been reserved. Everyone else sees the full claim state.
+// Gifts for an event, with both recipient rules applied per viewer:
+// - Own-list visibility rule: a gift suggested for the viewer is never added,
+//   and its later changes and removal are skipped (`hiddenIds`).
+// - Claim-quietly rule: the viewer's self-added gifts have `claimedBy`
+//   stripped, so they never learn whether — or by whom — they're reserved.
+// No owner exemption. Everyone else sees every gift with its full claim state.
 Meteor.publish('gifts.byEvent', async function (eventId: string) {
   check(eventId, String)
-  if (!this.userId) return this.ready()
+  const userId = this.userId
+  if (!userId) return this.ready()
 
   const event = await Events.findOneAsync(eventId)
-  if (!event || !isMemberOf(event, this.userId)) return this.ready()
-
-  const myParticipantId = event.participants.find(
-    p => p.kind === 'real' && p.userId === this.userId,
-  )?.id
+  if (!event || !isMemberOf(event, userId)) return this.ready()
 
   const mineIds = new Set<string>()
   const hiddenIds = new Set<string>()
-  const isMine = (forParticipantId?: unknown) =>
-    myParticipantId !== undefined && forParticipantId === myParticipantId
 
   const cursor = Gifts.find(
     { eventId },
@@ -49,12 +47,13 @@ Meteor.publish('gifts.byEvent', async function (eventId: string) {
   ) as unknown as AsyncObservableCursor
   const handle = await cursor.observeChangesAsync({
     added: (id, fields) => {
-      const out = { ...fields }
-      if (isMine(fields.forParticipantId) && fields.createdBy !== this.userId) {
+      const gift = fields as GiftDoc
+      if (isHiddenFrom(event, gift, userId)) {
         hiddenIds.add(id)
         return
       }
-      if (isMine(fields.forParticipantId)) {
+      const out = { ...fields }
+      if (isRecipient(event, gift, userId)) {
         mineIds.add(id)
         delete out.claimedBy
       }

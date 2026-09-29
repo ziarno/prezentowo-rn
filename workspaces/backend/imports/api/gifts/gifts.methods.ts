@@ -9,6 +9,7 @@ import { Meteor } from 'meteor/meteor'
 
 import { Events } from '../events/events.collection'
 import { Gifts } from './gifts.collection'
+import { isHiddenFrom, isRecipient } from './gifts.visibility'
 
 // Loads the event and asserts the caller is a real participant of it. Returns
 // the event so callers can do further participant checks without re-fetching.
@@ -35,16 +36,6 @@ const imageRefPattern = Match.Where((value: unknown): value is ImageRef => {
   return (kind === 'upload' || kind === 'illustration') && id.length > 0
 })
 
-// Resolves which real user (if any) a participant id belongs to.
-const realUserIdForParticipant = (
-  event: EventDoc,
-  participantId: string,
-): string | undefined => {
-  const participant = event.participants.find(p => p.id === participantId)
-  if (participant && participant.kind === 'real') return participant.userId
-  return undefined
-}
-
 // Loads a gift the caller may act on: they must be a member of its event, and
 // a gift hidden from them by the own-list visibility rule (suggested for them)
 // is answered exactly like a missing one, so no method confirms it exists.
@@ -54,14 +45,30 @@ const loadGift = async function (userId: string, giftId: string) {
     throw new Meteor.Error('notFound', 'giftNotFound')
   }
   const event = await assertEventMember(userId, gift.eventId)
-  const isHidden =
-    gift.createdBy !== userId &&
-    realUserIdForParticipant(event, gift.forParticipantId) === userId
-  if (isHidden) {
+  if (isHiddenFrom(event, gift, userId)) {
     throw new Meteor.Error('notFound', 'giftNotFound')
   }
   return { gift, event }
 }
+
+const isDuplicateKeyError = (error: unknown) =>
+  (error as { code?: unknown } | null)?.code === 11000
+
+const insertGift = (userId: string, options: AddGiftArgs, title: string) =>
+  Gifts.insertAsync({
+    eventId: options.eventId,
+    forParticipantId: options.forParticipantId,
+    title,
+    ...(options.description?.trim()
+      ? { description: options.description.trim() }
+      : {}),
+    ...(options.url?.trim() ? { url: options.url.trim() } : {}),
+    ...(options.image ? { image: options.image } : {}),
+    claimedBy: [],
+    createdBy: userId,
+    createdAt: new Date(),
+    ...(options.clientId ? { clientId: options.clientId } : {}),
+  } as Parameters<typeof Gifts.insertAsync>[0])
 
 const addGift = async function (
   this: Meteor.MethodThisType,
@@ -117,25 +124,6 @@ const addGift = async function (
     throw error
   }
 }
-
-const isDuplicateKeyError = (error: unknown) =>
-  (error as { code?: unknown } | null)?.code === 11000
-
-const insertGift = (userId: string, options: AddGiftArgs, title: string) =>
-  Gifts.insertAsync({
-    eventId: options.eventId,
-    forParticipantId: options.forParticipantId,
-    title,
-    ...(options.description?.trim()
-      ? { description: options.description.trim() }
-      : {}),
-    ...(options.url?.trim() ? { url: options.url.trim() } : {}),
-    ...(options.image ? { image: options.image } : {}),
-    claimedBy: [],
-    createdBy: userId,
-    createdAt: new Date(),
-    ...(options.clientId ? { clientId: options.clientId } : {}),
-  } as Parameters<typeof Gifts.insertAsync>[0])
 
 const updateGift = async function (
   this: Meteor.MethodThisType,
@@ -215,7 +203,7 @@ const setClaim = async function (
 
   // You can't claim a gift that's on your own wishlist — and you shouldn't be
   // able to see its claim state anyway ("claim quietly").
-  if (realUserIdForParticipant(event, gift.forParticipantId) === userId) {
+  if (isRecipient(event, gift, userId)) {
     throw new Meteor.Error('invalidArgs', 'cannotClaimOwnGift')
   }
 

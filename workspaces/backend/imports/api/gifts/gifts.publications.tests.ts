@@ -1,6 +1,6 @@
 import assert from 'assert'
 
-import { addGift, createFamilyEvent } from '../../../tests/fixtures'
+import { addGiftAs, createFamilyEvent } from '../../../tests/fixtures'
 import {
   callAsUser,
   resetDatabase,
@@ -24,7 +24,7 @@ describe('gifts.byEvent', function () {
   // up, every one of those writes has been processed.
   const barrier = async (sub: Awaited<ReturnType<typeof subscribe>>) => {
     const { users, participants, eventId } = family
-    const id = await addGift(
+    const id = await addGiftAs(
       users.celina,
       eventId,
       participants.dziadek,
@@ -45,7 +45,7 @@ describe('gifts.byEvent', function () {
   describe('own-list visibility rule', function () {
     it('never sends the recipient a gift someone else suggested for them', async function () {
       const { users, participants, eventId } = family
-      const suggested = await addGift(
+      const suggested = await addGiftAs(
         users.ola,
         eventId,
         participants.bartek,
@@ -63,7 +63,7 @@ describe('gifts.byEvent', function () {
 
     it('never sends the recipient changes to, or the removal of, a suggested gift', async function () {
       const { users, participants, eventId } = family
-      const suggested = await addGift(
+      const suggested = await addGiftAs(
         users.ola,
         eventId,
         participants.bartek,
@@ -87,7 +87,7 @@ describe('gifts.byEvent', function () {
   describe('claim-quietly rule', function () {
     it('sends the recipient their self-added gift without its claims', async function () {
       const { users, participants, eventId } = family
-      const own = await addGift(
+      const own = await addGiftAs(
         users.bartek,
         eventId,
         participants.bartek,
@@ -104,7 +104,7 @@ describe('gifts.byEvent', function () {
 
     it('keeps stripping claims from live updates to a self-added gift', async function () {
       const { users, participants, eventId } = family
-      const own = await addGift(
+      const own = await addGiftAs(
         users.bartek,
         eventId,
         participants.bartek,
@@ -129,13 +129,13 @@ describe('gifts.byEvent', function () {
   describe('everyone who is not the recipient', function () {
     it('sees self-added and suggested gifts with their claims', async function () {
       const { users, participants, eventId } = family
-      const own = await addGift(
+      const own = await addGiftAs(
         users.bartek,
         eventId,
         participants.bartek,
         'Book',
       )
-      const suggested = await addGift(
+      const suggested = await addGiftAs(
         users.ola,
         eventId,
         participants.bartek,
@@ -151,7 +151,7 @@ describe('gifts.byEvent', function () {
 
     it("sees everything on a placeholder's list, since nobody is its recipient", async function () {
       const { users, participants, eventId } = family
-      const gift = await addGift(
+      const gift = await addGiftAs(
         users.bartek,
         eventId,
         participants.dziadek,
@@ -171,7 +171,7 @@ describe('gifts.byEvent', function () {
   describe('the event creator as recipient (no owner exemption)', function () {
     it('never receives a gift suggested for them', async function () {
       const { users, participants, eventId } = family
-      const suggested = await addGift(
+      const suggested = await addGiftAs(
         users.bartek,
         eventId,
         participants.ola,
@@ -185,7 +185,12 @@ describe('gifts.byEvent', function () {
 
     it('receives their self-added gift without its claims', async function () {
       const { users, participants, eventId } = family
-      const own = await addGift(users.ola, eventId, participants.ola, 'Teapot')
+      const own = await addGiftAs(
+        users.ola,
+        eventId,
+        participants.ola,
+        'Teapot',
+      )
       await callAsUser(users.bartek, 'gifts.claim', { giftId: own })
 
       const sub = await subscribe(users.ola)
@@ -196,7 +201,7 @@ describe('gifts.byEvent', function () {
 
   it('never publishes the offline-replay clientId', async function () {
     const { users, participants, eventId } = family
-    const gift = await addGift(
+    const gift = await addGiftAs(
       users.bartek,
       eventId,
       participants.bartek,
@@ -214,7 +219,7 @@ describe('gifts.byEvent', function () {
 
   it('sends a non-member nothing', async function () {
     const { users, participants, eventId } = family
-    await addGift(users.bartek, eventId, participants.bartek, 'Book')
+    await addGiftAs(users.bartek, eventId, participants.bartek, 'Book')
 
     const sub = await subscribe(users.outsider)
 
