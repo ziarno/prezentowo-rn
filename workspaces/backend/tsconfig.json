@@ -26,6 +26,8 @@
     "paths": {
       /* Support absolute /imports/* with a leading '/' */
       "/*": ["*"],
+      /* Hand-written; see the file for why */
+      "meteor/accounts-express": ["types/meteor-accounts-express.d.ts"],
       /* Pull in type declarations for Meteor packages from either zodern:types or @types/meteor packages */
       "meteor/*": [
         "node_modules/@types/meteor/*",

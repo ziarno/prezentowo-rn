@@ -133,5 +133,14 @@
     "openMenu": "Open menu",
     "back": "Back",
     "close": "Close"
+  },
+  "images": {
+    "uploadErrors": {
+      "unauthorized": "You're signed out. Sign in again to upload photos.",
+      "expectedOneFile": "Choose one photo to upload.",
+      "tooLarge": "That photo is too large to upload.",
+      "notAnImage": "That file isn't a photo we can use.",
+      "failed": "Couldn't upload the photo. Try again."
+    }
   }
 }

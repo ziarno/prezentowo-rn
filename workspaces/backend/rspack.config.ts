@@ -11,8 +11,11 @@ import { TsCheckerRspackPlugin } from 'ts-checker-rspack-plugin'
  *
  * Use these flags to adjust your build settings based on environment.
  */
-export default defineConfig((/* Meteor */) => {
+export default defineConfig(Meteor => {
   return {
     plugins: [new TsCheckerRspackPlugin()],
+    // sharp loads a native binary, so Node requires it at runtime rather
+    // than Rspack bundling it.
+    ...(Meteor.isServer ? Meteor.compileWithMeteor(['sharp']) : {}),
   }
 })

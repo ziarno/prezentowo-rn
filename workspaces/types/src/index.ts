@@ -52,6 +52,19 @@ export type ImageRef =
   | { kind: 'upload'; id: string } // self-hosted upload
   | { kind: 'illustration'; id: string } // bundled stock key, e.g. "p3" or "b2"
 
+// The WebP derivatives of an upload, by long edge in px, served at
+// `/images/<id>/<size>.webp`: 400 present tile, 1000 present detail, 1600
+// event cover.
+export type ImageSize = 400 | 1000 | 1600
+
+// `POST /api/images` (single-file multipart) responds 200 with this.
+export type UploadImageResult = { id: string }
+
+// `POST /api/images` responds `{ error: UploadImageErrorCode }` with 400
+// (`expectedOneFile`), 413 (`tooLarge`) or 415 (`notAnImage`). A missing or
+// invalid login token is a 401 from the auth middleware.
+export type UploadImageErrorCode = 'expectedOneFile' | 'tooLarge' | 'notAnImage'
+
 export type GiftDoc = {
   _id: string
   eventId: string

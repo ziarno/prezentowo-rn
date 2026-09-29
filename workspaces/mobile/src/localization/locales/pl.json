@@ -133,5 +133,14 @@
     "openMenu": "Otwórz menu",
     "back": "Wstecz",
     "close": "Zamknij"
+  },
+  "images": {
+    "uploadErrors": {
+      "unauthorized": "Sesja wygasła. Zaloguj się ponownie, aby przesłać zdjęcia.",
+      "expectedOneFile": "Wybierz jedno zdjęcie do przesłania.",
+      "tooLarge": "To zdjęcie jest za duże, by je przesłać.",
+      "notAnImage": "Tego pliku nie da się użyć jako zdjęcia.",
+      "failed": "Nie udało się przesłać zdjęcia. Spróbuj ponownie."
+    }
   }
 }

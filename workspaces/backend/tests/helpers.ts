@@ -1,3 +1,4 @@
+import { Accounts } from 'meteor/accounts-base'
 import { Meteor } from 'meteor/meteor'
 import { MongoInternals } from 'meteor/mongo'
 
@@ -168,4 +169,22 @@ export async function waitFor(predicate: () => boolean, timeoutMs = 5000) {
     if (Date.now() > deadline) throw new Error('waitFor() timed out')
     await new Promise(resolve => setTimeout(resolve, 20))
   }
+}
+
+/**
+ * Issues a resume login token for `userId`, the one a DDP client holds after
+ * logging in and sends as `Authorization: Bearer <token>` over HTTP.
+ */
+export async function createLoginToken(userId: string) {
+  const stamped = Accounts._generateStampedLoginToken()
+  // accounts-base has it; @types/meteor doesn't declare it.
+  await (
+    Accounts as unknown as {
+      _insertLoginToken: (
+        userId: string,
+        token: typeof stamped,
+      ) => Promise<void>
+    }
+  )._insertLoginToken(userId, stamped)
+  return stamped.token
 }

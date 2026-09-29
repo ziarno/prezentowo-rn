@@ -14,5 +14,6 @@
       "magicLinkScheme": "prezentowo://",
       "magicLinkPath": "magic-link"
     }
-  }
+  },
+  "imagesDir": ".images"
 }
