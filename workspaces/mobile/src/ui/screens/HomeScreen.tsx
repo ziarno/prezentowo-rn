@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { FlatList, Pressable, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { sortForHome } from '@/api/eventList'
 import { PlusIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
@@ -43,7 +44,7 @@ export function HomeScreen() {
         </View>
       ) : (
         <FlatList
-          data={events}
+          data={sortForHome(events, new Date())}
           keyExtractor={event => event._id}
           renderItem={({ item }) => (
             <EventCard

@@ -272,14 +272,37 @@
     "emptyTitle": "No events yet",
     "emptyBody": "Create one for a birthday, Christmas or anything else, then invite the people taking part.",
     "emptyAction": "Create an event",
-    "today": "today",
-    "tomorrow": "tomorrow",
-    "inDays_one": "in {{count}} day",
-    "inDays_other": "in {{count}} days",
-    "daysAgo_one": "{{count}} day ago",
-    "daysAgo_other": "{{count}} days ago",
     "people_one": "{{count}} person",
     "people_other": "{{count}} people",
-    "morePeople": "+{{count}}"
+    "morePeople": "+{{count}}",
+    "countdown": {
+      "today": "today",
+      "tomorrow": "tomorrow",
+      "yesterday": "yesterday",
+      "in": {
+        "day_one": "in a day",
+        "day_other": "in {{count}} days",
+        "week_one": "in a week",
+        "week_other": "in {{count}} weeks",
+        "month_one": "in a month",
+        "month_other": "in {{count}} months",
+        "year_one": "in a year",
+        "year_other": "in {{count}} years"
+      },
+      "ago": {
+        "day_one": "a day ago",
+        "day_other": "{{count}} days ago",
+        "week_one": "a week ago",
+        "week_other": "{{count}} weeks ago",
+        "month_one": "a month ago",
+        "month_other": "{{count}} months ago",
+        "year_one": "a year ago",
+        "year_other": "{{count}} years ago"
+      }
+    },
+    "kind": {
+      "many-to-many": "For everyone",
+      "many-to-one": "For one person"
+    }
   }
 }

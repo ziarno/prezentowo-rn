@@ -1,3 +1,5 @@
+import dayjs from 'dayjs'
+
 // Pure helpers behind Home's event rows (`3a`).
 
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/
@@ -27,6 +29,61 @@ export function daysUntil(date: string, now: Date): number | undefined {
   const utcDay = (d: Date) =>
     Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
   return Math.round((utcDay(target) - utcDay(now)) / DAY_MS)
+}
+
+export type CountdownUnit = 'day' | 'week' | 'month' | 'year'
+
+export type Countdown =
+  | { kind: 'today' | 'tomorrow' | 'yesterday' }
+  | { kind: 'in' | 'ago'; unit: CountdownUnit; count: number }
+
+// How far the event is, coarsened to the largest whole unit: days under a
+// week, weeks under a calendar month, months under a year, then years. Counts
+// are rounded within the unit, and 12 months becomes a year.
+export function countdown(date: string, now: Date): Countdown | undefined {
+  const days = daysUntil(date, now)
+  if (days === undefined) return undefined
+  if (days === 0) return { kind: 'today' }
+  if (days === 1) return { kind: 'tomorrow' }
+  if (days === -1) return { kind: 'yesterday' }
+
+  const kind = days > 0 ? ('in' as const) : ('ago' as const)
+  const at = (unit: CountdownUnit, count: number): Countdown => ({
+    kind,
+    unit,
+    count,
+  })
+  const absDays = Math.abs(days)
+  if (absDays < 7) return at('day', absDays)
+
+  // Calendar-aware, so "1 month" is the same date next month.
+  const months = Math.abs(
+    dayjs(date).diff(dayjs(now).startOf('day'), 'month', true),
+  )
+  if (months < 1) return at('week', Math.round(absDays / 7))
+  if (months < 12) {
+    const rounded = Math.round(months)
+    return rounded < 12 ? at('month', rounded) : at('year', 1)
+  }
+  return at('year', Math.round(months / 12))
+}
+
+// Home's order: upcoming events soonest first (today counts as upcoming),
+// then past ones, latest first. An unreadable date sorts last.
+export function sortForHome<T extends { date: string }>(
+  events: readonly T[],
+  now: Date,
+): T[] {
+  const today = dayjs(now).format('YYYY-MM-DD')
+  const rank = (event: T) =>
+    !parseEventDate(event.date) ? 2 : event.date >= today ? 0 : 1
+  return [...events].sort((a, b) => {
+    const byRank = rank(a) - rank(b)
+    if (byRank !== 0 || rank(a) === 2) return byRank
+    // `YYYY-MM-DD` compares correctly as a string.
+    const byDate = a.date < b.date ? -1 : a.date > b.date ? 1 : 0
+    return rank(a) === 0 ? byDate : -byDate
+  })
 }
 
 // A stable pseudo-random option for `seed` (docs/spec.md §1.1 fallback):

@@ -3,7 +3,12 @@ import { type TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { Pressable, View } from 'react-native'
 
-import { avatarPreview, daysUntil, parseEventDate } from '@/api/eventList'
+import {
+  type Countdown,
+  avatarPreview,
+  countdown,
+  parseEventDate,
+} from '@/api/eventList'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
@@ -13,16 +18,13 @@ import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
 const AVATAR_SIZE = 28
 const MAX_AVATARS = 5
 
-function countdown(t: TFunction, days: number): string {
-  if (days === 0) return t('home.today')
-  if (days === 1) return t('home.tomorrow')
-  return days > 0
-    ? t('home.inDays', { count: days })
-    : t('home.daysAgo', { count: -days })
-}
+const countdownText = (t: TFunction, c: Countdown): string =>
+  'unit' in c
+    ? t(`home.countdown.${c.kind}.${c.unit}`, { count: c.count })
+    : t(`home.countdown.${c.kind}`)
 
-// A `3a` row: the event's background band, then title, date with countdown,
-// and who's taking part.
+// A `3a` row: the event's background band, then title with its kind badge,
+// date with countdown, and who's taking part.
 export function EventCard({
   event,
   onPress,
@@ -34,7 +36,12 @@ export function EventCard({
   const { participants } = useEventParticipants(event._id)
 
   const date = parseEventDate(event.date)
-  const days = daysUntil(event.date, new Date())
+  const until = countdown(event.date, new Date())
+  // Events from before kinds existed have no `type`; like `beneficiaryIdOf`,
+  // anything that isn't many-to-one reads as many-to-many.
+  const kindLabel = t(
+    `home.kind.${event.type === 'many-to-one' ? 'many-to-one' : 'many-to-many'}`,
+  )
   const when = [
     date
       ? new Intl.DateTimeFormat(i18n.language, {
@@ -43,7 +50,7 @@ export function EventCard({
           year: 'numeric',
         }).format(date)
       : event.date,
-    days === undefined ? undefined : countdown(t, days),
+    until && countdownText(t, until),
   ]
     .filter(Boolean)
     .join(' · ')
@@ -61,17 +68,24 @@ export function EventCard({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${event.title}, ${when}`}
+      accessibilityLabel={`${event.title}, ${kindLabel}, ${when}`}
       className="overflow-hidden rounded-2xl border border-garland-ink-08 bg-garland-paper active:opacity-70"
     >
       <EventBackground event={event} height={72} />
       <View className="gap-1 px-4 pb-3.5 pt-3">
-        <Text
-          className="font-garland-display text-xl text-garland-ink"
-          numberOfLines={1}
-        >
-          {event.title}
-        </Text>
+        <View className="flex-row items-center gap-2">
+          <Text
+            className="flex-1 font-garland-display text-xl text-garland-ink"
+            numberOfLines={1}
+          >
+            {event.title}
+          </Text>
+          <View className="rounded-full bg-garland-paper2 px-2.5 py-1">
+            <Text className="text-[11px] font-semibold text-garland-ink-60">
+              {kindLabel}
+            </Text>
+          </View>
+        </View>
         <Text className="text-[13px] text-garland-ink-60">{when}</Text>
         {participants.length > 0 ? (
           <View

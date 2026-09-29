@@ -1,10 +1,15 @@
 /// <reference types="jest" />
 import {
   avatarPreview,
+  countdown,
   daysUntil,
   parseEventDate,
+  sortForHome,
   stablePick,
 } from '../eventList'
+
+const noonOn = (y: number, m: number, d: number) =>
+  new Date(y, m - 1, d, 12, 30)
 
 describe('parseEventDate', () => {
   it('reads YYYY-MM-DD as local midnight, not UTC', () => {
@@ -25,9 +30,6 @@ describe('parseEventDate', () => {
 })
 
 describe('daysUntil', () => {
-  const noonOn = (y: number, m: number, d: number) =>
-    new Date(y, m - 1, d, 12, 30)
-
   it('is 0 on the day, whatever the time', () => {
     expect(daysUntil('2026-12-24', noonOn(2026, 12, 24))).toBe(0)
     expect(daysUntil('2026-12-24', new Date(2026, 11, 24, 23, 59))).toBe(0)
@@ -83,5 +85,79 @@ describe('avatarPreview', () => {
       shown: ['a', 'b', 'c'],
       more: 3,
     })
+  })
+})
+
+describe('countdown', () => {
+  const now = noonOn(2026, 9, 29)
+  const inUnit = (unit: string, count: number) => ({ kind: 'in', unit, count })
+  const ago = (unit: string, count: number) => ({ kind: 'ago', unit, count })
+
+  it('names the nearest days', () => {
+    expect(countdown('2026-09-29', now)).toEqual({ kind: 'today' })
+    expect(countdown('2026-09-30', now)).toEqual({ kind: 'tomorrow' })
+    expect(countdown('2026-09-28', now)).toEqual({ kind: 'yesterday' })
+  })
+
+  it('counts days under a week', () => {
+    expect(countdown('2026-10-02', now)).toEqual(inUnit('day', 3))
+    expect(countdown('2026-10-05', now)).toEqual(inUnit('day', 6))
+    expect(countdown('2026-09-26', now)).toEqual(ago('day', 3))
+  })
+
+  it('counts rounded weeks under a month', () => {
+    expect(countdown('2026-10-06', now)).toEqual(inUnit('week', 1))
+    expect(countdown('2026-10-09', now)).toEqual(inUnit('week', 1))
+    expect(countdown('2026-10-12', now)).toEqual(inUnit('week', 2))
+    expect(countdown('2026-10-20', now)).toEqual(inUnit('week', 3))
+    expect(countdown('2026-10-28', now)).toEqual(inUnit('week', 4))
+    expect(countdown('2026-09-08', now)).toEqual(ago('week', 3))
+  })
+
+  it('counts rounded calendar months under a year', () => {
+    expect(countdown('2026-10-29', now)).toEqual(inUnit('month', 1))
+    expect(countdown('2026-12-24', now)).toEqual(inUnit('month', 3))
+    expect(countdown('2026-05-04', now)).toEqual(ago('month', 5))
+  })
+
+  it('counts rounded years from there, never "12 months"', () => {
+    expect(countdown('2027-09-20', now)).toEqual(inUnit('year', 1))
+    expect(countdown('2028-09-29', now)).toEqual(inUnit('year', 2))
+    expect(countdown('2024-09-29', now)).toEqual(ago('year', 2))
+  })
+
+  it('is undefined for an unreadable date', () => {
+    expect(countdown('soon', now)).toBeUndefined()
+  })
+})
+
+describe('sortForHome', () => {
+  const now = noonOn(2026, 9, 29)
+  const event = (_id: string, date: string) => ({ _id, date })
+
+  it('puts upcoming events first, soonest first, then past ones, latest first', () => {
+    const sorted = sortForHome(
+      [
+        event('long-past', '2025-12-24'),
+        event('far', '2027-05-01'),
+        event('recent-past', '2026-09-28'),
+        event('today', '2026-09-29'),
+        event('soon', '2026-10-02'),
+      ],
+      now,
+    )
+    expect(sorted.map(e => e._id)).toEqual([
+      'today',
+      'soon',
+      'far',
+      'recent-past',
+      'long-past',
+    ])
+  })
+
+  it('keeps an unreadable date last, and does not mutate its input', () => {
+    const input = [event('broken', 'soon'), event('soon', '2026-10-02')]
+    expect(sortForHome(input, now).map(e => e._id)).toEqual(['soon', 'broken'])
+    expect(input.map(e => e._id)).toEqual(['broken', 'soon'])
   })
 })

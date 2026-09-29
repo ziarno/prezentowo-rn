@@ -23,6 +23,7 @@
     "@meteorrn/core": "^2.9.1",
     "@prezentowo/types": "*",
     "@react-native-community/netinfo": "12.0.1",
+    "dayjs": "^1.11.23",
     "expo": "^57.0.0",
     "expo-build-properties": "~57.0.17",
     "expo-constants": "~57.0.18",
