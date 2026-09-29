@@ -212,3 +212,24 @@ export type UpdateGiftArgs = {
   // null clears; undefined leaves unchanged.
   image?: ImageRef | null
 }
+
+// What `gifts.importLink` read off a shop's product page.
+export type ImportedFields = {
+  title?: string
+  description?: string
+  // The canonical product URL, falling back to the pasted one.
+  url: string
+  // A remote image; the client uploads it through `POST /api/images` before
+  // adding the present.
+  imageUrl?: string
+  // Fields the page had nothing for, each shown as a field-specific review
+  // hint.
+  missing: ('title' | 'description' | 'image')[]
+}
+
+// `gifts.importLink` resolves to this; it never throws for shop-side failures.
+export type LinkImportOutcome =
+  | { outcome: 'success'; fields: ImportedFields }
+  // blockedShop is set when the URL matched the blocked shop list.
+  | { outcome: 'unreadable'; blockedShop?: string }
+  | { outcome: 'infra-failure' }
