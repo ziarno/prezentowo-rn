@@ -3,6 +3,8 @@ import { initReactI18next } from 'react-i18next'
 
 import en from './locales/en.json'
 import pl from './locales/pl.json'
+// Before `init` below, which is when i18next reads Intl.PluralRules.
+import './pluralRules'
 
 export type SupportedLocale = 'en' | 'pl'
 

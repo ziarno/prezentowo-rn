@@ -1,8 +1,5 @@
-import { useTranslation } from 'react-i18next'
-
-import { StubScreen } from '@/ui/components/StubScreen'
+import { HomeScreen } from '@/ui/screens/HomeScreen'
 
 export default function HomeRoute() {
-  const { t } = useTranslation()
-  return <StubScreen title={t('shell.home')} />
+  return <HomeScreen />
 }

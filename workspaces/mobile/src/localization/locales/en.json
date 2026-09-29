@@ -266,5 +266,20 @@
       "kindRequired": "Choose one to continue.",
       "beneficiaryRequired": "Choose who the event is for."
     }
+  },
+  "home": {
+    "loading": "Loading your events…",
+    "emptyTitle": "No events yet",
+    "emptyBody": "Create one for a birthday, Christmas or anything else, then invite the people taking part.",
+    "emptyAction": "Create an event",
+    "today": "today",
+    "tomorrow": "tomorrow",
+    "inDays_one": "in {{count}} day",
+    "inDays_other": "in {{count}} days",
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago",
+    "people_one": "{{count}} person",
+    "people_other": "{{count}} people",
+    "morePeople": "+{{count}}"
   }
 }
