@@ -3,6 +3,7 @@ import assert from 'assert'
 
 import { createUser } from '../../../tests/fixtures'
 import { callAsUser, resetDatabase } from '../../../tests/helpers'
+import { uploadAs, useImagesSandbox } from '../../../tests/images'
 import { INVITE_CODE_ALPHABET } from '../invites/invites.codes'
 import { Invites, createInviteIndexes } from '../invites/invites.collection'
 import { Events } from './events.collection'
@@ -152,6 +153,30 @@ describe('events.create', function () {
       const event = await create({ background })
 
       assert.deepStrictEqual(event.background, background)
+    })
+  })
+
+  describe('uploaded background', function () {
+    useImagesSandbox()
+
+    it("stores the caller's own upload", async function () {
+      const background = await uploadAs(ola)
+
+      const event = await create({ background })
+
+      assert.deepStrictEqual(event.background, background)
+    })
+
+    it("rejects someone else's upload, or one that doesn't exist", async function () {
+      const others = await uploadAs(bartek)
+
+      for (const background of [
+        others,
+        { kind: 'upload', id: 'x'.repeat(43) },
+      ]) {
+        await rejectsWith({ background }, 'imageNotFound')
+      }
+      assert.strictEqual(await Events.find().countAsync(), 0)
     })
   })
 

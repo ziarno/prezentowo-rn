@@ -8,6 +8,7 @@ import { File } from 'expo-file-system'
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator'
 import { fetch } from 'expo/fetch'
 
+import type { LocalPhoto } from '@/api/draftImage'
 import { BACKEND_HTTP_URL } from '@/constants/backend'
 import { NetworkError, authToken } from '@/sync'
 
@@ -117,6 +118,15 @@ export async function uploadImage(
   if (!response.ok) throw await errorFrom(response)
   const { id } = (await response.json()) as UploadImageResult
   return { kind: 'upload', id }
+}
+
+// Where a photo shows from: the device while it's still a wizard's pick,
+// else the upload's `size` derivative.
+export function photoUri(
+  image: LocalPhoto | Extract<ImageRef, { kind: 'upload' }>,
+  size: ImageSize,
+): string {
+  return image.kind === 'local' ? image.uri : uploadImageUrl(image.id, size)
 }
 
 // Where an upload's WebP derivative is served (docs/spec.md §3.1). The id is

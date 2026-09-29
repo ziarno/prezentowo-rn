@@ -9,6 +9,7 @@ import { Meteor } from 'meteor/meteor'
 import { Random } from 'meteor/random'
 
 import { imageRefPattern } from '../images/images.patterns'
+import { assertOwnUpload } from '../images/images.refs'
 import { insertInvite } from '../invites/invites.codes'
 import { Events } from './events.collection'
 
@@ -98,6 +99,7 @@ const createEvent = async function (
   if (!isCalendarDate(date)) {
     throw new Meteor.Error('invalidArgs', 'invalidDate')
   }
+  await assertOwnUpload(options.background, userId)
 
   const host: EventParticipant = { id: Random.id(), kind: 'real', userId }
 

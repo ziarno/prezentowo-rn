@@ -7,12 +7,17 @@ import type {
 
 import { garland } from '@/constants/colors'
 
+import { type DraftImage, imageChange, savedImage } from './draftImage'
 import { beneficiaryIdOf } from './events'
 
-// The create-event wizard's steps: `4a` name & date, `4b` kind, `4d` people,
-// `4e` who the event is for (many-to-one only). `4c` background lands with
-// the photos slice.
-export type WizardStep = 'details' | 'kind' | 'people' | 'beneficiary'
+// The create-event wizard's steps: `4a` name & date, `4b` kind, `4c`
+// background, `4d` people, `4e` who the event is for (many-to-one only).
+export type WizardStep =
+  | 'details'
+  | 'kind'
+  | 'background'
+  | 'people'
+  | 'beneficiary'
 
 export type WizardMode = 'create' | 'edit'
 
@@ -36,6 +41,8 @@ export type EventDraft = {
   date: string
   type?: EventType
   beneficiaryKey?: string
+  // Empty means none was picked; it renders the §1.1 fallback.
+  background?: DraftImage
   people: DraftPerson[]
 }
 
@@ -46,11 +53,22 @@ export type StepError =
   | 'kindRequired'
   | 'beneficiaryRequired'
 
-const CREATE_STEPS: WizardStep[] = ['details', 'kind', 'people', 'beneficiary']
+const CREATE_STEPS: WizardStep[] = [
+  'details',
+  'kind',
+  'background',
+  'people',
+  'beneficiary',
+]
 
 // People are edited on `6a` itself (remove) or by invite (add), and
 // `UpdateEventArgs` has no participants, so edit mode never opens that step.
-const EDIT_STEPS: WizardStep[] = ['details', 'kind', 'beneficiary']
+const EDIT_STEPS: WizardStep[] = [
+  'details',
+  'kind',
+  'background',
+  'beneficiary',
+]
 
 const PLACEHOLDER_COLORS = [garland.berry, garland.amber, garland.green]
 
@@ -100,6 +118,7 @@ export function stepError(
     }
     case 'kind':
       return draft.type ? null : 'kindRequired'
+    case 'background':
     case 'people':
       return null
     case 'beneficiary':
@@ -128,6 +147,7 @@ export function draftFromEvent(event: EventDoc, userId: string): EventDraft {
     date: event.date,
     type: event.type,
     beneficiaryKey: beneficiaryIdOf(event),
+    background: event.background,
     people: event.participants.map(p =>
       p.kind === 'real' && p.userId === userId
         ? { key: p.id, kind: 'you' }
@@ -207,9 +227,11 @@ export function toCreateEventArgs(
       return []
     },
   )
+  const background = savedImage(draft.background)
   const base = {
     title: draft.title.trim(),
     date: draft.date.trim(),
+    ...(background ? { background } : {}),
     participants,
   }
   if (draft.type === 'many-to-one') {
@@ -224,7 +246,10 @@ export function toCreateEventArgs(
   return { ...base, type: 'many-to-many' }
 }
 
-/** The `events.update` payload: only the fields the draft changed. */
+/**
+ * The `events.update` payload: only the fields the draft changed, with null
+ * for a removed background.
+ */
 export function toUpdateEventArgs(
   event: EventDoc,
   draft: EventDraft,
@@ -234,6 +259,8 @@ export function toUpdateEventArgs(
   const date = draft.date.trim()
   if (title !== event.title) args.title = title
   if (date !== event.date) args.date = date
+  const background = imageChange(event.background, savedImage(draft.background))
+  if (background !== undefined) args.background = background
 
   // The kind is sent whole whenever its type or beneficiary changed.
   if (

@@ -4,6 +4,7 @@ import { Meteor } from 'meteor/meteor'
 
 import { Events } from '../events/events.collection'
 import { imageRefPattern } from '../images/images.patterns'
+import { assertOwnUpload, releaseImage } from '../images/images.refs'
 import { Gifts } from './gifts.collection'
 import { isHiddenFrom, isRecipient } from './gifts.visibility'
 
@@ -104,6 +105,10 @@ const addGift = async function (
   const replayed = await findReplayed()
   if (replayed) return { _id: replayed._id }
 
+  // After the replay check: a replayed add's upload may since have been
+  // replaced or cleared, and the replay must still answer with its gift.
+  await assertOwnUpload(options.image, userId)
+
   try {
     return { _id: await insertGift(userId, options, title) }
   } catch (error) {
@@ -138,6 +143,7 @@ const updateGift = async function (
   if (gift.createdBy !== this.userId) {
     throw new Meteor.Error('notAuthorized', 'notTheGiftCreator')
   }
+  await assertOwnUpload(options.image, this.userId)
 
   const updates: Record<string, unknown> = {}
   if (options.title !== undefined) {
@@ -157,6 +163,9 @@ const updateGift = async function (
   if (Object.keys(modifier).length > 0) {
     await Gifts.updateAsync(options.giftId, modifier)
   }
+  if (options.image !== undefined) {
+    await releaseImage(gift.image, options.image)
+  }
 }
 
 const removeGift = async function (
@@ -175,6 +184,7 @@ const removeGift = async function (
   }
 
   await Gifts.removeAsync(options.giftId)
+  await releaseImage(gift.image)
 }
 
 const setClaim = async function (

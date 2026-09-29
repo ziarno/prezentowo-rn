@@ -44,16 +44,19 @@ describe('wizardSteps', () => {
     expect(wizardSteps('create', 'details', 'many-to-many')).toEqual([
       'details',
       'kind',
+      'background',
       'people',
     ])
     expect(wizardSteps('create', 'details', undefined)).toEqual([
       'details',
       'kind',
+      'background',
       'people',
     ])
     expect(wizardSteps('create', 'details', 'many-to-one')).toEqual([
       'details',
       'kind',
+      'background',
       'people',
       'beneficiary',
     ])
@@ -63,6 +66,7 @@ describe('wizardSteps', () => {
     expect(wizardSteps('create', 'people', 'many-to-one')).toEqual([
       'details',
       'kind',
+      'background',
       'people',
       'beneficiary',
     ])
@@ -271,6 +275,49 @@ describe('edit mode', () => {
     ).toEqual({
       eventId: 'e1',
       kind: { type: 'many-to-one', beneficiaryParticipantId: 'p-babcia' },
+    })
+  })
+})
+
+describe('background', () => {
+  const photo = { kind: 'upload', id: 'u1' } as const
+
+  it('comes after the kind when creating, and can be edited on its own', () => {
+    expect(wizardSteps('create', 'details', 'many-to-many')).toContain(
+      'background',
+    )
+    expect(parseStep('background', 'edit')).toBe('background')
+    expect(wizardSteps('edit', 'background', 'many-to-one')).toEqual([
+      'background',
+    ])
+  })
+
+  it('is optional', () => {
+    expect(stepError('background', draft())).toBeNull()
+  })
+
+  it('is sent on create only when one was picked', () => {
+    expect(toCreateEventArgs(draft(), ME)).not.toHaveProperty('background')
+    expect(toCreateEventArgs(draft({ background: photo }), ME)).toMatchObject({
+      background: photo,
+    })
+  })
+
+  it('is edited from the saved one: replaced, removed, or left alone', () => {
+    const e = event({ background: photo })
+    const edited = draftFromEvent(e, ME)
+    expect(edited.background).toEqual(photo)
+
+    expect(toUpdateEventArgs(e, edited)).toEqual({ eventId: 'e1' })
+    expect(
+      toUpdateEventArgs(e, {
+        ...edited,
+        background: { kind: 'upload', id: 'u2' },
+      }),
+    ).toEqual({ eventId: 'e1', background: { kind: 'upload', id: 'u2' } })
+    expect(toUpdateEventArgs(e, { ...edited, background: undefined })).toEqual({
+      eventId: 'e1',
+      background: null,
     })
   })
 })

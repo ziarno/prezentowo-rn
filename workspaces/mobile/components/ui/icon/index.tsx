@@ -239,3 +239,42 @@ export function ChatIcon(props: IconProps) {
     />
   )
 }
+
+export function CameraIcon({ color = 'currentColor', ...props }: IconProps) {
+  return (
+    <StrokeIcon
+      {...props}
+      color={color}
+      strokeWidth={1.8}
+      d="M22 18a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"
+      extra={
+        <Circle cx={12} cy={13} r={3.5} stroke={color} strokeWidth={1.8} />
+      }
+    />
+  )
+}
+
+export function PhotoIcon({ color = 'currentColor', ...props }: IconProps) {
+  return (
+    <StrokeIcon
+      {...props}
+      color={color}
+      strokeWidth={1.8}
+      d="M21 15l-5-5L5 21"
+      extra={
+        <>
+          <Rect
+            x={3}
+            y={3}
+            width={18}
+            height={18}
+            rx={2}
+            stroke={color}
+            strokeWidth={1.8}
+          />
+          <Circle cx={8.5} cy={8.5} r={1.5} stroke={color} strokeWidth={1.8} />
+        </>
+      }
+    />
+  )
+}

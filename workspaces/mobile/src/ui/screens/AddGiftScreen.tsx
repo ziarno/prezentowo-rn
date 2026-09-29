@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { uploadDraftImage } from '@/api/draftImage'
 import {
   type GiftDraft,
   type GiftWizardMode,
@@ -19,6 +20,7 @@ import {
   toUpdateGiftArgs,
 } from '@/api/giftWizard'
 import { addGift, updateGift } from '@/api/gifts'
+import { uploadImage } from '@/api/images'
 import { canEditGift } from '@/api/presentLists'
 import { Text } from '@/components/ui/text'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
@@ -29,6 +31,7 @@ import { usePersonName } from '@/hooks/usePersonName'
 import { errorMessage } from '@/localization/errorMessage'
 import { GarlandField } from '@/ui/components/GarlandField'
 import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
+import { PhotoPicker } from '@/ui/components/PhotoPicker'
 import { PresentTile } from '@/ui/components/PresentTile'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
 import { SheetKeyboardAvoidingView } from '@/ui/components/SheetKeyboardAvoidingView'
@@ -184,7 +187,12 @@ function GiftWizard({
     setSubmitError(null)
     leaving.current = true
     try {
-      await onSubmit(draft)
+      // Kept in the draft, so a retry after a failed save doesn't upload
+      // the photo again.
+      const image = await uploadDraftImage(draft.image, uploadImage)
+      const uploaded = { ...draft, image }
+      setDraft(uploaded)
+      await onSubmit(uploaded)
     } catch (e) {
       leaving.current = false
       setSubmitError(
@@ -201,7 +209,7 @@ function GiftWizard({
   }
 
   const primaryLabel =
-    step === 'photo'
+    step === 'photo' && !draft.image
       ? t('common.skip')
       : !isLast
         ? t('wizard.next')
@@ -249,7 +257,10 @@ function GiftWizard({
               />
             </>
           ) : step === 'photo' ? (
-            <PhotoStep />
+            <>
+              <StepHeading>{t('addPresent.photo.heading')}</StepHeading>
+              <PresentPhoto draft={draft} onChange={setDraft} size={160} />
+            </>
           ) : step === 'details' ? (
             <>
               <StepHeading>{t('addPresent.details.heading')}</StepHeading>
@@ -347,20 +358,34 @@ function DetailFields({ draft, onChange }: FieldsProps) {
   )
 }
 
-// `5b`: uploading a photo or picking one of ours lands with the photos
-// slice; until then the only way on is without one.
-function PhotoStep() {
+// `5b`, and the photo on `5d`: one photo per present, or none. Picking one
+// of ours lands with the stock art slice.
+function PresentPhoto({
+  draft,
+  onChange,
+  size,
+}: FieldsProps & { size: number }) {
   const { t } = useTranslation()
   return (
-    <>
-      <StepHeading>{t('addPresent.photo.heading')}</StepHeading>
-      <View className="items-center py-4">
-        <PresentTile image={undefined} size={140} radius={20} />
-      </View>
-      <Text className="text-center text-[13px] leading-[19px] text-garland-ink-60">
-        {t('addPresent.photo.noPhoto')}
-      </Text>
-    </>
+    <PhotoPicker
+      value={draft.image}
+      onChange={image => onChange({ ...draft, image })}
+      preview={
+        <>
+          <PresentTile
+            image={draft.image}
+            size={size}
+            radius={20}
+            derivative={1000}
+          />
+          {draft.image ? null : (
+            <Text className="mt-3 text-center text-[13px] leading-[19px] text-garland-ink-60">
+              {t('addPresent.photo.noPhoto')}
+            </Text>
+          )}
+        </>
+      }
+    />
   )
 }
 
@@ -441,13 +466,8 @@ function SummaryStep({
         </Text>
       ) : null}
 
-      <View className="my-4 flex-row items-center gap-3.5 border-b border-garland-ink-08 pb-4">
-        <PresentTile image={draft.image} size={64} />
-        <Text className="flex-1 text-[13px] leading-[18px] text-garland-ink-60">
-          {draft.image
-            ? t('addPresent.summary.photoKept')
-            : t('addPresent.photo.noPhoto')}
-        </Text>
+      <View className="my-4 border-b border-garland-ink-08 pb-5">
+        <PresentPhoto draft={draft} onChange={onChange} size={120} />
       </View>
 
       <TitleField draft={draft} onChange={onChange} errorMessage={titleError} />

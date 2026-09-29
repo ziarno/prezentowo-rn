@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { Keyboard, Pressable, ScrollView, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { uploadDraftImage } from '@/api/draftImage'
 import {
   type DraftPerson,
   type EventDraft,
@@ -24,6 +25,7 @@ import {
   wizardSteps,
 } from '@/api/eventWizard'
 import { createEvent, updateEvent } from '@/api/events'
+import { uploadImage } from '@/api/images'
 import { CheckIcon, CloseIcon, PlusIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { type AvatarKey, isAvatarKey } from '@/constants/avatars'
@@ -36,9 +38,11 @@ import {
   AvatarPickerModal,
   type AvatarPickerModalHandle,
 } from '@/ui/components/AvatarPickerModal'
+import { EventBackground } from '@/ui/components/EventBackground'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { GarlandField } from '@/ui/components/GarlandField'
 import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
+import { PhotoPicker } from '@/ui/components/PhotoPicker'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
 import { SheetKeyboardAvoidingView } from '@/ui/components/SheetKeyboardAvoidingView'
 import {
@@ -46,6 +50,8 @@ import {
   WizardFooter,
   WizardProgress,
 } from '@/ui/components/Wizard'
+
+const COVER_PREVIEW_HEIGHT = 180
 
 // How a person in the draft is shown.
 type PersonView = { name: string; avatarKey?: string; color?: string }
@@ -218,7 +224,12 @@ function EventWizard({
     setSubmitError(null)
     leaving.current = true
     try {
-      await onSubmit(draft)
+      // Kept in the draft, so a retry after a failed save doesn't upload
+      // the photo again.
+      const background = await uploadDraftImage(draft.background, uploadImage)
+      const uploaded = { ...draft, background }
+      setDraft(uploaded)
+      await onSubmit(uploaded)
     } catch (e) {
       leaving.current = false
       setSubmitError(
@@ -267,6 +278,8 @@ function EventWizard({
               type={draft.type}
               onChange={type => setDraft({ ...draft, type })}
             />
+          ) : step === 'background' ? (
+            <BackgroundStep draft={draft} onChange={setDraft} />
           ) : step === 'people' ? (
             <PeopleStep draft={draft} onChange={setDraft} viewOf={viewOf} />
           ) : (
@@ -389,6 +402,50 @@ function KindStep({
           )
         })}
       </View>
+    </>
+  )
+}
+
+// `4c`: a photo, or none (the fallback). Picking one of ours lands with the
+// stock art slice.
+function BackgroundStep({
+  draft,
+  onChange,
+}: {
+  draft: EventDraft
+  onChange: (draft: EventDraft) => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <>
+      <StepHeading>{t('createEvent.background.heading')}</StepHeading>
+      <PhotoPicker
+        value={draft.background}
+        onChange={background => onChange({ ...draft, background })}
+        preview={
+          draft.background ? (
+            <View className="w-full overflow-hidden rounded-2xl">
+              <EventBackground
+                event={{ _id: '', background: draft.background }}
+                height={COVER_PREVIEW_HEIGHT}
+                derivative={1600}
+              />
+            </View>
+          ) : (
+            <View
+              className="w-full items-center justify-center rounded-2xl border-[1.5px] border-dashed border-garland-ink-15 px-6"
+              style={{ height: COVER_PREVIEW_HEIGHT }}
+            >
+              <Text className="text-center text-[13px] leading-[19px] text-garland-ink-60">
+                {t('createEvent.background.none')}
+              </Text>
+            </View>
+          )
+        }
+      />
+      <Text className="mt-4 text-xs leading-[17px] text-garland-ink-60">
+        {t('createEvent.background.hint')}
+      </Text>
     </>
   )
 }

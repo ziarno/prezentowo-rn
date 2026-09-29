@@ -207,8 +207,7 @@
     },
     "summary": {
       "heading": "Check it over",
-      "forLabel": "For",
-      "photoKept": "The photo stays as it is."
+      "forLabel": "For"
     },
     "errors": {
       "titleRequired": "Give the present a name.",
@@ -265,6 +264,11 @@
       "dateInvalid": "Use a date like 2026-12-24.",
       "kindRequired": "Choose one to continue.",
       "beneficiaryRequired": "Choose who the event is for."
+    },
+    "background": {
+      "heading": "Pick a background",
+      "none": "No photo — we'll pick a background for you.",
+      "hint": "It sits behind the event title, date and countdown."
     }
   },
   "home": {
@@ -300,5 +304,19 @@
         "year_other": "{{count}} years ago"
       }
     }
+  },
+  "photoPicker": {
+    "takePhoto": "Take photo",
+    "choosePhoto": "Choose photo",
+    "remove": "Remove photo",
+    "errors": {
+      "cameraDenied": "Allow camera access in Settings to take a photo.",
+      "cameraUnavailable": "This device can't take photos. Choose one instead.",
+      "libraryFailed": "Couldn't open your photos. Try again."
+    }
+  },
+  "feed": {
+    "loading": "Loading…",
+    "notFound": "This event isn't here anymore."
   }
 }

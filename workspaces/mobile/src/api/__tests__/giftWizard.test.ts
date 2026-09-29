@@ -193,4 +193,20 @@ describe('toUpdateGiftArgs', () => {
       toUpdateGiftArgs(g, { ...draftFromGift(g), description: 'Soft' }),
     ).toEqual({ giftId: 'g1', description: 'Soft' })
   })
+
+  it('sends a replaced or removed photo, and nothing for the same one', () => {
+    const photo = { kind: 'upload', id: 'u1' } as const
+    const g = gift({ image: photo })
+
+    expect(toUpdateGiftArgs(g, draftFromGift(g))).toEqual({ giftId: 'g1' })
+    expect(
+      toUpdateGiftArgs(g, {
+        ...draftFromGift(g),
+        image: { kind: 'upload', id: 'u2' },
+      }),
+    ).toEqual({ giftId: 'g1', image: { kind: 'upload', id: 'u2' } })
+    expect(
+      toUpdateGiftArgs(g, { ...draftFromGift(g), image: undefined }),
+    ).toEqual({ giftId: 'g1', image: null })
+  })
 })

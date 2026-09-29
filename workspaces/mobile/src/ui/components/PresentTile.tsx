@@ -1,12 +1,14 @@
-import type { ImageRef, ImageSize } from '@prezentowo/types'
+import type { ImageSize } from '@prezentowo/types'
 import { Image } from 'expo-image'
 import { View } from 'react-native'
 
-import { uploadImageUrl } from '@/api/images'
+import type { DraftImage } from '@/api/draftImage'
+import { photoUri } from '@/api/images'
 import { present } from '@/constants/presents'
 
 type PresentTileProps = {
-  image: ImageRef | undefined
+  // A wizard's photo not yet uploaded shows from the device.
+  image: DraftImage | undefined
   // Outer rounded tile size.
   size?: number
   // Inner illustration size. Defaults to ~88% of the tile. A photo always
@@ -17,7 +19,8 @@ type PresentTileProps = {
   derivative?: ImageSize
 }
 
-// A present's image: an upload's WebP derivative, or its bundled illustration.
+// A present's image: an upload's WebP derivative (or a picked photo still on
+// the device), or its bundled illustration.
 // An empty or unknown illustration falls back to stock art.
 export function PresentTile({
   image,
@@ -32,9 +35,9 @@ export function PresentTile({
       className="items-center justify-center overflow-hidden bg-garland-paper2"
       style={{ width: size, height: size, borderRadius: radius }}
     >
-      {image?.kind === 'upload' ? (
+      {image?.kind === 'upload' || image?.kind === 'local' ? (
         <Image
-          source={{ uri: uploadImageUrl(image.id, derivative) }}
+          source={{ uri: photoUri(image, derivative) }}
           style={{ width: size, height: size }}
           contentFit="cover"
           transition={150}

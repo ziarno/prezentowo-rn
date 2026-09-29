@@ -209,8 +209,7 @@
     },
     "summary": {
       "heading": "Sprawdź wszystko",
-      "forLabel": "Dla",
-      "photoKept": "Zdjęcie zostaje bez zmian."
+      "forLabel": "Dla"
     },
     "errors": {
       "titleRequired": "Nazwij prezent.",
@@ -267,6 +266,11 @@
       "dateInvalid": "Wpisz datę w formacie 2026-12-24.",
       "kindRequired": "Wybierz jedną z opcji.",
       "beneficiaryRequired": "Wybierz, dla kogo jest wydarzenie."
+    },
+    "background": {
+      "heading": "Wybierz tło",
+      "none": "Bez zdjęcia — wybierzemy tło za Ciebie.",
+      "hint": "Tło jest widoczne pod nazwą wydarzenia, datą i odliczaniem."
     }
   },
   "home": {
@@ -320,5 +324,19 @@
         "year_other": "{{count}} roku temu"
       }
     }
+  },
+  "photoPicker": {
+    "takePhoto": "Zrób zdjęcie",
+    "choosePhoto": "Wybierz zdjęcie",
+    "remove": "Usuń zdjęcie",
+    "errors": {
+      "cameraDenied": "Aby zrobić zdjęcie, zezwól na dostęp do aparatu w Ustawieniach.",
+      "cameraUnavailable": "To urządzenie nie może robić zdjęć. Wybierz zdjęcie z galerii.",
+      "libraryFailed": "Nie udało się otworzyć zdjęć. Spróbuj ponownie."
+    }
+  },
+  "feed": {
+    "loading": "Ładowanie…",
+    "notFound": "Tego wydarzenia już tu nie ma."
   }
 }

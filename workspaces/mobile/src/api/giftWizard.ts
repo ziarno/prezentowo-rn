@@ -2,10 +2,10 @@ import type {
   AddGiftArgs,
   EventDoc,
   GiftDoc,
-  ImageRef,
   UpdateGiftArgs,
 } from '@prezentowo/types'
 
+import { type DraftImage, imageChange, savedImage } from './draftImage'
 import { beneficiaryIdOf } from './events'
 
 // The add-present wizard's steps: `5a` name, `5b` photo, `5c` description
@@ -19,7 +19,7 @@ export type GiftDraft = {
   title: string
   description: string
   url: string
-  image?: ImageRef
+  image?: DraftImage
   // Minted once per wizard, so resending the same add can't duplicate it.
   clientId: string
 }
@@ -116,21 +116,21 @@ export function draftFromGift(gift: GiftDoc): GiftDraft {
 export function toAddGiftArgs(eventId: string, draft: GiftDraft): AddGiftArgs {
   const description = draft.description.trim()
   const url = draft.url.trim()
+  const image = savedImage(draft.image)
   return {
     eventId,
     forParticipantId: draft.forParticipantId!,
     title: draft.title.trim(),
     ...(description ? { description } : {}),
     ...(url ? { url } : {}),
-    ...(draft.image ? { image: draft.image } : {}),
+    ...(image ? { image } : {}),
     clientId: draft.clientId,
   }
 }
 
 /**
- * The `gifts.update` payload: only the fields the draft changed. The
- * recipient is write-once, and the photo can't be changed until the photos
- * slice lands.
+ * The `gifts.update` payload: only the fields the draft changed, with null
+ * for a removed photo. The recipient is write-once.
  */
 export function toUpdateGiftArgs(
   gift: GiftDoc,
@@ -143,5 +143,7 @@ export function toUpdateGiftArgs(
   if (title !== gift.title) args.title = title
   if (description !== (gift.description ?? '')) args.description = description
   if (url !== (gift.url ?? '')) args.url = url
+  const image = imageChange(gift.image, savedImage(draft.image))
+  if (image !== undefined) args.image = image
   return args
 }

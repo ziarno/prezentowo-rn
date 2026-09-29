@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.prezentowo.app"
+      "bundleIdentifier": "com.prezentowo.app",
+      "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true
+      }
     },
     "android": {
       "package": "com.prezentowo.app",
@@ -41,6 +44,14 @@
       "expo-secure-store",
       "expo-font",
       "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Prezentowo uses your photos for event backgrounds and present photos.",
+          "cameraPermission": "Prezentowo uses the camera to take event backgrounds and present photos.",
+          "microphonePermission": false
+        }
+      ],
       "expo-status-bar",
       "expo-web-browser",
       [
@@ -55,6 +66,9 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "locales": {
+      "pl": "./languages/pl.json"
     }
   }
 }

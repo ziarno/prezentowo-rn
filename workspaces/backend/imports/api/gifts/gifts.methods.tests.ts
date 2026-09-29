@@ -2,6 +2,7 @@ import assert from 'assert'
 
 import { addGiftAs, createFamilyEvent } from '../../../tests/fixtures'
 import { callAsUser, resetDatabase } from '../../../tests/helpers'
+import { isStored, uploadAs, useImagesSandbox } from '../../../tests/images'
 import { Gifts, createGiftIndexes } from './gifts.collection'
 import './gifts.methods'
 
@@ -158,30 +159,6 @@ describe('gifts methods', function () {
       assert.strictEqual((await Gifts.findOneAsync(gift))?.title, 'Wool scarf')
     })
 
-    it('clears the image on null and keeps it when image is left out', async function () {
-      const { users, participants, eventId } = family
-      const image = { kind: 'upload', id: 'abc123' }
-      const gift = await addGiftAs(
-        users.celina,
-        eventId,
-        participants.bartek,
-        'Scarf',
-        { image },
-      )
-
-      await callAsUser(users.celina, 'gifts.update', {
-        giftId: gift,
-        title: 'Hat',
-      })
-      assert.deepStrictEqual((await Gifts.findOneAsync(gift))?.image, image)
-
-      await callAsUser(users.celina, 'gifts.update', {
-        giftId: gift,
-        image: null,
-      })
-      assert.strictEqual('image' in (await Gifts.findOneAsync(gift))!, false)
-    })
-
     it('rejects any other member, the event creator included', async function () {
       const { users, participants, eventId } = family
       const gift = await addGiftAs(
@@ -293,6 +270,175 @@ describe('gifts methods', function () {
         })
       }
       assert.strictEqual((await Gifts.findOneAsync(hidden))?.title, 'Scarf')
+    })
+  })
+  // docs/spec.md §3.1: a gift's upload goes with it, and is replaced or
+  // cleared along with its image.
+  describe('photos', function () {
+    useImagesSandbox()
+
+    const giftWith = (image: unknown) =>
+      addGiftAs(
+        family.users.celina,
+        family.eventId,
+        family.participants.bartek,
+        'Scarf',
+        {
+          image,
+        },
+      )
+
+    it("stores the caller's own upload", async function () {
+      const image = await uploadAs(family.users.celina)
+
+      const gift = await giftWith(image)
+
+      assert.deepStrictEqual((await Gifts.findOneAsync(gift))?.image, image)
+    })
+
+    it('still answers a replay once its upload has been released', async function () {
+      const { users, participants, eventId } = family
+      const image = await uploadAs(users.celina)
+      const args = { clientId: 'offline-1', image }
+      const gift = await addGiftAs(
+        users.celina,
+        eventId,
+        participants.bartek,
+        'Scarf',
+        args,
+      )
+      await callAsUser(users.celina, 'gifts.update', {
+        giftId: gift,
+        image: null,
+      })
+
+      const replay = await addGiftAs(
+        users.celina,
+        eventId,
+        participants.bartek,
+        'Scarf',
+        args,
+      )
+
+      assert.strictEqual(replay, gift)
+    })
+
+    it("rejects someone else's upload, or one that doesn't exist", async function () {
+      const { users, participants, eventId } = family
+      const others = await uploadAs(users.bartek)
+
+      for (const image of [others, { kind: 'upload', id: 'x'.repeat(43) }]) {
+        await assert.rejects(giftWith(image), {
+          error: 'notFound',
+          reason: 'imageNotFound',
+        })
+      }
+      assert.strictEqual(await Gifts.find({ eventId }).countAsync(), 0)
+      assert.ok(await isStored(others.id))
+
+      const gift = await addGiftAs(
+        users.celina,
+        eventId,
+        participants.bartek,
+        'Scarf',
+      )
+      await assert.rejects(
+        callAsUser(users.celina, 'gifts.update', {
+          giftId: gift,
+          image: others,
+        }),
+        { error: 'notFound', reason: 'imageNotFound' },
+      )
+      assert.strictEqual('image' in (await Gifts.findOneAsync(gift))!, false)
+    })
+
+    it('deletes the replaced upload when the image changes', async function () {
+      const first = await uploadAs(family.users.celina)
+      const second = await uploadAs(family.users.celina)
+      const gift = await giftWith(first)
+
+      await callAsUser(family.users.celina, 'gifts.update', {
+        giftId: gift,
+        image: second,
+      })
+
+      assert.deepStrictEqual((await Gifts.findOneAsync(gift))?.image, second)
+      assert.strictEqual(await isStored(first.id), false)
+      assert.ok(await isStored(second.id))
+    })
+
+    it('deletes the upload when the image is cleared', async function () {
+      const image = await uploadAs(family.users.celina)
+      const gift = await giftWith(image)
+
+      await callAsUser(family.users.celina, 'gifts.update', {
+        giftId: gift,
+        image: null,
+      })
+
+      assert.strictEqual('image' in (await Gifts.findOneAsync(gift))!, false)
+      assert.strictEqual(await isStored(image.id), false)
+    })
+
+    it('deletes the upload when it is swapped for an illustration', async function () {
+      const image = await uploadAs(family.users.celina)
+      const gift = await giftWith(image)
+
+      await callAsUser(family.users.celina, 'gifts.update', {
+        giftId: gift,
+        image: { kind: 'illustration', id: 'p3' },
+      })
+
+      assert.strictEqual(await isStored(image.id), false)
+    })
+
+    it('keeps the upload when the image is left out or sent unchanged', async function () {
+      const image = await uploadAs(family.users.celina)
+      const gift = await giftWith(image)
+
+      await callAsUser(family.users.celina, 'gifts.update', {
+        giftId: gift,
+        title: 'Hat',
+      })
+      await callAsUser(family.users.celina, 'gifts.update', {
+        giftId: gift,
+        image,
+      })
+
+      assert.deepStrictEqual((await Gifts.findOneAsync(gift))?.image, image)
+      assert.ok(await isStored(image.id))
+    })
+
+    it('deletes the upload with the gift, whoever removes it', async function () {
+      const { users } = family
+      const mine = await uploadAs(users.celina)
+      const theirs = await uploadAs(users.celina)
+      const byCreator = await giftWith(mine)
+      const byEventCreator = await giftWith(theirs)
+
+      await callAsUser(users.celina, 'gifts.remove', { giftId: byCreator })
+      await callAsUser(users.ola, 'gifts.remove', { giftId: byEventCreator })
+
+      assert.strictEqual(await isStored(mine.id), false)
+      assert.strictEqual(await isStored(theirs.id), false)
+    })
+
+    it('keeps the upload when a removal is rejected', async function () {
+      const image = await uploadAs(family.users.celina)
+      const gift = await addGiftAs(
+        family.users.celina,
+        family.eventId,
+        family.participants.dziadek,
+        'Scarf',
+        { image },
+      )
+
+      await assert.rejects(
+        callAsUser(family.users.bartek, 'gifts.remove', { giftId: gift }),
+        { error: 'notAuthorized' },
+      )
+
+      assert.ok(await isStored(image.id))
     })
   })
 })

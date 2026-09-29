@@ -1,0 +1,6 @@
+{
+  "ios": {
+    "NSCameraUsageDescription": "Prezentowo używa aparatu, by robić zdjęcia tła wydarzeń i prezentów.",
+    "NSPhotoLibraryUsageDescription": "Prezentowo używa Twoich zdjęć jako tła wydarzeń i zdjęć prezentów."
+  }
+}

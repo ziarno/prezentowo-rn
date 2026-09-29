@@ -1,27 +1,17 @@
 import type { EventDoc } from '@prezentowo/types'
-import { type TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { Pressable, View } from 'react-native'
 
-import {
-  type Countdown,
-  avatarPreview,
-  countdown,
-  parseEventDate,
-} from '@/api/eventList'
+import { avatarPreview } from '@/api/eventList'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
+import { eventWhen } from '@/localization/eventDates'
 import { EventBackground } from '@/ui/components/EventBackground'
 import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
 
 const AVATAR_SIZE = 28
 const MAX_AVATARS = 5
-
-const countdownText = (t: TFunction, c: Countdown): string =>
-  'unit' in c
-    ? t(`home.countdown.${c.kind}.${c.unit}`, { count: c.count })
-    : t(`home.countdown.${c.kind}`)
 
 // A `3a` row: the event's background band, then title, date with countdown,
 // and who's taking part.
@@ -35,20 +25,13 @@ export function EventCard({
   const { t, i18n } = useTranslation()
   const { participants } = useEventParticipants(event._id)
 
-  const date = parseEventDate(event.date)
-  const until = countdown(event.date, new Date())
-  const when = [
-    date
-      ? new Intl.DateTimeFormat(i18n.language, {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric',
-        }).format(date)
-      : event.date,
-    until && countdownText(t, until),
-  ]
-    .filter(Boolean)
-    .join(' · ')
+  const { date, countdown } = eventWhen(
+    t,
+    i18n.language,
+    event.date,
+    new Date(),
+  )
+  const when = [date, countdown].filter(Boolean).join(' · ')
 
   const { shown, more } = avatarPreview(participants, MAX_AVATARS)
   const overlap = Math.round(AVATAR_SIZE * 0.3)
