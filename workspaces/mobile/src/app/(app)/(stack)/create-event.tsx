@@ -1,8 +1,19 @@
-import { useTranslation } from 'react-i18next'
+import { useLocalSearchParams } from 'expo-router'
 
-import { StubScreen } from '@/ui/components/StubScreen'
+import { parseStep } from '@/api/eventWizard'
+import { CreateEventScreen } from '@/ui/screens/CreateEventScreen'
 
+// `?eventId=` opens the wizard in edit mode (from `6a`); `?step=` picks the
+// step it starts at.
 export default function CreateEventRoute() {
-  const { t } = useTranslation()
-  return <StubScreen title={t('shell.createEvent')} variant="modal" />
+  const { eventId, step } = useLocalSearchParams<{
+    eventId?: string
+    step?: string
+  }>()
+  return (
+    <CreateEventScreen
+      eventId={eventId}
+      start={parseStep(step, eventId ? 'edit' : 'create')}
+    />
+  )
 }

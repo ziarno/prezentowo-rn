@@ -173,5 +173,55 @@
     "claimToo": "Też to kupię",
     "unclaim": "Jednak tego nie kupię",
     "onYourList": "To jest na twojej liście. Nie zobaczysz, czy ktoś to kupuje."
+  },
+  "createEvent": {
+    "stepOf": "Krok {{step}} z {{count}}",
+    "back": "Wstecz",
+    "next": "Dalej",
+    "create": "Utwórz wydarzenie",
+    "save": "Zapisz",
+    "loading": "Ładowanie…",
+    "notFound": "Tego wydarzenia już tu nie ma.",
+    "createFailed": "Nie udało się utworzyć wydarzenia. Spróbuj ponownie.",
+    "saveFailed": "Nie udało się zapisać wydarzenia. Spróbuj ponownie.",
+    "details": {
+      "heading": "Jaka to okazja?",
+      "nameLabel": "Nazwa",
+      "namePlaceholder": "Wigilia u babci",
+      "dateLabel": "Data",
+      "datePlaceholder": "RRRR-MM-DD",
+      "dateHint": "Od daty zależy odliczanie na ekranie głównym."
+    },
+    "kind": {
+      "heading": "Kto dostaje prezenty?",
+      "manyToMany": "Wszyscy dostają prezenty",
+      "manyToManyExamples": "Wigilia, Secret Santa",
+      "manyToOne": "Jedna osoba dostaje prezenty",
+      "manyToOneExamples": "Urodziny, baby shower"
+    },
+    "people": {
+      "heading": "Kto bierze udział?",
+      "you": "Ty",
+      "host": "Gospodarz",
+      "onPrezentowo": "W Prezentowo",
+      "addedByName": "Dodano po imieniu",
+      "namePlaceholder": "Wpisz imię",
+      "add": "Dodaj",
+      "remove": "Usuń: {{name}}",
+      "pickAvatar": "Wybierz awatar: {{name}}",
+      "joinLater": "Każdy może też dołączyć później przez link z zaproszeniem — bez zatwierdzania."
+    },
+    "beneficiary": {
+      "heading": "Dla kogo jest wydarzenie?",
+      "hint": "Wybierz spośród dodanych osób.",
+      "you": "{{name}} (ty)"
+    },
+    "errors": {
+      "nameRequired": "Nadaj wydarzeniu nazwę.",
+      "dateRequired": "Wybierz datę.",
+      "dateInvalid": "Wpisz datę w formacie 2026-12-24.",
+      "kindRequired": "Wybierz jedną z opcji.",
+      "beneficiaryRequired": "Wybierz, dla kogo jest wydarzenie."
+    }
   }
 }

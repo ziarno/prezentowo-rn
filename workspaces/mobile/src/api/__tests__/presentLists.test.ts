@@ -20,6 +20,7 @@ const event: EventDoc = {
     { id: 'pBartek', kind: 'real', userId: 'bartek' },
     { id: 'pDziadek', kind: 'placeholder', name: 'Dziadek', color: '#c7973d' },
   ],
+  type: 'many-to-many',
 }
 
 let seq = 0

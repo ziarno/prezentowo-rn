@@ -1,5 +1,7 @@
 import '../imports/api/accounts/devLogin.tests'
+import '../imports/api/events/events.methods.tests'
 import '../imports/api/gifts/gifts.methods.tests'
 import '../imports/api/gifts/gifts.publications.tests'
 import '../imports/api/images/images.tests'
+import '../imports/api/invites/invites.tests'
 import './helpers.tests'

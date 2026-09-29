@@ -33,24 +33,62 @@ export type EventParticipant =
       avatar?: string
     }
 
+export type ImageRef =
+  | { kind: 'upload'; id: string } // self-hosted upload
+  | { kind: 'illustration'; id: string } // bundled stock key, e.g. "p3" or "b2"
+
+export type EventKind =
+  | { type: 'many-to-many' }
+  // An EventParticipant.id, never a userId: the beneficiary may be a
+  // placeholder.
+  | { type: 'many-to-one'; beneficiaryParticipantId: string }
+
+// Participant ids are minted server-side, so create names the beneficiary by
+// index into `participants`.
+export type CreateEventKindInput =
+  | { type: 'many-to-many' }
+  | { type: 'many-to-one'; beneficiaryIndex: number }
+
 export type CreateEventArgs = {
   title: string
+  // A calendar date, `YYYY-MM-DD`.
   date: string
+  background?: ImageRef
+  // The caller is always the host and is added if missing; a `real` entry
+  // for them marks where they sit for `beneficiaryIndex`.
   participants: EventParticipantInput[]
-}
+} & CreateEventKindInput
 
 export type EventDoc = {
   _id: string
   title: string
   date: string
+  background?: ImageRef
   ownerId: string
   participants: EventParticipant[]
   createdAt: Date
+} & EventKind
+
+export type UpdateEventArgs = {
+  eventId: string
+  title?: string
+  date?: string
+  // null clears it.
+  background?: ImageRef | null
+  // Rejected once any GiftDoc exists for the event.
+  kind?: EventKind
 }
 
-export type ImageRef =
-  | { kind: 'upload'; id: string } // self-hosted upload
-  | { kind: 'illustration'; id: string } // bundled stock key, e.g. "p3" or "b2"
+export type InviteDoc = {
+  _id: string
+  // 4 chars, crypto-random, alphabet = [A-Za-z0-9] minus 0 O 1 l I (57
+  // symbols). Unique.
+  code: string
+  // Exactly one InviteDoc per event.
+  eventId: string
+  ownerId: string
+  createdAt: Date
+}
 
 // The WebP derivatives of an upload, by long edge in px, served at
 // `/images/<id>/<size>.webp`: 400 present tile, 1000 present detail, 1600

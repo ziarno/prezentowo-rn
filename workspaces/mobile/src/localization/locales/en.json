@@ -173,5 +173,55 @@
     "claimToo": "I'll buy this too",
     "unclaim": "I'm not buying this anymore",
     "onYourList": "This is on your list. You won't see whether anyone is buying it."
+  },
+  "createEvent": {
+    "stepOf": "Step {{step}} of {{count}}",
+    "back": "Back",
+    "next": "Next",
+    "create": "Create event",
+    "save": "Save",
+    "loading": "Loading…",
+    "notFound": "This event isn't here anymore.",
+    "createFailed": "Couldn't create the event. Try again.",
+    "saveFailed": "Couldn't save the event. Try again.",
+    "details": {
+      "heading": "What's the occasion?",
+      "nameLabel": "Name",
+      "namePlaceholder": "Christmas at Grandma's",
+      "dateLabel": "Date",
+      "datePlaceholder": "YYYY-MM-DD",
+      "dateHint": "The date drives the countdown on Home."
+    },
+    "kind": {
+      "heading": "Who gets presents?",
+      "manyToMany": "Everyone gets presents",
+      "manyToManyExamples": "Christmas, Secret Santa",
+      "manyToOne": "One person gets presents",
+      "manyToOneExamples": "Birthday, baby shower"
+    },
+    "people": {
+      "heading": "Who's taking part?",
+      "you": "You",
+      "host": "Host",
+      "onPrezentowo": "On Prezentowo",
+      "addedByName": "Added by name",
+      "namePlaceholder": "Type a name",
+      "add": "Add",
+      "remove": "Remove {{name}}",
+      "pickAvatar": "Choose an avatar for {{name}}",
+      "joinLater": "Anyone can also join later with an invite link — no approval needed."
+    },
+    "beneficiary": {
+      "heading": "Who is the event for?",
+      "hint": "Pick from the people you added.",
+      "you": "{{name}} (you)"
+    },
+    "errors": {
+      "nameRequired": "Give the event a name.",
+      "dateRequired": "Pick the date.",
+      "dateInvalid": "Use a date like 2026-12-24.",
+      "kindRequired": "Choose one to continue.",
+      "beneficiaryRequired": "Choose who the event is for."
+    }
   }
 }

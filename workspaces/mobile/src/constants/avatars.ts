@@ -91,6 +91,9 @@ export const AVATAR_KEYS: readonly AvatarKey[] = [
   ...MALE_AVATAR_KEYS,
 ]
 
+export const isAvatarKey = (key: string | undefined): key is AvatarKey =>
+  !!key && key in AVATAR_SOURCES
+
 export const avatarGender = (key: AvatarKey): AvatarGender =>
   key.startsWith('f') ? 'female' : 'male'
 

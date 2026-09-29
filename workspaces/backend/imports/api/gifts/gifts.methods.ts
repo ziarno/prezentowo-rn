@@ -1,13 +1,9 @@
-import type {
-  AddGiftArgs,
-  EventDoc,
-  ImageRef,
-  UpdateGiftArgs,
-} from '@prezentowo/types'
+import type { AddGiftArgs, EventDoc, UpdateGiftArgs } from '@prezentowo/types'
 import { Match, check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 
 import { Events } from '../events/events.collection'
+import { imageRefPattern } from '../images/images.patterns'
 import { Gifts } from './gifts.collection'
 import { isHiddenFrom, isRecipient } from './gifts.visibility'
 
@@ -29,12 +25,6 @@ const assertEventMember = async function (
   }
   return event
 }
-
-const imageRefPattern = Match.Where((value: unknown): value is ImageRef => {
-  check(value, { kind: String, id: String })
-  const { kind, id } = value as ImageRef
-  return (kind === 'upload' || kind === 'illustration') && id.length > 0
-})
 
 // Loads a gift the caller may act on: they must be a member of its event, and
 // a gift hidden from them by the own-list visibility rule (suggested for them)

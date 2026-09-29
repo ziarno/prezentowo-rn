@@ -29,6 +29,7 @@ export async function createFamilyEvent() {
     {
       title: 'Wigilia',
       date: '2026-12-24',
+      type: 'many-to-many',
       participants: [
         { kind: 'real', userId: bartek },
         { kind: 'real', userId: celina },

@@ -1,7 +1,7 @@
 import { View } from 'react-native'
 
 import { Text } from '@/components/ui/text'
-import { AVATAR_SOURCES, type AvatarKey, avatar } from '@/constants/avatars'
+import { avatar, isAvatarKey } from '@/constants/avatars'
 import { garland } from '@/constants/colors'
 import { Avatar } from '@/ui/components/Avatar'
 
@@ -12,9 +12,6 @@ type ParticipantAvatarProps = {
   color?: string
   size?: number
 }
-
-const isAvatarKey = (key: string | undefined): key is AvatarKey =>
-  !!key && key in AVATAR_SOURCES
 
 // Renders a participant's avatar image when one is known, otherwise a colored
 // circle with their initial — used for placeholders not yet on Prezentowo.

@@ -1,5 +1,6 @@
 import type {
   CreateEventArgs,
+  EventKind,
   EventParticipant,
   EventParticipantInput,
 } from '@prezentowo/types'
@@ -7,6 +8,8 @@ import { Match, check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 import { Random } from 'meteor/random'
 
+import { imageRefPattern } from '../images/images.patterns'
+import { insertInvite } from '../invites/invites.codes'
 import { Events } from './events.collection'
 
 const participantPattern = Match.Where(
@@ -33,6 +36,38 @@ const participantPattern = Match.Where(
   },
 )
 
+// A real calendar day as `YYYY-MM-DD`; the date drives the Home countdown.
+const isCalendarDate = (date: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false
+  const parsed = new Date(`${date}T00:00:00Z`)
+  return !isNaN(parsed.getTime()) && parsed.toISOString().startsWith(date)
+}
+
+// The stored kind, with `beneficiaryIndex` resolved to the minted id of the
+// participant it points at.
+const resolveKind = (
+  options: CreateEventArgs,
+  participantIds: string[],
+): EventKind => {
+  if (options.type === 'many-to-many') return { type: 'many-to-many' }
+  if (options.type !== 'many-to-one') {
+    throw new Meteor.Error('invalidArgs', 'invalidKind')
+  }
+  const index: unknown = options.beneficiaryIndex
+  if (
+    typeof index !== 'number' ||
+    !Number.isInteger(index) ||
+    index < 0 ||
+    index >= participantIds.length
+  ) {
+    throw new Meteor.Error('invalidArgs', 'invalidBeneficiary')
+  }
+  return {
+    type: 'many-to-one',
+    beneficiaryParticipantId: participantIds[index]!,
+  }
+}
+
 const createEvent = async function (
   this: Meteor.MethodThisType,
   options: CreateEventArgs,
@@ -42,13 +77,17 @@ const createEvent = async function (
     Match.ObjectIncluding({
       title: String,
       date: String,
+      background: Match.Optional(imageRefPattern),
       participants: [participantPattern],
+      // Validated by resolveKind, which names the error.
+      type: Match.Any,
     }),
   )
 
   if (!this.userId) {
     throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
   }
+  const userId = this.userId
 
   const title = options.title.trim()
   const date = options.date.trim()
@@ -56,14 +95,21 @@ const createEvent = async function (
   if (!title || !date) {
     throw new Meteor.Error('invalidArgs', 'missingFields')
   }
+  if (!isCalendarDate(date)) {
+    throw new Meteor.Error('invalidArgs', 'invalidDate')
+  }
 
-  // Host is always the caller — strip any duplicate "real" entry for them
-  // before prepending, so the host appears exactly once and can't be omitted.
-  const otherParticipants: EventParticipant[] = options.participants
-    .filter(p => !(p.kind === 'real' && p.userId === this.userId))
-    .map(p =>
+  const host: EventParticipant = { id: Random.id(), kind: 'real', userId }
+
+  // Mint an id per input entry, in order, so `beneficiaryIndex` can be
+  // resolved. The host is always the caller: any `real` entry for them maps
+  // to the one host participant, which is prepended exactly once.
+  const minted = options.participants.map(
+    (p): EventParticipant =>
       p.kind === 'real'
-        ? { id: Random.id(), kind: 'real', userId: p.userId }
+        ? p.userId === userId
+          ? host
+          : { id: Random.id(), kind: 'real', userId: p.userId }
         : {
             id: Random.id(),
             kind: 'placeholder',
@@ -71,21 +117,29 @@ const createEvent = async function (
             color: p.color,
             ...(p.avatar ? { avatar: p.avatar } : {}),
           },
-    )
-
-  const host: EventParticipant = {
-    id: Random.id(),
-    kind: 'real',
-    userId: this.userId,
-  }
+  )
+  const kind = resolveKind(
+    options,
+    minted.map(p => p.id),
+  )
 
   const _id = await Events.insertAsync({
     title,
     date,
-    ownerId: this.userId,
-    participants: [host, ...otherParticipants],
+    ...(options.background ? { background: options.background } : {}),
+    ownerId: userId,
+    participants: [host, ...minted.filter(p => p !== host)],
     createdAt: new Date(),
+    ...kind,
   } as Parameters<typeof Events.insertAsync>[0])
+
+  // An event is never left without its invite.
+  try {
+    await insertInvite(_id, userId)
+  } catch (error) {
+    await Events.removeAsync(_id)
+    throw error
+  }
 
   return { _id }
 }

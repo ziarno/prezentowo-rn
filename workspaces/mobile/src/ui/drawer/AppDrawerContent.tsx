@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { beneficiaryIdOf } from '@/api/events'
 import { presentCounts } from '@/api/presentLists'
 import {
   BackIcon,
@@ -139,13 +140,19 @@ function EventMenu({ eventId, go }: MenuProps & { eventId: string }) {
   const { participants } = useEventParticipants(eventId)
   const { gifts } = useEventGifts(eventId)
   const user = useCurrentUser()
-  // Everyone gets a count in `3d`. `3d2` (beneficiary only) lands with the
-  // event kind (#36).
+  // Everyone gets a count in `3d`. In `3d2` (many-to-one) the beneficiary
+  // is listed first and is the only one with a count.
   const counts = event ? presentCounts(event, gifts, user?._id) : {}
-  const people = participants.map(p => ({
-    ...p,
-    presentCount: counts[p.id],
-  }))
+  const beneficiaryId = event ? beneficiaryIdOf(event) : undefined
+  const people = participants
+    .map(p => ({
+      ...p,
+      presentCount:
+        !beneficiaryId || p.id === beneficiaryId ? counts[p.id] : undefined,
+    }))
+    .sort(
+      (a, b) => Number(b.id === beneficiaryId) - Number(a.id === beneficiaryId),
+    )
 
   return (
     <>

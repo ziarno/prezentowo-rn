@@ -15,12 +15,15 @@ type ScreenHeaderProps = {
   // drawer, so they get a close button instead.
   variant?: 'drawer' | 'modal'
   right?: ReactNode
+  // Replaces the modal close button's default `router.back()`.
+  onClose?: () => void
 }
 
 export function ScreenHeader({
   title,
   variant = 'drawer',
   right,
+  onClose = () => router.back(),
 }: ScreenHeaderProps) {
   const { t } = useTranslation()
   const navigation = useNavigation()
@@ -64,7 +67,7 @@ export function ScreenHeader({
       {right}
       {variant === 'modal' ? (
         <Pressable
-          onPress={() => router.back()}
+          onPress={onClose}
           hitSlop={12}
           accessibilityRole="button"
           accessibilityLabel={t('shell.close')}
