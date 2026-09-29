@@ -55,3 +55,117 @@ export async function callAsUser<T = unknown>(
 
   return (await handler.apply(invocation, args)) as T
 }
+
+type PublishHandler = (
+  this: Subscription,
+  ...args: unknown[]
+) => unknown | Promise<unknown>
+
+// Meteor keeps registered publications here; @types/meteor doesn't declare it.
+const publishHandlers = () =>
+  (
+    Meteor as unknown as {
+      server: { publish_handlers: Record<string, PublishHandler> }
+    }
+  ).server.publish_handlers
+
+type Fields = Record<string, unknown>
+
+type Subscription = {
+  userId: string | null
+  connection: null
+  added: (collection: string, id: string, fields: Fields) => void
+  changed: (collection: string, id: string, fields: Fields) => void
+  removed: (collection: string, id: string) => void
+  ready: () => void
+  onStop: (fn: () => void) => void
+  error: (error: Error) => void
+  stop: () => void
+}
+
+export type SubscriptionMessage =
+  | { msg: 'added'; collection: string; id: string; fields: Fields }
+  | { msg: 'changed'; collection: string; id: string; fields: Fields }
+  | { msg: 'removed'; collection: string; id: string }
+
+/**
+ * Runs a registered publication as `userId` (or signed out, with `null`) and
+ * records what it would send to a DDP client. `docs(collection)` is the
+ * client-side view (merged fields per id); `messages` is every `added` /
+ * `changed` / `removed` in order. Resolves once the publication is ready.
+ * Call `stop()` when done so its observers are torn down.
+ */
+export async function subscribeAsUser(
+  userId: string | null,
+  name: string,
+  ...args: unknown[]
+) {
+  const handler = publishHandlers()[name]
+  if (!handler) throw new Error(`No publication registered as "${name}"`)
+
+  const messages: SubscriptionMessage[] = []
+  const store = new Map<string, Map<string, Fields>>()
+  const stopCallbacks: (() => void)[] = []
+  const collectionStore = (collection: string) => {
+    let docs = store.get(collection)
+    if (!docs) store.set(collection, (docs = new Map()))
+    return docs
+  }
+
+  let markReady!: () => void
+  const ready = new Promise<void>(resolve => (markReady = resolve))
+
+  const sub: Subscription = {
+    userId,
+    connection: null,
+    added: (collection, id, fields) => {
+      messages.push({ msg: 'added', collection, id, fields })
+      collectionStore(collection).set(id, { ...fields })
+    },
+    changed: (collection, id, fields) => {
+      messages.push({ msg: 'changed', collection, id, fields })
+      const doc = collectionStore(collection).get(id)
+      if (!doc) throw new Error(`changed() for unknown ${collection}/${id}`)
+      for (const [key, value] of Object.entries(fields)) {
+        if (value === undefined) delete doc[key]
+        else doc[key] = value
+      }
+    },
+    removed: (collection, id) => {
+      messages.push({ msg: 'removed', collection, id })
+      collectionStore(collection).delete(id)
+    },
+    ready: () => markReady(),
+    onStop: fn => void stopCallbacks.push(fn),
+    error: error => {
+      throw error
+    },
+    stop: () => stopCallbacks.forEach(fn => fn()),
+  }
+
+  const result = await handler.apply(sub, args)
+  if (result !== undefined) {
+    throw new Error(
+      'subscribeAsUser() only supports publications that call ready()',
+    )
+  }
+  await ready
+
+  return {
+    messages,
+    docs: (collection: string) => collectionStore(collection),
+    stop: () => sub.stop(),
+  }
+}
+
+/**
+ * Polls `predicate` until it returns true, for waiting on live publication
+ * updates that arrive asynchronously after a write.
+ */
+export async function waitFor(predicate: () => boolean, timeoutMs = 5000) {
+  const deadline = Date.now() + timeoutMs
+  while (!predicate()) {
+    if (Date.now() > deadline) throw new Error('waitFor() timed out')
+    await new Promise(resolve => setTimeout(resolve, 20))
+  }
+}

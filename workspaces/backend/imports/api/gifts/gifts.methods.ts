@@ -1,4 +1,9 @@
-import type { AddGiftArgs, EventDoc, UpdateGiftArgs } from '@prezentowo/types'
+import type {
+  AddGiftArgs,
+  EventDoc,
+  ImageRef,
+  UpdateGiftArgs,
+} from '@prezentowo/types'
 import { Match, check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 
@@ -24,6 +29,12 @@ const assertEventMember = async function (
   return event
 }
 
+const imageRefPattern = Match.Where((value: unknown): value is ImageRef => {
+  check(value, { kind: String, id: String })
+  const { kind, id } = value as ImageRef
+  return (kind === 'upload' || kind === 'illustration') && id.length > 0
+})
+
 // Resolves which real user (if any) a participant id belongs to.
 const realUserIdForParticipant = (
   event: EventDoc,
@@ -32,6 +43,24 @@ const realUserIdForParticipant = (
   const participant = event.participants.find(p => p.id === participantId)
   if (participant && participant.kind === 'real') return participant.userId
   return undefined
+}
+
+// Loads a gift the caller may act on: they must be a member of its event, and
+// a gift hidden from them by the own-list visibility rule (suggested for them)
+// is answered exactly like a missing one, so no method confirms it exists.
+const loadGift = async function (userId: string, giftId: string) {
+  const gift = await Gifts.findOneAsync(giftId)
+  if (!gift) {
+    throw new Meteor.Error('notFound', 'giftNotFound')
+  }
+  const event = await assertEventMember(userId, gift.eventId)
+  const isHidden =
+    gift.createdBy !== userId &&
+    realUserIdForParticipant(event, gift.forParticipantId) === userId
+  if (isHidden) {
+    throw new Meteor.Error('notFound', 'giftNotFound')
+  }
+  return { gift, event }
 }
 
 const addGift = async function (
@@ -45,9 +74,9 @@ const addGift = async function (
       forParticipantId: String,
       title: String,
       description: Match.Maybe(String),
-      price: Match.Maybe(String),
       url: Match.Maybe(String),
-      image: Match.Maybe(String),
+      image: Match.Optional(imageRefPattern),
+      clientId: Match.Maybe(String),
     }),
   )
 
@@ -66,23 +95,47 @@ const addGift = async function (
     throw new Meteor.Error('invalidArgs', 'missingTitle')
   }
 
-  const _id = await Gifts.insertAsync({
+  const userId = this.userId
+  const findReplayed = async () =>
+    options.clientId
+      ? await Gifts.findOneAsync(
+          { createdBy: userId, clientId: options.clientId },
+          { fields: { _id: 1 } },
+        )
+      : undefined
+
+  const replayed = await findReplayed()
+  if (replayed) return { _id: replayed._id }
+
+  try {
+    return { _id: await insertGift(userId, options, title) }
+  } catch (error) {
+    // A concurrent replay won the race to the unique (createdBy, clientId)
+    // index — return the gift it inserted.
+    const winner = isDuplicateKeyError(error) && (await findReplayed())
+    if (winner) return { _id: winner._id }
+    throw error
+  }
+}
+
+const isDuplicateKeyError = (error: unknown) =>
+  (error as { code?: unknown } | null)?.code === 11000
+
+const insertGift = (userId: string, options: AddGiftArgs, title: string) =>
+  Gifts.insertAsync({
     eventId: options.eventId,
     forParticipantId: options.forParticipantId,
     title,
     ...(options.description?.trim()
       ? { description: options.description.trim() }
       : {}),
-    ...(options.price?.trim() ? { price: options.price.trim() } : {}),
     ...(options.url?.trim() ? { url: options.url.trim() } : {}),
     ...(options.image ? { image: options.image } : {}),
     claimedBy: [],
-    createdBy: this.userId,
+    createdBy: userId,
     createdAt: new Date(),
+    ...(options.clientId ? { clientId: options.clientId } : {}),
   } as Parameters<typeof Gifts.insertAsync>[0])
-
-  return { _id }
-}
 
 const updateGift = async function (
   this: Meteor.MethodThisType,
@@ -94,9 +147,8 @@ const updateGift = async function (
       giftId: String,
       title: Match.Maybe(String),
       description: Match.Maybe(String),
-      price: Match.Maybe(String),
       url: Match.Maybe(String),
-      image: Match.Maybe(String),
+      image: Match.Optional(Match.OneOf(null, imageRefPattern)),
     }),
   )
 
@@ -104,11 +156,10 @@ const updateGift = async function (
     throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
   }
 
-  const gift = await Gifts.findOneAsync(options.giftId)
-  if (!gift) {
-    throw new Meteor.Error('notFound', 'giftNotFound')
+  const { gift } = await loadGift(this.userId, options.giftId)
+  if (gift.createdBy !== this.userId) {
+    throw new Meteor.Error('notAuthorized', 'notTheGiftCreator')
   }
-  await assertEventMember(this.userId, gift.eventId)
 
   const updates: Record<string, unknown> = {}
   if (options.title !== undefined) {
@@ -118,12 +169,15 @@ const updateGift = async function (
   }
   if (options.description !== undefined)
     updates.description = options.description.trim()
-  if (options.price !== undefined) updates.price = options.price.trim()
   if (options.url !== undefined) updates.url = options.url.trim()
-  if (options.image !== undefined) updates.image = options.image
+  if (options.image) updates.image = options.image
 
-  if (Object.keys(updates).length > 0) {
-    await Gifts.updateAsync(options.giftId, { $set: updates })
+  const modifier = {
+    ...(Object.keys(updates).length > 0 ? { $set: updates } : {}),
+    ...(options.image === null ? { $unset: { image: '' } } : {}),
+  }
+  if (Object.keys(modifier).length > 0) {
+    await Gifts.updateAsync(options.giftId, modifier)
   }
 }
 
@@ -137,11 +191,10 @@ const removeGift = async function (
     throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
   }
 
-  const gift = await Gifts.findOneAsync(options.giftId)
-  if (!gift) {
-    throw new Meteor.Error('notFound', 'giftNotFound')
+  const { gift, event } = await loadGift(this.userId, options.giftId)
+  if (gift.createdBy !== this.userId && event.ownerId !== this.userId) {
+    throw new Meteor.Error('notAuthorized', 'notTheGiftOrEventCreator')
   }
-  await assertEventMember(this.userId, gift.eventId)
 
   await Gifts.removeAsync(options.giftId)
 }
@@ -158,11 +211,7 @@ const setClaim = async function (
   }
 
   const userId = this.userId
-  const gift = await Gifts.findOneAsync(options.giftId)
-  if (!gift) {
-    throw new Meteor.Error('notFound', 'giftNotFound')
-  }
-  const event = await assertEventMember(userId, gift.eventId)
+  const { gift, event } = await loadGift(userId, options.giftId)
 
   // You can't claim a gift that's on your own wishlist — and you shouldn't be
   // able to see its claim state anyway ("claim quietly").

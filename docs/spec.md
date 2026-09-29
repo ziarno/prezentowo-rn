@@ -216,7 +216,7 @@ All methods are `async`, check `this.userId`, and validate arguments. "Member" m
 | Collection | Doc | New? | Indexes |
 |---|---|---|---|
 | `Events` | `EventDoc` | changed | — |
-| `Gifts` | `GiftDoc` | changed | `eventId`; `createdBy + clientId` unique sparse |
+| `Gifts` | `GiftDoc` | changed | `eventId`; `createdBy + clientId` unique, partial on `clientId` existing (a sparse compound index would still index every gift) |
 | `Invites` | `InviteDoc` | new | `code` unique; `eventId` unique |
 | `Activity` | `ActivityDoc` | new | `eventId + createdAt` |
 | `Notifications` | `NotificationDoc` | new | `userId + createdAt`; `userId + eventId + kind` unique partial on `invite-deferred` |

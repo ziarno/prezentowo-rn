@@ -39,13 +39,21 @@ Meteor.publish('gifts.byEvent', async function (eventId: string) {
   )?.id
 
   const mineIds = new Set<string>()
+  const hiddenIds = new Set<string>()
   const isMine = (forParticipantId?: unknown) =>
     myParticipantId !== undefined && forParticipantId === myParticipantId
 
-  const cursor = Gifts.find({ eventId }) as unknown as AsyncObservableCursor
+  const cursor = Gifts.find(
+    { eventId },
+    { fields: { clientId: 0 } },
+  ) as unknown as AsyncObservableCursor
   const handle = await cursor.observeChangesAsync({
     added: (id, fields) => {
       const out = { ...fields }
+      if (isMine(fields.forParticipantId) && fields.createdBy !== this.userId) {
+        hiddenIds.add(id)
+        return
+      }
       if (isMine(fields.forParticipantId)) {
         mineIds.add(id)
         delete out.claimedBy
@@ -53,11 +61,13 @@ Meteor.publish('gifts.byEvent', async function (eventId: string) {
       this.added('gifts', id, out)
     },
     changed: (id, fields) => {
+      if (hiddenIds.has(id)) return
       const out = { ...fields }
       if (mineIds.has(id) && 'claimedBy' in out) delete out.claimedBy
       this.changed('gifts', id, out)
     },
     removed: id => {
+      if (hiddenIds.delete(id)) return
       mineIds.delete(id)
       this.removed('gifts', id)
     },

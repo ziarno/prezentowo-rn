@@ -48,20 +48,23 @@ export type EventDoc = {
   createdAt: Date
 }
 
+export type ImageRef =
+  | { kind: 'upload'; id: string } // self-hosted upload
+  | { kind: 'illustration'; id: string } // bundled stock key, e.g. "p3" or "b2"
+
 export type GiftDoc = {
   _id: string
   eventId: string
-  // The participant (by EventParticipant.id) this gift is intended for.
+  // The recipient (by EventParticipant.id). Write-once.
   forParticipantId: string
   title: string
   description?: string
-  price?: string
   url?: string
-  // Present illustration key, e.g. "p3".
-  image?: string
-  // userIds who have reserved this gift. Hidden from the recipient by the
-  // gifts.byEvent publication — "claim quietly".
+  image?: ImageRef
+  // userIds who have reserved this gift. Stripped for the recipient by the
+  // gifts.byEvent publication — the claim-quietly rule.
   claimedBy: string[]
+  // userId. Write-once.
   createdBy: string
   createdAt: Date
 }
@@ -71,16 +74,18 @@ export type AddGiftArgs = {
   forParticipantId: string
   title: string
   description?: string
-  price?: string
   url?: string
-  image?: string
+  image?: ImageRef
+  // Idempotency key for offline replay: a repeat (createdBy, clientId)
+  // returns the existing gift instead of inserting a duplicate.
+  clientId?: string
 }
 
 export type UpdateGiftArgs = {
   giftId: string
   title?: string
   description?: string
-  price?: string
   url?: string
-  image?: string
+  // null clears; undefined leaves unchanged.
+  image?: ImageRef | null
 }

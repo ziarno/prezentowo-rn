@@ -41,7 +41,12 @@ export function GiftRow({
           : 'border-b border-garland-ink-08'
       }`}
     >
-      <PresentTile image={gift.image} size={56} imageSize={50} />
+      <PresentTile
+        // Uploaded photos aren't rendered yet; they fall back to stock art.
+        image={gift.image?.kind === 'illustration' ? gift.image.id : undefined}
+        size={56}
+        imageSize={50}
+      />
 
       <View className="min-w-0 flex-1">
         {forName ? (
@@ -65,9 +70,6 @@ export function GiftRow({
         ) : null}
         <View className="mt-1.5 flex-row items-center gap-3">
           <GiftFlag claimed={claimedCount > 0} claimers={claimedCount} />
-          {gift.price ? (
-            <Text className="text-xs text-garland-ink-40">{gift.price}</Text>
-          ) : null}
         </View>
       </View>
 
