@@ -23,8 +23,8 @@ const countdownText = (t: TFunction, c: Countdown): string =>
     ? t(`home.countdown.${c.kind}.${c.unit}`, { count: c.count })
     : t(`home.countdown.${c.kind}`)
 
-// A `3a` row: the event's background band, then title with its kind badge,
-// date with countdown, and who's taking part.
+// A `3a` row: the event's background band, then title, date with countdown,
+// and who's taking part.
 export function EventCard({
   event,
   onPress,
@@ -37,11 +37,6 @@ export function EventCard({
 
   const date = parseEventDate(event.date)
   const until = countdown(event.date, new Date())
-  // Events from before kinds existed have no `type`; like `beneficiaryIdOf`,
-  // anything that isn't many-to-one reads as many-to-many.
-  const kindLabel = t(
-    `home.kind.${event.type === 'many-to-one' ? 'many-to-one' : 'many-to-many'}`,
-  )
   const when = [
     date
       ? new Intl.DateTimeFormat(i18n.language, {
@@ -68,24 +63,17 @@ export function EventCard({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${event.title}, ${kindLabel}, ${when}`}
+      accessibilityLabel={`${event.title}, ${when}`}
       className="overflow-hidden rounded-2xl border border-garland-ink-08 bg-garland-paper active:opacity-70"
     >
       <EventBackground event={event} height={72} />
       <View className="gap-1 px-4 pb-3.5 pt-3">
-        <View className="flex-row items-center gap-2">
-          <Text
-            className="flex-1 font-garland-display text-xl text-garland-ink"
-            numberOfLines={1}
-          >
-            {event.title}
-          </Text>
-          <View className="rounded-full bg-garland-paper2 px-2.5 py-1">
-            <Text className="text-[11px] font-semibold text-garland-ink-60">
-              {kindLabel}
-            </Text>
-          </View>
-        </View>
+        <Text
+          className="font-garland-display text-xl text-garland-ink"
+          numberOfLines={1}
+        >
+          {event.title}
+        </Text>
         <Text className="text-[13px] text-garland-ink-60">{when}</Text>
         {participants.length > 0 ? (
           <View

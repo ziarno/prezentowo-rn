@@ -299,10 +299,6 @@
         "year_one": "a year ago",
         "year_other": "{{count}} years ago"
       }
-    },
-    "kind": {
-      "many-to-many": "For everyone",
-      "many-to-one": "For one person"
     }
   }
 }

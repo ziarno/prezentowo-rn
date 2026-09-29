@@ -319,10 +319,6 @@
         "year_many": "{{count}} lat temu",
         "year_other": "{{count}} roku temu"
       }
-    },
-    "kind": {
-      "many-to-many": "Dla wszystkich",
-      "many-to-one": "Dla jednej osoby"
     }
   }
 }
