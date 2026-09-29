@@ -142,5 +142,36 @@
       "notAnImage": "Tego pliku nie da się użyć jako zdjęcia.",
       "failed": "Nie udało się przesłać zdjęcia. Spróbuj ponownie."
     }
+  },
+  "person": {
+    "loading": "Ładowanie…",
+    "notFound": "Tej osoby nie ma już w wydarzeniu.",
+    "you": "Ty",
+    "someone": "Ktoś",
+    "yourList": "Twoja lista",
+    "theirList": "Lista: {{name}}",
+    "presentCount": "Dodane przez ciebie: {{count}}",
+    "presentsWithBuyer": "Kupującego ma {{withBuyer}} z {{count}}",
+    "ownListNote": "Widzisz tylko to, co dodajesz. Prezenty zaproponowane przez innych — i to, kto je kupuje — pozostają ukryte.",
+    "emptyMine": "Twoja lista jest jeszcze pusta.",
+    "ownWishes": "Własne życzenia: {{name}}",
+    "emptyOwnWishes": "{{name}} nie ma jeszcze żadnych życzeń.",
+    "suggested": "Propozycje innych",
+    "suggestedNote": "{{name}} nigdy nie widzi tej grupy — ani kupujących.",
+    "emptySuggested": "Nikt jeszcze niczego nie zaproponował."
+  },
+  "present": {
+    "loading": "Ładowanie…",
+    "notFound": "Tego prezentu już nie ma.",
+    "forName": "Dla: {{name}}",
+    "forYou": "Dla ciebie",
+    "addedBy": "Dodane przez: {{name}}",
+    "addedByYou": "Dodane przez ciebie",
+    "buying": "Kupują",
+    "nobodyBuying": "Nikt jeszcze tego nie kupuje.",
+    "claim": "Kupię to",
+    "claimToo": "Też to kupię",
+    "unclaim": "Jednak tego nie kupię",
+    "onYourList": "To jest na twojej liście. Nie zobaczysz, czy ktoś to kupuje."
   }
 }

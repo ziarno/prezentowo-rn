@@ -1,7 +1,7 @@
 /// <reference types="jest" />
 import { NetworkError } from '@/sync/errors'
 
-import { ImageUploadError, uploadImage } from '../images'
+import { ImageUploadError, uploadImage, uploadImageUrl } from '../images'
 
 type Size = { width?: number | null; height?: number | null }
 
@@ -194,5 +194,13 @@ describe('uploadImage', () => {
 
     expect(error).toBeInstanceOf(NetworkError)
     expect(error.kind).toBe('timeout')
+  })
+})
+
+describe('uploadImageUrl', () => {
+  it("points at the upload's derivative of the given size", () => {
+    expect(uploadImageUrl('abc', 400)).toBe(
+      'http://backend.test:8100/images/abc/400.webp',
+    )
   })
 })

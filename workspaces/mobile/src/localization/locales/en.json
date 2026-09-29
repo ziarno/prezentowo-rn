@@ -142,5 +142,36 @@
       "notAnImage": "That file isn't a photo we can use.",
       "failed": "Couldn't upload the photo. Try again."
     }
+  },
+  "person": {
+    "loading": "Loading…",
+    "notFound": "This person isn't in the event anymore.",
+    "you": "You",
+    "someone": "Someone",
+    "yourList": "Your list",
+    "theirList": "{{name}}'s list",
+    "presentCount": "Added by you: {{count}}",
+    "presentsWithBuyer": "{{withBuyer}} of {{count}} have a buyer",
+    "ownListNote": "You only see what you added. Presents others suggested — and who is buying — stay hidden.",
+    "emptyMine": "You haven't added any presents yet.",
+    "ownWishes": "{{name}}'s own wishes",
+    "emptyOwnWishes": "{{name}} hasn't added anything yet.",
+    "suggested": "Suggested by others",
+    "suggestedNote": "{{name}} never sees this group — or any buyers.",
+    "emptySuggested": "Nobody has suggested anything yet."
+  },
+  "present": {
+    "loading": "Loading…",
+    "notFound": "This present isn't here anymore.",
+    "forName": "For {{name}}",
+    "forYou": "For you",
+    "addedBy": "Added by {{name}}",
+    "addedByYou": "Added by you",
+    "buying": "Buying it",
+    "nobodyBuying": "Nobody is buying this yet.",
+    "claim": "I'll buy this",
+    "claimToo": "I'll buy this too",
+    "unclaim": "I'm not buying this anymore",
+    "onYourList": "This is on your list. You won't see whether anyone is buying it."
   }
 }

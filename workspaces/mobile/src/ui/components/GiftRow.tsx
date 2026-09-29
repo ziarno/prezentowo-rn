@@ -3,11 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, View } from 'react-native'
 
 import { Text } from '@/components/ui/text'
+import { BuyerChips } from '@/ui/components/BuyerChips'
 import { GiftFlag } from '@/ui/components/GiftFlag'
-import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
 import { PresentTile } from '@/ui/components/PresentTile'
-
-export type GiftClaimer = { name: string; avatarKey?: string }
 
 type GiftRowProps = {
   gift: GiftDoc
@@ -16,8 +14,9 @@ type GiftRowProps = {
   forName?: string
   // Shown under the title instead of the eyebrow (single-person list).
   showDescription?: boolean
-  // Resolved claimers, rendered as a small avatar stack on the right.
-  claimers?: GiftClaimer[]
+  // The names of the people buying it, as `🛍` chips (or "Open" when
+  // empty). Omitted where the viewer may not see claim state (`3e`).
+  buyers?: string[]
   topBorder?: boolean
 }
 
@@ -26,27 +25,22 @@ export function GiftRow({
   onPress,
   forName,
   showDescription = false,
-  claimers = [],
+  buyers,
   topBorder = false,
 }: GiftRowProps) {
   const { t } = useTranslation()
-  const claimedCount = gift.claimedBy?.length ?? 0
 
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
       className={`flex-row items-center gap-3.5 px-[22px] py-3.5 active:opacity-70 ${
         topBorder
           ? 'border-t border-garland-ink-08'
           : 'border-b border-garland-ink-08'
       }`}
     >
-      <PresentTile
-        // Uploaded photos aren't rendered yet; they fall back to stock art.
-        image={gift.image?.kind === 'illustration' ? gift.image.id : undefined}
-        size={56}
-        imageSize={50}
-      />
+      <PresentTile image={gift.image} size={56} imageSize={50} />
 
       <View className="min-w-0 flex-1">
         {forName ? (
@@ -68,28 +62,16 @@ export function GiftRow({
             {gift.description}
           </Text>
         ) : null}
-        <View className="mt-1.5 flex-row items-center gap-3">
-          <GiftFlag claimed={claimedCount > 0} claimers={claimedCount} />
-        </View>
+        {buyers ? (
+          <View className="mt-1.5">
+            {buyers.length > 0 ? (
+              <BuyerChips names={buyers} />
+            ) : (
+              <GiftFlag claimed={false} />
+            )}
+          </View>
+        ) : null}
       </View>
-
-      {claimers.length > 0 ? (
-        <View className="flex-row">
-          {claimers.slice(0, 3).map((c, i) => (
-            <View
-              key={i}
-              style={{ marginLeft: i === 0 ? 0 : -8 }}
-              className="rounded-full border-2 border-garland-paper"
-            >
-              <ParticipantAvatar
-                name={c.name}
-                avatarKey={c.avatarKey}
-                size={22}
-              />
-            </View>
-          ))}
-        </View>
-      ) : null}
     </Pressable>
   )
 }

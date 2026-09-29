@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { presentCounts } from '@/api/presentLists'
 import {
   BackIcon,
   BellIcon,
@@ -19,6 +20,7 @@ import { garland } from '@/constants/colors'
 import { useAuth } from '@/hooks/useAuth'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
+import { useEventGifts } from '@/hooks/useEventGifts'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useLanguageModal } from '@/localization/LanguageModalProvider'
 import { LOCALES } from '@/localization/provider'
@@ -135,6 +137,15 @@ function EventMenu({ eventId, go }: MenuProps & { eventId: string }) {
   const { t } = useTranslation()
   const { event } = useEventById(eventId)
   const { participants } = useEventParticipants(eventId)
+  const { gifts } = useEventGifts(eventId)
+  const user = useCurrentUser()
+  // Everyone gets a count in `3d`. `3d2` (beneficiary only) lands with the
+  // event kind (#36).
+  const counts = event ? presentCounts(event, gifts, user?._id) : {}
+  const people = participants.map(p => ({
+    ...p,
+    presentCount: counts[p.id],
+  }))
 
   return (
     <>
@@ -192,7 +203,7 @@ function EventMenu({ eventId, go }: MenuProps & { eventId: string }) {
         {t('shell.people')}
       </Text>
       <PeopleDrawer
-        people={participants}
+        people={people}
         onSelectPerson={participantId =>
           go(() =>
             router.push({

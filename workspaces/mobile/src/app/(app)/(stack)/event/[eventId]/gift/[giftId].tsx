@@ -1,8 +1,17 @@
-import { useTranslation } from 'react-i18next'
+import { useLocalSearchParams } from 'expo-router'
 
-import { StubScreen } from '@/ui/components/StubScreen'
+import { PresentDetailScreen } from '@/ui/screens/PresentDetailScreen'
 
 export default function GiftRoute() {
-  const { t } = useTranslation()
-  return <StubScreen title={t('shell.present')} />
+  const { eventId, giftId } = useLocalSearchParams<{
+    eventId: string
+    giftId: string
+  }>()
+  return (
+    <PresentDetailScreen
+      key={`${eventId}/${giftId}`}
+      eventId={eventId}
+      giftId={giftId}
+    />
+  )
 }

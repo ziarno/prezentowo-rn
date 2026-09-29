@@ -9,6 +9,8 @@ import { useSubscription, useTracker } from '@/sync'
 export type EventParticipantsResult = {
   participants: ResolvedParticipant[]
   resolve: (participantId: string) => ResolvedParticipant | undefined
+  // The participant a real user is, e.g. to name a gift's creator or buyers.
+  resolveUser: (userId: string) => ResolvedParticipant | undefined
   // Whether the participants' profiles have arrived.
   ready: boolean
 }
@@ -29,6 +31,7 @@ export function useEventParticipants(
   return {
     participants,
     resolve: id => participants.find(p => p.id === id),
+    resolveUser: userId => participants.find(p => p.userId === userId),
     ready,
   }
 }

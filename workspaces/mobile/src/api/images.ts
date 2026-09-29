@@ -1,5 +1,6 @@
 import type {
   ImageRef,
+  ImageSize,
   UploadImageErrorCode,
   UploadImageResult,
 } from '@prezentowo/types'
@@ -116,4 +117,10 @@ export async function uploadImage(
   if (!response.ok) throw await errorFrom(response)
   const { id } = (await response.json()) as UploadImageResult
   return { kind: 'upload', id }
+}
+
+// Where an upload's WebP derivative is served (docs/spec.md §3.1). The id is
+// the capability, so the URL needs no token.
+export function uploadImageUrl(id: string, size: ImageSize): string {
+  return `${BACKEND_HTTP_URL}/images/${id}/${size}.webp`
 }
