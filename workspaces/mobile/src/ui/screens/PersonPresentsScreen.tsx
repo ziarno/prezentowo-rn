@@ -2,11 +2,14 @@ import type { GiftDoc } from '@prezentowo/types'
 import { router } from 'expo-router'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ScrollView, View } from 'react-native'
+import { Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { recipientOptions } from '@/api/giftWizard'
 import { personPresents } from '@/api/presentLists'
+import { PlusIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
+import { garland } from '@/constants/colors'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
 import { useEventGifts } from '@/hooks/useEventGifts'
@@ -82,9 +85,26 @@ export function PersonPresentsScreen({
           g => (g.claimedBy?.length ?? 0) > 0,
         ).length
 
+  // Only someone who gets presents in this event has a list to add to.
+  const addPresent = recipientOptions(event).includes(participantId) ? (
+    <Pressable
+      onPress={() =>
+        router.push({
+          pathname: '/event/[eventId]/add-gift',
+          params: { eventId, forParticipantId: participantId },
+        })
+      }
+      hitSlop={12}
+      accessibilityRole="button"
+      accessibilityLabel={t('shell.addPresent')}
+    >
+      <PlusIcon width={22} height={22} color={garland.ink} />
+    </Pressable>
+  ) : undefined
+
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
-      <ScreenHeader title={event.title} />
+      <ScreenHeader title={event.title} right={addPresent} />
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}

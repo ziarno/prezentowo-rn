@@ -84,3 +84,28 @@ export function presentCounts(
   }
   return counts
 }
+
+// `1e` ✎ Edit: only the person who added the present (`gifts.update`).
+export const canEditGift = (
+  gift: GiftDoc,
+  viewerUserId: string | undefined,
+): boolean => !!viewerUserId && gift.createdBy === viewerUserId
+
+// `1e` delete: the person who added it or the event creator
+// (`gifts.remove`), never for a present hidden from the viewer.
+export const canRemoveGift = (
+  event: EventDoc,
+  gift: GiftDoc,
+  viewerUserId: string | undefined,
+): boolean =>
+  !!viewerUserId &&
+  (gift.createdBy === viewerUserId || event.ownerId === viewerUserId) &&
+  !isHiddenFrom(event, gift, viewerUserId)
+
+// The "N people claimed this" warning on the delete dialog, or null when
+// there is nothing to warn about. A copy without `claimedBy` (the claim-
+// quietly rule stripped it) never gets one.
+export function claimCountForRemoval(gift: GiftDoc): number | null {
+  const count = gift.claimedBy?.length ?? 0
+  return count > 0 ? count : null
+}

@@ -2,7 +2,10 @@
 import type { EventDoc, GiftDoc } from '@prezentowo/types'
 
 import {
+  canEditGift,
+  canRemoveGift,
   claimAction,
+  claimCountForRemoval,
   isHiddenFrom,
   personPresents,
   presentCounts,
@@ -136,5 +139,44 @@ describe('isHiddenFrom', function () {
   it("shows the viewer their own wishes and everyone else's gifts", function () {
     expect(isHiddenFrom(event, gift('pBartek', 'bartek'), 'bartek')).toBe(false)
     expect(isHiddenFrom(event, gift('pBartek', 'ola'), 'ola')).toBe(false)
+  })
+})
+
+describe('canEditGift', function () {
+  it('lets only the person who added a present edit it', function () {
+    const suggestion = gift('pBartek', 'ola')
+    expect(canEditGift(suggestion, 'ola')).toBe(true)
+    expect(canEditGift(suggestion, 'bartek')).toBe(false)
+  })
+})
+
+describe('canRemoveGift', function () {
+  it('lets the person who added it or the event creator delete it', function () {
+    const wish = gift('pBartek', 'bartek')
+    expect(canRemoveGift(event, wish, 'bartek')).toBe(true)
+    expect(canRemoveGift(event, wish, 'ola')).toBe(true)
+    expect(canRemoveGift(event, gift('pOla', 'ola'), 'bartek')).toBe(false)
+  })
+
+  it('never offers the event creator a present hidden from them', function () {
+    expect(canRemoveGift(event, gift('pOla', 'bartek'), 'ola')).toBe(false)
+  })
+})
+
+describe('claimCountForRemoval', function () {
+  it('counts the buyers the viewer can see', function () {
+    expect(
+      claimCountForRemoval(gift('pBartek', 'ola', { claimedBy: ['a', 'b'] })),
+    ).toBe(2)
+  })
+
+  it('says nothing when nobody claimed it', function () {
+    expect(claimCountForRemoval(gift('pBartek', 'ola'))).toBeNull()
+  })
+
+  it("says nothing when the viewer's copy carries no claim state", function () {
+    const ownWish = gift('pBartek', 'bartek')
+    delete (ownWish as Partial<GiftDoc>).claimedBy
+    expect(claimCountForRemoval(ownWish)).toBeNull()
   })
 })

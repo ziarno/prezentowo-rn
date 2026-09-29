@@ -132,7 +132,8 @@
     "comingSoon": "Coming soon.",
     "openMenu": "Open menu",
     "back": "Back",
-    "close": "Close"
+    "close": "Close",
+    "editPresent": "Edit present"
   },
   "images": {
     "uploadErrors": {
@@ -172,12 +173,54 @@
     "claim": "I'll buy this",
     "claimToo": "I'll buy this too",
     "unclaim": "I'm not buying this anymore",
-    "onYourList": "This is on your list. You won't see whether anyone is buying it."
+    "onYourList": "This is on your list. You won't see whether anyone is buying it.",
+    "edit": "Edit",
+    "delete": "Delete present",
+    "deleteTitle": "Delete “{{title}}”?",
+    "deleteMessage": "This can't be undone.",
+    "deleteClaimed_one": "{{count}} person claimed this.",
+    "deleteClaimed_other": "{{count}} people claimed this.",
+    "deleteCancel": "Cancel"
   },
-  "createEvent": {
+  "addPresent": {
+    "eventNotFound": "This event isn't here anymore.",
+    "addFailed": "Couldn't add the present. Try again.",
+    "saveFailed": "Couldn't save the present. Try again.",
+    "add": "Add present",
+    "save": "Save",
+    "nameLabel": "Name",
+    "namePlaceholder": "A warm scarf",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Size, colour, anything that helps",
+    "linkLabel": "Link",
+    "linkPlaceholder": "Where to buy it",
+    "title": {
+      "heading": "What's the present?"
+    },
+    "photo": {
+      "heading": "Add a photo?",
+      "noPhoto": "No photo — we'll show one of our illustrations."
+    },
+    "details": {
+      "heading": "Anything else?",
+      "hint": "Both are optional."
+    },
+    "summary": {
+      "heading": "Check it over",
+      "forLabel": "For",
+      "photoKept": "The photo stays as it is."
+    },
+    "errors": {
+      "titleRequired": "Give the present a name.",
+      "recipientRequired": "Choose who the present is for."
+    }
+  },
+  "wizard": {
     "stepOf": "Step {{step}} of {{count}}",
     "back": "Back",
-    "next": "Next",
+    "next": "Next"
+  },
+  "createEvent": {
     "create": "Create event",
     "save": "Save",
     "loading": "Loading…",

@@ -1,11 +1,19 @@
+import { router } from 'expo-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Linking, Pressable, ScrollView, View } from 'react-native'
+import { Alert, Linking, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-import { claimGift, unclaimGift } from '@/api/gifts'
-import { type ClaimAction, claimAction, isHiddenFrom } from '@/api/presentLists'
-import { LinkIcon } from '@/components/ui/icon'
+import { claimGift, removeGift, unclaimGift } from '@/api/gifts'
+import {
+  type ClaimAction,
+  canEditGift,
+  canRemoveGift,
+  claimAction,
+  claimCountForRemoval,
+  isHiddenFrom,
+} from '@/api/presentLists'
+import { LinkIcon, PencilIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
@@ -31,7 +39,8 @@ const hrefOf = (url: string) =>
 
 // `1e`: a present's photo or illustration, who it's for and who added it,
 // its description and link, and — for everyone but its recipient — who is
-// buying it and the claim/unclaim action.
+// buying it and the claim/unclaim action. Whoever added it can edit it;
+// they or the event creator can delete it.
 export function PresentDetailScreen({
   eventId,
   giftId,
@@ -48,6 +57,8 @@ export function PresentDetailScreen({
 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [removing, setRemoving] = useState(false)
+  const [removeError, setRemoveError] = useState<string | null>(null)
 
   // A suggestion for the viewer (a stale local copy) reads as missing.
   if (!gift || !event || !user || isHiddenFrom(event, gift, user._id)) {
@@ -83,9 +94,65 @@ export function PresentDetailScreen({
       .finally(() => setSubmitting(false))
   }
 
+  const edit = () =>
+    router.push({
+      pathname: '/event/[eventId]/add-gift',
+      params: { eventId, giftId: gift._id },
+    })
+
+  const remove = async () => {
+    setRemoveError(null)
+    setRemoving(true)
+    try {
+      await removeGift(gift._id)
+      router.back()
+    } catch (err) {
+      setRemoveError(errorMessage(err, t('common.somethingWentWrong')))
+      setRemoving(false)
+    }
+  }
+
+  const confirmRemove = () => {
+    const claimCount = claimCountForRemoval(gift)
+    Alert.alert(
+      t('present.deleteTitle', { title: gift.title }),
+      [
+        t('present.deleteMessage'),
+        claimCount ? t('present.deleteClaimed', { count: claimCount }) : null,
+      ]
+        .filter(Boolean)
+        .join(' '),
+      [
+        { text: t('present.deleteCancel'), style: 'cancel' },
+        {
+          text: t('present.delete'),
+          style: 'destructive',
+          onPress: () => void remove(),
+        },
+      ],
+    )
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
-      <ScreenHeader title={event.title} />
+      <ScreenHeader
+        title={event.title}
+        right={
+          canEditGift(gift, user._id) ? (
+            <Pressable
+              onPress={edit}
+              hitSlop={12}
+              accessibilityRole="button"
+              className="flex-row items-center gap-1.5 active:opacity-60"
+            >
+              <PencilIcon width={16} height={16} color={garland.ink} />
+              <Text className="text-sm font-bold text-garland-ink">
+                {t('present.edit')}
+              </Text>
+            </Pressable>
+          ) : undefined
+        }
+      />
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
@@ -169,6 +236,27 @@ export function PresentDetailScreen({
           ) : (
             <LockNote className="mt-6">{t('present.onYourList')}</LockNote>
           )}
+
+          {canRemoveGift(event, gift, user._id) ? (
+            <View className="mt-10 border-t border-garland-ink-08 pt-5">
+              <GarlandButton
+                variant="link"
+                onPress={confirmRemove}
+                loading={removing}
+                className="self-start"
+                hitSlop={12}
+              >
+                <GarlandButtonText className="text-sm font-bold text-garland-berry">
+                  {t('present.delete')}
+                </GarlandButtonText>
+              </GarlandButton>
+              {removeError ? (
+                <Text className="mt-3 text-xs text-garland-berry">
+                  {removeError}
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
         </View>
       </ScrollView>
     </SafeAreaView>

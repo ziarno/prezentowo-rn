@@ -1,7 +1,7 @@
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { router, useNavigation } from 'expo-router'
 import { usePreventRemove } from 'expo-router/react-navigation'
-import { type ReactNode, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Keyboard, Pressable, ScrollView, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -41,6 +41,11 @@ import { GarlandField } from '@/ui/components/GarlandField'
 import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
 import { SheetKeyboardAvoidingView } from '@/ui/components/SheetKeyboardAvoidingView'
+import {
+  StepHeading,
+  WizardFooter,
+  WizardProgress,
+} from '@/ui/components/Wizard'
 
 // How a person in the draft is shown.
 type PersonView = { name: string; avatarKey?: string; color?: string }
@@ -232,7 +237,7 @@ function EventWizard({
   const title =
     mode === 'create' ? t('shell.createEvent') : t('shell.editEvent')
   const primaryLabel = !isLast
-    ? t('createEvent.next')
+    ? t('wizard.next')
     : mode === 'create'
       ? t('createEvent.create')
       : t('createEvent.save')
@@ -246,7 +251,7 @@ function EventWizard({
           onClose={() => leave(() => router.back())}
         />
         {steps.length > 1 ? (
-          <Progress index={index} count={steps.length} />
+          <WizardProgress index={index} count={steps.length} />
         ) : null}
 
         <ScrollView
@@ -286,64 +291,14 @@ function EventWizard({
           ) : null}
         </ScrollView>
 
-        <View className="flex-row gap-3 border-t border-garland-ink-08 px-[22px] pb-2 pt-3">
-          {/* Wrapped so both halves are equal: the button's own padding
-              skews flex-1 on the button itself. */}
-          {index > 0 ? (
-            <View className="flex-1">
-              <GarlandButton
-                variant="outline"
-                onPress={goBack}
-                disabled={submitting}
-              >
-                <GarlandButtonText>{t('createEvent.back')}</GarlandButtonText>
-              </GarlandButton>
-            </View>
-          ) : null}
-          <View className="flex-1">
-            <GarlandButton onPress={next} loading={submitting}>
-              <GarlandButtonText>{primaryLabel}</GarlandButtonText>
-            </GarlandButton>
-          </View>
-        </View>
+        <WizardFooter
+          primaryLabel={primaryLabel}
+          onPrimary={next}
+          onBack={index > 0 ? goBack : undefined}
+          submitting={submitting}
+        />
       </SheetKeyboardAvoidingView>
     </SafeAreaView>
-  )
-}
-
-function Progress({ index, count }: { index: number; count: number }) {
-  const { t } = useTranslation()
-  return (
-    <View className="px-[22px] pb-4">
-      <View
-        className="flex-row gap-1.5"
-        accessibilityRole="progressbar"
-        accessibilityLabel={t('createEvent.stepOf', {
-          step: index + 1,
-          count,
-        })}
-      >
-        {Array.from({ length: count }, (_, i) => (
-          <View
-            key={i}
-            className={`h-1 flex-1 rounded-full ${
-              i <= index ? 'bg-garland-ink' : 'bg-garland-ink-15'
-            }`}
-          />
-        ))}
-      </View>
-      <Text className="mt-2 text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-        {t('createEvent.stepOf', { step: index + 1, count })}
-      </Text>
-    </View>
-  )
-}
-
-function StepHeading({ children }: { children: ReactNode }) {
-  return (
-    <Text className="mb-[22px] mt-1.5 font-garland-display text-[28px] leading-[31px] text-garland-ink">
-      {children}
-    </Text>
   )
 }
 

@@ -132,7 +132,8 @@
     "comingSoon": "Już wkrótce.",
     "openMenu": "Otwórz menu",
     "back": "Wstecz",
-    "close": "Zamknij"
+    "close": "Zamknij",
+    "editPresent": "Edytuj prezent"
   },
   "images": {
     "uploadErrors": {
@@ -172,12 +173,56 @@
     "claim": "Kupię to",
     "claimToo": "Też to kupię",
     "unclaim": "Jednak tego nie kupię",
-    "onYourList": "To jest na twojej liście. Nie zobaczysz, czy ktoś to kupuje."
+    "onYourList": "To jest na twojej liście. Nie zobaczysz, czy ktoś to kupuje.",
+    "edit": "Edytuj",
+    "delete": "Usuń prezent",
+    "deleteTitle": "Usunąć „{{title}}”?",
+    "deleteMessage": "Tego nie da się cofnąć.",
+    "deleteClaimed_one": "{{count}} osoba to kupuje.",
+    "deleteClaimed_few": "{{count}} osoby to kupują.",
+    "deleteClaimed_many": "{{count}} osób to kupuje.",
+    "deleteClaimed_other": "{{count}} osoby to kupują.",
+    "deleteCancel": "Anuluj"
   },
-  "createEvent": {
+  "addPresent": {
+    "eventNotFound": "Tego wydarzenia już nie ma.",
+    "addFailed": "Nie udało się dodać prezentu. Spróbuj ponownie.",
+    "saveFailed": "Nie udało się zapisać prezentu. Spróbuj ponownie.",
+    "add": "Dodaj prezent",
+    "save": "Zapisz",
+    "nameLabel": "Nazwa",
+    "namePlaceholder": "Ciepły szalik",
+    "descriptionLabel": "Opis",
+    "descriptionPlaceholder": "Rozmiar, kolor, cokolwiek pomoże",
+    "linkLabel": "Link",
+    "linkPlaceholder": "Gdzie to kupić",
+    "title": {
+      "heading": "Jaki to prezent?"
+    },
+    "photo": {
+      "heading": "Dodać zdjęcie?",
+      "noPhoto": "Bez zdjęcia — pokażemy jedną z naszych ilustracji."
+    },
+    "details": {
+      "heading": "Coś jeszcze?",
+      "hint": "Oba pola są opcjonalne."
+    },
+    "summary": {
+      "heading": "Sprawdź wszystko",
+      "forLabel": "Dla",
+      "photoKept": "Zdjęcie zostaje bez zmian."
+    },
+    "errors": {
+      "titleRequired": "Nazwij prezent.",
+      "recipientRequired": "Wybierz, dla kogo jest prezent."
+    }
+  },
+  "wizard": {
     "stepOf": "Krok {{step}} z {{count}}",
     "back": "Wstecz",
-    "next": "Dalej",
+    "next": "Dalej"
+  },
+  "createEvent": {
     "create": "Utwórz wydarzenie",
     "save": "Zapisz",
     "loading": "Ładowanie…",
