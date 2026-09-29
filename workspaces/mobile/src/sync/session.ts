@@ -109,7 +109,10 @@ function attach(ddp: Ddp) {
     // run after this one, so look once it has.
     setTimeout(checkLogin, 0)
   })
-  on('disconnected', goOffline)
+  on('disconnected', () => {
+    goOffline()
+    abandonLibraryCalls()
+  })
   on('ready', emitMessage)
   on('nosub', emitMessage)
 }
@@ -134,6 +137,30 @@ function checkLogin() {
 function goOffline() {
   setPhase('offline')
   for (const listener of listeners) listener.offline?.()
+}
+
+// The library never settles a call whose connection closed, so its callback
+// never runs. For its resume login that's fatal: the callback is what clears
+// its "login in flight" flag, and while that's set every later resume login
+// returns early — `loggingIn()` stays true and the session never gets ready.
+// So answer them once no result can arrive. (Ours are gone already: `calls.ts`
+// drops them on `offline`.)
+function abandonLibraryCalls() {
+  for (const { callback } of Data.calls.splice(0)) {
+    callback?.(ABANDONED, undefined)
+  }
+}
+
+// As `too-many-requests`: the one error the resume login's callback answers by
+// just trying the resume again — `timeToReset` + 100 ms later, and only if no
+// user is logged in by then. Any other error runs its token-login retry, which
+// passes the user id as the token: on a cold start that sends `login` with no
+// token, the server rejects it, and the library logs out. The library's other
+// calls (its `logout`) ignore the error's shape.
+const ABANDONED = {
+  error: 'too-many-requests',
+  reason: 'The connection closed before a result arrived.',
+  timeToReset: 0,
 }
 
 function emitMessage(msg: DdpMessage) {

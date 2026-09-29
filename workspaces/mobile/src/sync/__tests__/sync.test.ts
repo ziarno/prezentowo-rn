@@ -23,14 +23,17 @@ let server: FakeDdpServer
 let sync: SyncModule
 
 async function start(
-  options: Parameters<typeof startFakeDdpServer>[0] & { token?: string } = {},
+  options: Parameters<typeof startFakeDdpServer>[0] & {
+    token?: string
+    reconnectIntervalMs?: number
+  } = {},
 ) {
   server = await startFakeDdpServer(options)
   sync = loadSync()
   sync.connect(server.url, {
     storage: memoryStorage(options.token),
     netInfo: null,
-    reconnectIntervalMs: 50,
+    reconnectIntervalMs: options.reconnectIntervalMs ?? 50,
   })
 }
 
@@ -254,5 +257,71 @@ describe('a rejected resume token', () => {
       () => server.connections[0].socket.readyState === WebSocket.CLOSED,
       { label: 'old socket closed' },
     )
+  })
+})
+
+describe('a resume login cut off by a disconnect', () => {
+  // The resume token each `login` that reached the server carried.
+  const logins = () =>
+    methodArrivals('login').map(
+      entry => (entry.msg.params as { resume?: string }[])[0]?.resume,
+    )
+
+  it('is sent again on the next connection', async () => {
+    await start(withToken)
+    server.holdMethod('login')
+    await waitFor(() => server.arrivals(0).includes('login'))
+
+    server.dropAll()
+    await waitFor(() => server.arrivals(1).includes('login'), {
+      label: 'login on the next connection',
+    })
+    server.releaseMethod('login')
+
+    await waitFor(() => sync.status() === 'connected')
+    await expect(sync.call('gifts.claim', { giftId: 'g1' })).resolves.toEqual({
+      ok: 'gifts.claim',
+    })
+  })
+
+  it('resumes with the stored token after a slow reconnect', async () => {
+    await start({ ...withToken, reconnectIntervalMs: 400 })
+    server.holdMethod('login')
+    await waitFor(() => server.arrivals(0).includes('login'))
+
+    // The library reconnects at once after the first drop, then waits the
+    // reconnect interval — well past its own login retry delays.
+    server.refuseHandshakes(1)
+    server.dropAll()
+    await waitFor(() => server.arrivals(2).includes('login'), {
+      label: 'login on the next accepted connection',
+    })
+    server.releaseMethod('login')
+
+    await waitFor(() => sync.status() === 'connected')
+    await expect(sync.call('gifts.claim', { giftId: 'g1' })).resolves.toEqual({
+      ok: 'gifts.claim',
+    })
+    await sleep(300)
+    expect(logins()).toEqual(['token-1', 'token-1'])
+  })
+
+  it('is sent again mid-session, and nothing retries it after', async () => {
+    await start(withToken)
+    await waitFor(() => sync.status() === 'connected')
+
+    server.holdMethod('login')
+    server.dropAll()
+    await waitFor(() => server.arrivals(1).includes('login'))
+    server.dropAll()
+    await waitFor(() => server.arrivals(2).includes('login'), {
+      label: 'login on the next connection',
+    })
+    server.releaseMethod('login')
+
+    await waitFor(() => sync.status() === 'connected')
+    await sleep(300)
+    expect(logins()).toEqual(['token-1', 'token-1', 'token-1'])
+    expect(server.arrivals(2)).toEqual(['login'])
   })
 })

@@ -32,7 +32,8 @@ type Dependency = { depend(): void; changed(): void }
 type LibraryData = {
   ddp: Ddp | null
   // Outstanding method calls. The library's `result` handler looks the id up
-  // here, calls the callback and splices the entry out itself.
+  // here, calls the callback and splices the entry out itself. Nothing in the
+  // library settles or prunes them when the connection closes.
   calls: { id: string; callback?: (error: unknown, result: unknown) => void }[]
   on(event: string, listener: () => void): void
   off(event: string, listener: () => void): void
