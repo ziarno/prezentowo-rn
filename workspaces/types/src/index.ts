@@ -37,6 +37,78 @@ export type ImageRef =
   | { kind: 'upload'; id: string } // self-hosted upload
   | { kind: 'illustration'; id: string } // bundled stock key, e.g. "p3" or "b2"
 
+// Stock art bundled in the app (docs/spec.md §1.1). Append-only: an id is
+// never reused or renumbered. `GiftDoc.image` takes a present id,
+// `EventDoc.background` a background id.
+export const PRESENT_ILLUSTRATION_IDS = [
+  'p1',
+  'p2',
+  'p3',
+  'p4',
+  'p5',
+  'p6',
+  'p7',
+  'p8',
+  'p9',
+  'p10',
+  'p11',
+  'p12',
+  'p13',
+  'p14',
+  'p15',
+  'p16',
+  'p17',
+  'p18',
+  'p19',
+  'p20',
+  'p21',
+  'p22',
+  'p23',
+  'p24',
+  'p25',
+  'p26',
+  'p27',
+  'p28',
+  'p29',
+  'p30',
+  'p31',
+  'p32',
+  'p33',
+  'p34',
+  'p35',
+  'p36',
+  'p37',
+  'p38',
+  'p39',
+  'p40',
+] as const
+export const BACKGROUND_ILLUSTRATION_IDS = [
+  'b1',
+  'b2',
+  'b3',
+  'b4',
+  'b5',
+  'b6',
+  'b7',
+  'b8',
+  'b9',
+  'b10',
+  'b11',
+  'b12',
+  'b13',
+  'b14',
+  'b15',
+  'b16',
+  'b17',
+  'b18',
+  'b19',
+  'b20',
+] as const
+
+export type PresentIllustrationId = (typeof PRESENT_ILLUSTRATION_IDS)[number]
+export type BackgroundIllustrationId =
+  (typeof BACKGROUND_ILLUSTRATION_IDS)[number]
+
 export type EventKind =
   | { type: 'many-to-many' }
   // An EventParticipant.id, never a userId: the beneficiary may be a

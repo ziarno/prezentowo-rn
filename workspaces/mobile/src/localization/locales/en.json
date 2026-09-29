@@ -199,7 +199,7 @@
     },
     "photo": {
       "heading": "Add a photo?",
-      "noPhoto": "No photo — we'll show one of our illustrations."
+      "noPhoto": "Nothing picked — we'll show one of our illustrations."
     },
     "details": {
       "heading": "Anything else?",
@@ -267,7 +267,7 @@
     },
     "background": {
       "heading": "Pick a background",
-      "none": "No photo — we'll pick a background for you.",
+      "none": "Nothing picked — we'll choose a background for you.",
       "hint": "It sits behind the event title, date and countdown."
     }
   },
@@ -306,9 +306,13 @@
     }
   },
   "photoPicker": {
+    "upload": "Upload photo",
     "takePhoto": "Take photo",
     "choosePhoto": "Choose photo",
-    "remove": "Remove photo",
+    "cancel": "Cancel",
+    "remove": "Remove",
+    "presentLabel": "Illustration {{number}}",
+    "backgroundLabel": "Background {{number}}",
     "errors": {
       "cameraDenied": "Allow camera access in Settings to take a photo.",
       "cameraUnavailable": "This device can't take photos. Choose one instead.",

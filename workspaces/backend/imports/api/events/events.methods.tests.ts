@@ -154,6 +154,25 @@ describe('events.create', function () {
 
       assert.deepStrictEqual(event.background, background)
     })
+
+    it('accepts every stock background id', async function () {
+      for (const id of ['b1', 'b20']) {
+        const background = { kind: 'illustration', id }
+        const event = await create({ background })
+
+        assert.deepStrictEqual(event.background, background)
+      }
+    })
+
+    it('rejects an illustration id that is not a background', async function () {
+      for (const id of ['p3', 'b0', 'b21', 'B3']) {
+        await rejectsWith(
+          { background: { kind: 'illustration', id } },
+          'unknownIllustration',
+        )
+      }
+      assert.strictEqual(await Events.find().countAsync(), 0)
+    })
   })
 
   describe('uploaded background', function () {

@@ -30,8 +30,8 @@ import { useGiftById } from '@/hooks/useGiftById'
 import { usePersonName } from '@/hooks/usePersonName'
 import { errorMessage } from '@/localization/errorMessage'
 import { GarlandField } from '@/ui/components/GarlandField'
+import { ImagePickerGrid } from '@/ui/components/ImagePickerGrid'
 import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
-import { PhotoPicker } from '@/ui/components/PhotoPicker'
 import { PresentTile } from '@/ui/components/PresentTile'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
 import { SheetKeyboardAvoidingView } from '@/ui/components/SheetKeyboardAvoidingView'
@@ -259,7 +259,12 @@ function GiftWizard({
           ) : step === 'photo' ? (
             <>
               <StepHeading>{t('addPresent.photo.heading')}</StepHeading>
-              <PresentPhoto draft={draft} onChange={setDraft} size={160} />
+              <PresentPhoto
+                draft={draft}
+                onChange={setDraft}
+                size={160}
+                removable={mode === 'edit'}
+              />
             </>
           ) : step === 'details' ? (
             <>
@@ -358,32 +363,45 @@ function DetailFields({ draft, onChange }: FieldsProps) {
   )
 }
 
-// `5b`, and the photo on `5d`: one photo per present, or none. Picking one
-// of ours lands with the stock art slice.
+// `5b`, and the picture on `5d`: one photo or illustration per present, or
+// none (the fallback). While editing it can be removed.
 function PresentPhoto({
   draft,
   onChange,
   size,
-}: FieldsProps & { size: number }) {
+  removable,
+  layout,
+}: FieldsProps & {
+  size: number
+  removable: boolean
+  layout?: 'grid' | 'row'
+}) {
   const { t } = useTranslation()
   return (
-    <PhotoPicker
+    <ImagePickerGrid
+      art="present"
       value={draft.image}
       onChange={image => onChange({ ...draft, image })}
+      removable={removable}
+      layout={layout}
       preview={
-        <>
+        draft.image ? (
           <PresentTile
-            image={draft.image}
+            gift={{ _id: '', image: draft.image }}
             size={size}
             radius={20}
             derivative={1000}
           />
-          {draft.image ? null : (
-            <Text className="mt-3 text-center text-[13px] leading-[19px] text-garland-ink-60">
+        ) : (
+          <View
+            className="items-center justify-center rounded-[20px] border-[1.5px] border-dashed border-garland-ink-15 px-3"
+            style={{ width: size, height: size }}
+          >
+            <Text className="text-center text-[13px] leading-[19px] text-garland-ink-60">
               {t('addPresent.photo.noPhoto')}
             </Text>
-          )}
-        </>
+          </View>
+        )
       }
     />
   )
@@ -467,7 +485,13 @@ function SummaryStep({
       ) : null}
 
       <View className="my-4 border-b border-garland-ink-08 pb-5">
-        <PresentPhoto draft={draft} onChange={onChange} size={120} />
+        <PresentPhoto
+          draft={draft}
+          onChange={onChange}
+          size={120}
+          removable={mode === 'edit'}
+          layout="row"
+        />
       </View>
 
       <TitleField draft={draft} onChange={onChange} errorMessage={titleError} />

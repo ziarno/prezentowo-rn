@@ -41,8 +41,8 @@ import {
 import { EventBackground } from '@/ui/components/EventBackground'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { GarlandField } from '@/ui/components/GarlandField'
+import { ImagePickerGrid } from '@/ui/components/ImagePickerGrid'
 import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
-import { PhotoPicker } from '@/ui/components/PhotoPicker'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
 import { SheetKeyboardAvoidingView } from '@/ui/components/SheetKeyboardAvoidingView'
 import {
@@ -279,7 +279,11 @@ function EventWizard({
               onChange={type => setDraft({ ...draft, type })}
             />
           ) : step === 'background' ? (
-            <BackgroundStep draft={draft} onChange={setDraft} />
+            <BackgroundStep
+              draft={draft}
+              onChange={setDraft}
+              removable={mode === 'edit'}
+            />
           ) : step === 'people' ? (
             <PeopleStep draft={draft} onChange={setDraft} viewOf={viewOf} />
           ) : (
@@ -406,21 +410,25 @@ function KindStep({
   )
 }
 
-// `4c`: a photo, or none (the fallback). Picking one of ours lands with the
-// stock art slice.
+// `4c`: a photo, one of our backgrounds, or none (the fallback). From `6a`
+// it can be removed.
 function BackgroundStep({
   draft,
   onChange,
+  removable,
 }: {
   draft: EventDraft
   onChange: (draft: EventDraft) => void
+  removable: boolean
 }) {
   const { t } = useTranslation()
   return (
     <>
       <StepHeading>{t('createEvent.background.heading')}</StepHeading>
-      <PhotoPicker
+      <ImagePickerGrid
+        art="background"
         value={draft.background}
+        removable={removable}
         onChange={background => onChange({ ...draft, background })}
         preview={
           draft.background ? (

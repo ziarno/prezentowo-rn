@@ -1,15 +1,16 @@
-import type {
-  CreateEventArgs,
-  EventKind,
-  EventParticipant,
-  EventParticipantInput,
+import {
+  BACKGROUND_ILLUSTRATION_IDS,
+  type CreateEventArgs,
+  type EventKind,
+  type EventParticipant,
+  type EventParticipantInput,
 } from '@prezentowo/types'
 import { Match, check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 import { Random } from 'meteor/random'
 
 import { imageRefPattern } from '../images/images.patterns'
-import { assertOwnUpload } from '../images/images.refs'
+import { assertOwnUpload, assertStockArt } from '../images/images.refs'
 import { insertInvite } from '../invites/invites.codes'
 import { Events } from './events.collection'
 
@@ -99,6 +100,7 @@ const createEvent = async function (
   if (!isCalendarDate(date)) {
     throw new Meteor.Error('invalidArgs', 'invalidDate')
   }
+  assertStockArt(options.background, BACKGROUND_ILLUSTRATION_IDS)
   await assertOwnUpload(options.background, userId)
 
   const host: EventParticipant = { id: Random.id(), kind: 'real', userId }

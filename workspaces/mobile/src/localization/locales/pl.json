@@ -201,7 +201,7 @@
     },
     "photo": {
       "heading": "Dodać zdjęcie?",
-      "noPhoto": "Bez zdjęcia — pokażemy jedną z naszych ilustracji."
+      "noPhoto": "Nic nie wybrano — pokażemy jedną z naszych ilustracji."
     },
     "details": {
       "heading": "Coś jeszcze?",
@@ -269,7 +269,7 @@
     },
     "background": {
       "heading": "Wybierz tło",
-      "none": "Bez zdjęcia — wybierzemy tło za Ciebie.",
+      "none": "Nic nie wybrano — wybierzemy tło za Ciebie.",
       "hint": "Tło jest widoczne pod nazwą wydarzenia, datą i odliczaniem."
     }
   },
@@ -326,9 +326,13 @@
     }
   },
   "photoPicker": {
+    "upload": "Dodaj zdjęcie",
     "takePhoto": "Zrób zdjęcie",
     "choosePhoto": "Wybierz zdjęcie",
-    "remove": "Usuń zdjęcie",
+    "cancel": "Anuluj",
+    "remove": "Usuń",
+    "presentLabel": "Ilustracja {{number}}",
+    "backgroundLabel": "Tło {{number}}",
     "errors": {
       "cameraDenied": "Aby zrobić zdjęcie, zezwól na dostęp do aparatu w Ustawieniach.",
       "cameraUnavailable": "To urządzenie nie może robić zdjęć. Wybierz zdjęcie z galerii.",

@@ -160,7 +160,7 @@ export function PresentDetailScreen({
       >
         <View className="items-center px-[22px] pt-2">
           <PresentTile
-            image={gift.image}
+            gift={gift}
             size={220}
             imageSize={190}
             radius={24}

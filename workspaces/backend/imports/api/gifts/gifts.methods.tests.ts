@@ -115,6 +115,36 @@ describe('gifts methods', function () {
       }
     })
 
+    it('accepts every present illustration id', async function () {
+      const { users, participants, eventId } = family
+
+      for (const id of ['p1', 'p21', 'p40']) {
+        const image = { kind: 'illustration', id }
+        const gift = await addGiftAs(
+          users.celina,
+          eventId,
+          participants.bartek,
+          'Scarf',
+          { image },
+        )
+        assert.deepStrictEqual((await Gifts.findOneAsync(gift))?.image, image)
+      }
+    })
+
+    it('rejects an illustration id that is not a present', async function () {
+      const { users, participants, eventId } = family
+
+      for (const id of ['b3', 'p0', 'p41', 'P3', 'p3 ']) {
+        await assert.rejects(
+          addGiftAs(users.celina, eventId, participants.bartek, 'Scarf', {
+            image: { kind: 'illustration', id },
+          }),
+          { error: 'invalidArgs', reason: 'unknownIllustration' },
+        )
+      }
+      assert.strictEqual(await Gifts.find({ eventId }).countAsync(), 0)
+    })
+
     it('no longer stores a price', async function () {
       const { users, participants, eventId } = family
 
@@ -157,6 +187,27 @@ describe('gifts methods', function () {
       })
 
       assert.strictEqual((await Gifts.findOneAsync(gift))?.title, 'Wool scarf')
+    })
+
+    it('rejects an illustration id that is not a present', async function () {
+      const { users, participants, eventId } = family
+      const image = { kind: 'illustration', id: 'p3' }
+      const gift = await addGiftAs(
+        users.celina,
+        eventId,
+        participants.bartek,
+        'Scarf',
+        { image },
+      )
+
+      await assert.rejects(
+        callAsUser(users.celina, 'gifts.update', {
+          giftId: gift,
+          image: { kind: 'illustration', id: 'b3' },
+        }),
+        { error: 'invalidArgs', reason: 'unknownIllustration' },
+      )
+      assert.deepStrictEqual((await Gifts.findOneAsync(gift))?.image, image)
     })
 
     it('rejects any other member, the event creator included', async function () {

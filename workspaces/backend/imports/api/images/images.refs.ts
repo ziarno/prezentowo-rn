@@ -23,6 +23,21 @@ export async function assertOwnUpload(
 }
 
 /**
+ * Asserts an `illustration` image is stock art bundled for its field
+ * (docs/spec.md §1.1): `ids` is the field's allowlist from
+ * `@prezentowo/types`, presents for a gift and backgrounds for an event.
+ */
+export function assertStockArt(
+  image: ImageRef | null | undefined,
+  ids: readonly string[],
+): void {
+  if (image?.kind !== 'illustration') return
+  if (!ids.includes(image.id)) {
+    throw new Meteor.Error('invalidArgs', 'unknownIllustration')
+  }
+}
+
+/**
  * Deletes the upload `previous` pointed at once a document has dropped it for
  * `next` (a different image, or none). Call it after the write that dropped
  * it. A failed delete is logged, not thrown: the write has already landed.

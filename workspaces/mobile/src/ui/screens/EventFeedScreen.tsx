@@ -14,6 +14,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { type CoverTone, coverTone } from '@/api/stockArt'
 import { BackIcon, HamburgerIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
@@ -49,10 +50,12 @@ export function EventFeedScreen({ eventId }: { eventId: string }) {
     )
   }
 
+  const tone = coverTone(event.background, event._id)
   return (
     <CollapsingCover
       event={event}
-      cover={<CoverDetails eventId={eventId} date={event.date} />}
+      tone={tone}
+      cover={<CoverDetails eventId={eventId} date={event.date} tone={tone} />}
     >
       <Text className="py-10 text-center text-sm text-garland-ink-60">
         {t('shell.comingSoon')}
@@ -61,12 +64,19 @@ export function EventFeedScreen({ eventId }: { eventId: string }) {
   )
 }
 
+// Cover text sits straight on a stock pattern, in ink or paper to match its
+// tone; a photo gets a scrim and paper text.
+const coverTextColor = (tone: CoverTone) =>
+  tone === 'light' ? 'text-garland-ink' : 'text-garland-paper'
+
 function CollapsingCover({
   event,
+  tone,
   cover,
   children,
 }: {
   event: EventDoc
+  tone: CoverTone
   // The `3c` details under the title; they fade as the cover collapses.
   cover: ReactNode
   children: ReactNode
@@ -74,17 +84,18 @@ function CollapsingCover({
   const insets = useSafeAreaInsets()
   const { height: windowHeight } = useWindowDimensions()
   const scrollY = useSharedValue(0)
+  const textColor = coverTextColor(tone)
 
   const expanded = insets.top + COVER_HEIGHT
   const collapsed = insets.top + BAR_HEIGHT
   const range = expanded - collapsed
 
-  // The cover sits under a light status bar; screens above it are paper.
+  // The status bar matches the cover text; screens above it are paper.
   useFocusEffect(
     useCallback(() => {
-      setStatusBarStyle('light')
+      setStatusBarStyle(tone === 'light' ? 'dark' : 'light')
       return () => setStatusBarStyle('dark')
-    }, []),
+    }, [tone]),
   )
 
   const onScroll = useAnimatedScrollHandler(e => {
@@ -139,9 +150,9 @@ function CollapsingCover({
       >
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
           <EventBackground event={event} height="100%" derivative={1600} />
-          {/* Until the stock patterns declare their tones (#43), text sits
-              on a scrim so it reads on any photo or tint. */}
-          <View style={[StyleSheet.absoluteFill, styles.scrim]} />
+          {tone === 'photo' ? (
+            <View style={[StyleSheet.absoluteFill, styles.scrim]} />
+          ) : null}
         </View>
 
         <View
@@ -153,7 +164,7 @@ function CollapsingCover({
               transparent out of the accessibility tree. */}
           <Animated.View style={[styles.barTitle, barTitleStyle]}>
             <Text
-              className="font-garland-display text-lg text-garland-paper"
+              className={`font-garland-display text-lg ${textColor}`}
               numberOfLines={1}
             >
               {event.title}
@@ -166,7 +177,7 @@ function CollapsingCover({
           pointerEvents="none"
         >
           <Text
-            className="font-garland-display text-[34px] leading-[38px] text-garland-paper"
+            className={`font-garland-display text-[34px] leading-[38px] ${textColor}`}
             numberOfLines={2}
             accessibilityRole="header"
           >
@@ -224,26 +235,43 @@ function Chip({
   )
 }
 
-// Date, countdown chip and people count under the `3c` title.
-function CoverDetails({ eventId, date }: { eventId: string; date: string }) {
+// Date, countdown chip and people count under the `3c` title. The chip
+// inverts the text colour: green on a light pattern, paper otherwise.
+function CoverDetails({
+  eventId,
+  date,
+  tone,
+}: {
+  eventId: string
+  date: string
+  tone: CoverTone
+}) {
   const { t, i18n } = useTranslation()
   const { participants } = useEventParticipants(eventId)
   const when = eventWhen(t, i18n.language, date, new Date())
+  const light = tone === 'light'
+  const textColor = coverTextColor(tone)
 
   return (
     <View className="flex-row flex-wrap items-center gap-x-2.5 gap-y-1.5">
-      <Text className="text-sm font-semibold text-garland-paper">
-        {when.date}
-      </Text>
+      <Text className={`text-sm font-semibold ${textColor}`}>{when.date}</Text>
       {when.countdown ? (
-        <View className="rounded-full bg-garland-paper px-2.5 py-0.5">
-          <Text className="text-xs font-bold text-garland-ink">
+        <View
+          className={`rounded-full px-2.5 py-0.5 ${
+            light ? 'bg-garland-green' : 'bg-garland-paper'
+          }`}
+        >
+          <Text
+            className={`text-xs font-bold ${
+              light ? 'text-garland-paper' : 'text-garland-green'
+            }`}
+          >
             {when.countdown}
           </Text>
         </View>
       ) : null}
       {participants.length > 0 ? (
-        <Text className="text-sm text-garland-paper">
+        <Text className={`text-sm ${textColor}`}>
           {t('home.people', { count: participants.length })}
         </Text>
       ) : null}

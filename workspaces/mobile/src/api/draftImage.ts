@@ -8,6 +8,12 @@ export type LocalPhoto = { kind: 'local'; uri: string }
 // A wizard's image field: a saved `ImageRef`, or a photo not yet uploaded.
 export type DraftImage = ImageRef | LocalPhoto
 
+// A photo: an upload, or one picked in a wizard and still on the device.
+export type Photo = Exclude<DraftImage, { kind: 'illustration' }>
+
+export const isPhoto = (image: DraftImage | undefined): image is Photo =>
+  image?.kind === 'upload' || image?.kind === 'local'
+
 const sameImage = (a: ImageRef, b: ImageRef) =>
   a.kind === b.kind && a.id === b.id
 

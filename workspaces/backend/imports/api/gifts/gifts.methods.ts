@@ -1,10 +1,19 @@
-import type { AddGiftArgs, EventDoc, UpdateGiftArgs } from '@prezentowo/types'
+import {
+  type AddGiftArgs,
+  type EventDoc,
+  PRESENT_ILLUSTRATION_IDS,
+  type UpdateGiftArgs,
+} from '@prezentowo/types'
 import { Match, check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 
 import { Events } from '../events/events.collection'
 import { imageRefPattern } from '../images/images.patterns'
-import { assertOwnUpload, releaseImage } from '../images/images.refs'
+import {
+  assertOwnUpload,
+  assertStockArt,
+  releaseImage,
+} from '../images/images.refs'
 import { Gifts } from './gifts.collection'
 import { isHiddenFrom, isRecipient } from './gifts.visibility'
 
@@ -81,6 +90,7 @@ const addGift = async function (
   if (!this.userId) {
     throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
   }
+  assertStockArt(options.image, PRESENT_ILLUSTRATION_IDS)
 
   const event = await assertEventMember(this.userId, options.eventId)
 
@@ -143,6 +153,7 @@ const updateGift = async function (
   if (gift.createdBy !== this.userId) {
     throw new Meteor.Error('notAuthorized', 'notTheGiftCreator')
   }
+  assertStockArt(options.image, PRESENT_ILLUSTRATION_IDS)
   await assertOwnUpload(options.image, this.userId)
 
   const updates: Record<string, unknown> = {}

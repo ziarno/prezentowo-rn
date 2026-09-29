@@ -40,7 +40,7 @@ export function GiftRow({
           : 'border-b border-garland-ink-08'
       }`}
     >
-      <PresentTile image={gift.image} size={56} imageSize={50} />
+      <PresentTile gift={gift} size={56} imageSize={50} />
 
       <View className="min-w-0 flex-1">
         {forName ? (
