@@ -2,6 +2,7 @@ import { check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 
 import { Events } from './events.collection'
+import { isMemberOf } from './events.membership'
 
 // Events the current user owns or is a real participant of.
 Meteor.publish('events.mine', function () {
@@ -15,10 +16,14 @@ Meteor.publish('events.mine', function () {
   })
 })
 
-// A single event by id. Used by the join-event screen so a user who isn't a
-// participant yet — or not even signed in yet — can see the event they're
-// being invited to. The id acts as the invite capability.
-Meteor.publish('events.byId', function (eventId: string) {
+// A single event, for its members only. It is not an invite path: invites go
+// through `invites.byCode`, and an eventId grants nothing.
+Meteor.publish('events.byId', async function (eventId: string) {
   check(eventId, String)
+  if (!this.userId) return this.ready()
+
+  const event = await Events.findOneAsync(eventId)
+  if (!event || !isMemberOf(event, this.userId)) return this.ready()
+
   return Events.find({ _id: eventId })
 })

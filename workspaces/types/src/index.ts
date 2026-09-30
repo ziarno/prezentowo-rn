@@ -151,6 +151,12 @@ export type UpdateEventArgs = {
   kind?: EventKind
 }
 
+// `participantId` names the placeholder being claimed; without it the caller
+// joins as a new participant. The invite code is the only join capability.
+export type JoinEventArgs = { code: string; participantId?: string }
+
+export type JoinEventResult = { eventId: string }
+
 export type InviteDoc = {
   _id: string
   // 4 chars, crypto-random, alphabet = [A-Za-z0-9] minus 0 O 1 l I (57
@@ -160,6 +166,23 @@ export type InviteDoc = {
   eventId: string
   ownerId: string
   createdAt: Date
+}
+
+// What a signed-out or not-yet-member viewer may see of an event on `7a` and
+// the web landing page. Never carries a participant's userId or any gift.
+export type InvitePreview = {
+  code: string
+  eventId: string
+  title: string
+  date: string
+  background?: ImageRef
+  inviterName: string
+  unclaimedPlaceholders: {
+    id: string
+    name: string
+    color: string
+    avatar?: string
+  }[]
 }
 
 // The WebP derivatives of an upload, by long edge in px, served at

@@ -125,7 +125,6 @@
     "person": "Prezenty",
     "personChat": "Czat o prezentach",
     "present": "Prezent",
-    "invite": "Zaproszenie",
     "people": "Osoby",
     "invitePeople": "Zaproś osoby",
     "you": "— ty",
@@ -342,5 +341,23 @@
   "feed": {
     "loading": "Ładowanie…",
     "notFound": "Tego wydarzenia już tu nie ma."
+  },
+  "invite": {
+    "title": "Zaproszenie",
+    "loading": "Wczytujemy zaproszenie…",
+    "offline": "Jesteś offline. Połącz się z internetem, aby otworzyć to zaproszenie.",
+    "notFound": "Ten link z zaproszeniem już nie działa. Poproś o nowy.",
+    "invitedBy": "{{name}} zaprasza Cię do",
+    "invited": "Zaproszenie do",
+    "areYouOneOf": "Czy jesteś jedną z tych osób?",
+    "placeholderHint": "Zostały dodane po imieniu. Wybierz siebie, aby przejąć swoją listę.",
+    "imNew": "Nie, jestem tu nowy/a",
+    "nameVisible": "Po dołączeniu Twoje imię zobaczą wszyscy w wydarzeniu.",
+    "alreadyMember": "Już bierzesz udział w tym wydarzeniu.",
+    "placeholderTaken": "Ktoś właśnie zajął to miejsce. Wybierz ponownie.",
+    "join": "Dołącz",
+    "ignore": "Zignoruj",
+    "openEvent": "Otwórz wydarzenie",
+    "shareMessage": "Dołącz do „{{title}}” w Prezentowo: {{link}}"
   }
 }

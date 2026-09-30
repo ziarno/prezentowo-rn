@@ -1,0 +1,118 @@
+import type { EventDoc, InviteDoc, InvitePreview } from '@prezentowo/types'
+import { check } from 'meteor/check'
+import { Meteor } from 'meteor/meteor'
+
+import { Events } from '../events/events.collection'
+import { Invites } from './invites.collection'
+
+// A client-only collection: nothing on the server is stored under this name.
+const INVITE_PREVIEWS = 'invitePreviews'
+
+// Meteor 3 exposes the async observers on cursors, but the bundled type defs
+// lag behind — narrow the cursor to the shape we use.
+type ObserveCursor<T> = {
+  observeAsync: (callbacks: {
+    added?: (doc: T) => void
+    changed?: (doc: T) => void
+    removed?: (doc: T) => void
+  }) => Promise<{ stop: () => void }>
+}
+const observable = <T>(cursor: unknown) => cursor as ObserveCursor<T>
+
+// Everything `7a` shows before joining. Participants' userIds and gifts never
+// leave the server; placeholders are listed only while unclaimed.
+const invitePreview = (
+  code: string,
+  event: EventDoc,
+  inviterName: string,
+): InvitePreview => ({
+  code,
+  eventId: event._id,
+  title: event.title,
+  date: event.date,
+  ...(event.background ? { background: event.background } : {}),
+  inviterName,
+  unclaimedPlaceholders: event.participants.flatMap(p =>
+    p.kind === 'placeholder'
+      ? [
+          {
+            id: p.id,
+            name: p.name,
+            color: p.color,
+            ...(p.avatar ? { avatar: p.avatar } : {}),
+          },
+        ]
+      : [],
+  ),
+})
+
+// `7a`'s data, readable signed out: one `InvitePreview` (keyed by its code)
+// kept live while the code stays valid, and removed once it's rotated away or
+// the event is gone. An unknown code publishes nothing.
+Meteor.publish('invites.byCode', async function (code: string) {
+  check(code, String)
+
+  let invite: InviteDoc | null = null
+  let eventHandle: { stop: () => void } | null = null
+  let shown = false
+
+  const hide = () => {
+    if (!shown) return
+    shown = false
+    this.removed(INVITE_PREVIEWS, code)
+  }
+
+  const inviteHandle = await observable<InviteDoc>(
+    Invites.find({ code }),
+  ).observeAsync({
+    added: doc => void (invite = doc),
+    // The code was rotated (or the event deleted): it's dead from now on.
+    removed: () => {
+      invite = null
+      eventHandle?.stop()
+      hide()
+    },
+  })
+  this.onStop(() => {
+    inviteHandle.stop()
+    eventHandle?.stop()
+  })
+  if (!invite) return this.ready()
+  const { eventId, ownerId } = invite as InviteDoc
+
+  const owner = await Meteor.users.findOneAsync(ownerId, {
+    fields: { 'profile.name': 1 },
+  })
+  const inviterName = owner?.profile?.name ?? ''
+
+  const show = (event: EventDoc) => {
+    if (!invite) return
+    const preview = invitePreview(code, event, inviterName)
+    if (shown) {
+      // A cleared background has to be sent as undefined to clear it.
+      this.changed(INVITE_PREVIEWS, code, { background: undefined, ...preview })
+    } else {
+      shown = true
+      this.added(INVITE_PREVIEWS, code, preview)
+    }
+  }
+
+  eventHandle = await observable<EventDoc>(
+    Events.find({ _id: eventId }),
+  ).observeAsync({ added: show, changed: show, removed: hide })
+  if (!invite) eventHandle.stop()
+
+  this.ready()
+})
+
+// The event's `InviteDoc`, for `6a`'s link row and the drawer's share. Only
+// the event's creator gets it.
+Meteor.publish('invites.forEvent', async function (eventId: string) {
+  check(eventId, String)
+  if (!this.userId) return this.ready()
+
+  const event = await Events.findOneAsync(eventId)
+  if (!event || event.ownerId !== this.userId) return this.ready()
+
+  return Invites.find({ eventId })
+})

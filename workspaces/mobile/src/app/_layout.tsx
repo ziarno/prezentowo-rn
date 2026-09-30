@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider'
 import { useMagicLinkDeepLink } from '@/hooks/useMagicLinkDeepLink'
+import { usePendingInvite } from '@/hooks/usePendingInvite'
 import { LanguageModalProvider } from '@/localization/LanguageModalProvider'
 import { LocalizationProvider } from '@/localization/provider'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -48,6 +49,7 @@ function RootNavigator() {
   const showAuth = hasCompletedOnboarding === true && !userToken
   const showFirstLogin = !!userToken && firstLoginPending
   const showApp = !!userToken && !firstLoginPending
+  usePendingInvite(showApp)
 
   return (
     <Stack

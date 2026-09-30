@@ -1,6 +1,8 @@
 import type {
   CreateEventArgs,
   EventDoc,
+  JoinEventArgs,
+  JoinEventResult,
   UpdateEventArgs,
 } from '@prezentowo/types'
 
@@ -30,9 +32,6 @@ export function updateEvent(args: UpdateEventArgs): Promise<void> {
   return call('events.update', args)
 }
 
-export function joinEvent(args: {
-  eventId: string
-  participantId?: string
-}): Promise<void> {
-  return call('events.join', args)
+export function joinEvent(args: JoinEventArgs): Promise<JoinEventResult> {
+  return call<JoinEventResult>('events.join', args)
 }

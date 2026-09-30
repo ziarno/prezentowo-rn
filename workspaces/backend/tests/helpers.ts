@@ -84,6 +84,20 @@ type Subscription = {
   stop: () => void
 }
 
+// What a publication returns to publish one cursor. The bundled type defs
+// lag behind on the async observer and the internal description.
+type PublishedCursor = {
+  _cursorDescription: { collectionName: string }
+  observeChangesAsync: (callbacks: {
+    added: (id: string, fields: Fields) => void
+    changed: (id: string, fields: Fields) => void
+    removed: (id: string) => void
+  }) => Promise<{ stop: () => void }>
+}
+
+const isCursor = (value: unknown): value is PublishedCursor =>
+  typeof (value as PublishedCursor | null)?.observeChangesAsync === 'function'
+
 export type SubscriptionMessage =
   | { msg: 'added'; collection: string; id: string; fields: Fields }
   | { msg: 'changed'; collection: string; id: string; fields: Fields }
@@ -94,6 +108,7 @@ export type SubscriptionMessage =
  * records what it would send to a DDP client. `docs(collection)` is the
  * client-side view (merged fields per id); `messages` is every `added` /
  * `changed` / `removed` in order. Resolves once the publication is ready.
+ * A publication that returns a cursor has it published as Meteor would.
  * Call `stop()` when done so its observers are torn down.
  */
 export async function subscribeAsUser(
@@ -145,9 +160,19 @@ export async function subscribeAsUser(
   }
 
   const result = await handler.apply(sub, args)
-  if (result !== undefined) {
+  if (isCursor(result)) {
+    // Publish the returned cursor the way Meteor does for a DDP client.
+    const collection = result._cursorDescription.collectionName
+    const handle = await result.observeChangesAsync({
+      added: (id, fields) => sub.added(collection, id, fields),
+      changed: (id, fields) => sub.changed(collection, id, fields),
+      removed: id => sub.removed(collection, id),
+    })
+    sub.onStop(() => handle.stop())
+    sub.ready()
+  } else if (result !== undefined) {
     throw new Error(
-      'subscribeAsUser() only supports publications that call ready()',
+      'subscribeAsUser() supports publications that call ready() or return one cursor',
     )
   }
   await ready

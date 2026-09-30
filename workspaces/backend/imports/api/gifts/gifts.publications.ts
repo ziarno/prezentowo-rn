@@ -3,6 +3,7 @@ import { check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 
 import { Events } from '../events/events.collection'
+import { isMemberOf } from '../events/events.membership'
 import { Gifts } from './gifts.collection'
 import { isHiddenFrom, isRecipient } from './gifts.visibility'
 
@@ -16,13 +17,6 @@ type AsyncObservableCursor = {
     removed?: (id: string) => void
   }) => Promise<{ stop: () => void }>
 }
-
-const isMemberOf = (
-  event: { ownerId: string; participants: { kind: string; userId?: string }[] },
-  userId: string,
-): boolean =>
-  event.ownerId === userId ||
-  event.participants.some(p => p.kind === 'real' && p.userId === userId)
 
 // Gifts for an event, with both recipient rules applied per viewer:
 // - Own-list visibility rule: a gift suggested for the viewer is never added,

@@ -125,7 +125,6 @@
     "person": "Presents",
     "personChat": "Presents chat",
     "present": "Present",
-    "invite": "Invite",
     "people": "People",
     "invitePeople": "Invite people",
     "you": "— you",
@@ -322,5 +321,23 @@
   "feed": {
     "loading": "Loading…",
     "notFound": "This event isn't here anymore."
+  },
+  "invite": {
+    "title": "Invite",
+    "loading": "Loading the invite…",
+    "offline": "You're offline. Connect to the internet to open this invite.",
+    "notFound": "This invite link doesn't work anymore. Ask for a new one.",
+    "invitedBy": "{{name}} invited you to",
+    "invited": "You're invited to",
+    "areYouOneOf": "Are you one of these people?",
+    "placeholderHint": "They were added by name. Pick yourself to take over your list.",
+    "imNew": "No, I'm new",
+    "nameVisible": "Joining shows your name to everyone in the event.",
+    "alreadyMember": "You're already taking part in this event.",
+    "placeholderTaken": "Someone else just took that spot. Pick again.",
+    "join": "Join event",
+    "ignore": "Ignore",
+    "openEvent": "Open event",
+    "shareMessage": "Join “{{title}}” on Prezentowo: {{link}}"
   }
 }

@@ -2,10 +2,11 @@ import { router, useGlobalSearchParams, useSegments } from 'expo-router'
 import type { DrawerContentComponentProps } from 'expo-router/drawer'
 import type { ComponentType, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, View } from 'react-native'
+import { Pressable, ScrollView, Share, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { beneficiaryIdOf } from '@/api/events'
+import { inviteLink } from '@/api/invites'
 import { presentCounts } from '@/api/presentLists'
 import {
   BackIcon,
@@ -22,6 +23,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
 import { useEventGifts } from '@/hooks/useEventGifts'
+import { useEventInvite } from '@/hooks/useEventInvite'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useLanguageModal } from '@/localization/LanguageModalProvider'
 import { LOCALES } from '@/localization/provider'
@@ -140,6 +142,7 @@ function EventMenu({ eventId, go }: MenuProps & { eventId: string }) {
   const { participants } = useEventParticipants(eventId)
   const { gifts } = useEventGifts(eventId)
   const user = useCurrentUser()
+  const invite = useEventInvite(eventId)
   // Everyone gets a count in `3d`. In `3d2` (many-to-one) the beneficiary
   // is listed first and is the only one with a count.
   const counts = event ? presentCounts(event, gifts, user?._id) : {}
@@ -220,10 +223,25 @@ function EventMenu({ eventId, go }: MenuProps & { eventId: string }) {
           )
         }
       />
-      {/* Sharing the invite link lands with the invites slice. */}
-      <View className="border-t border-garland-ink-08">
-        <MenuRow Icon={PlusIcon} label={t('shell.invitePeople')} />
-      </View>
+      {/* Only the creator holds the invite code (`invites.forEvent`). */}
+      {invite ? (
+        <View className="border-t border-garland-ink-08">
+          <MenuRow
+            Icon={PlusIcon}
+            label={t('shell.invitePeople')}
+            onPress={() =>
+              go(() =>
+                Share.share({
+                  message: t('invite.shareMessage', {
+                    title: event?.title ?? '',
+                    link: inviteLink(invite.code),
+                  }),
+                }),
+              )
+            }
+          />
+        </View>
+      ) : null}
     </>
   )
 }

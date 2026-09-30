@@ -1,17 +1,22 @@
 import {
   BACKGROUND_ILLUSTRATION_IDS,
   type CreateEventArgs,
+  type EventDoc,
   type EventKind,
   type EventParticipant,
   type EventParticipantInput,
+  type JoinEventArgs,
+  type JoinEventResult,
 } from '@prezentowo/types'
 import { Match, check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
+import type { Mongo } from 'meteor/mongo'
 import { Random } from 'meteor/random'
 
 import { imageRefPattern } from '../images/images.patterns'
 import { assertOwnUpload, assertStockArt } from '../images/images.refs'
 import { insertInvite } from '../invites/invites.codes'
+import { eventForCode } from '../invites/invites.lookup'
 import { Events } from './events.collection'
 
 const participantPattern = Match.Where(
@@ -148,14 +153,19 @@ const createEvent = async function (
   return { _id }
 }
 
+// Another join may rewrite the participant list between our read and write,
+// so the write only lands on the list it was computed from; otherwise it's
+// recomputed from a fresh read, a few times at most.
+const MAX_JOIN_ATTEMPTS = 3
+
 const joinEvent = async function (
   this: Meteor.MethodThisType,
-  options: { eventId: string; participantId?: string },
-) {
+  options: JoinEventArgs,
+): Promise<JoinEventResult> {
   check(
     options,
     Match.ObjectIncluding({
-      eventId: String,
+      code: String,
       participantId: Match.Optional(String),
     }),
   )
@@ -163,40 +173,51 @@ const joinEvent = async function (
   if (!this.userId) {
     throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
   }
-
-  const event = await Events.findOneAsync(options.eventId)
-  if (!event) {
-    throw new Meteor.Error('notFound', 'eventNotFound')
-  }
-
   const userId = this.userId
 
-  if (event.participants.some(p => p.kind === 'real' && p.userId === userId)) {
-    throw new Meteor.Error('alreadyJoined', 'alreadyAParticipant')
-  }
+  for (let attempt = 0; attempt < MAX_JOIN_ATTEMPTS; attempt++) {
+    const event = await eventForCode(options.code)
 
-  let nextParticipants: EventParticipant[]
-  if (options.participantId) {
-    const target = event.participants.find(p => p.id === options.participantId)
-    if (!target) {
-      throw new Meteor.Error('notFound', 'placeholderNotFound')
+    if (
+      event.participants.some(p => p.kind === 'real' && p.userId === userId)
+    ) {
+      throw new Meteor.Error('alreadyJoined', 'alreadyAParticipant')
     }
-    if (target.kind !== 'placeholder') {
-      throw new Meteor.Error('invalidArgs', 'mustBeAPlaceholder')
-    }
-    nextParticipants = event.participants.map(p =>
-      p.id === options.participantId ? { id: p.id, kind: 'real', userId } : p,
-    )
-  } else {
-    nextParticipants = [
-      ...event.participants,
-      { id: Random.id(), kind: 'real', userId },
-    ]
-  }
 
-  await Events.updateAsync(options.eventId, {
-    $set: { participants: nextParticipants },
-  })
+    let nextParticipants: EventParticipant[]
+    if (options.participantId) {
+      const target = event.participants.find(
+        p => p.id === options.participantId,
+      )
+      if (!target) {
+        throw new Meteor.Error('notFound', 'placeholderNotFound')
+      }
+      if (target.kind !== 'placeholder') {
+        throw new Meteor.Error('invalidArgs', 'mustBeAPlaceholder')
+      }
+      // The placeholder's id is kept, so gifts already on their list stay.
+      nextParticipants = event.participants.map(p =>
+        p.id === target.id ? { id: p.id, kind: 'real', userId } : p,
+      )
+    } else {
+      nextParticipants = [
+        ...event.participants,
+        { id: Random.id(), kind: 'real', userId },
+      ]
+    }
+
+    // Compare-and-set on the whole array, which the selector typings don't
+    // model.
+    const participantsAsRead = {
+      _id: event._id,
+      participants: event.participants,
+    } as unknown as Mongo.Selector<EventDoc>
+    const updated = await Events.updateAsync(participantsAsRead, {
+      $set: { participants: nextParticipants },
+    })
+    if (updated) return { eventId: event._id }
+  }
+  throw new Meteor.Error('serverError', 'concurrentJoin')
 }
 
 Meteor.methods({

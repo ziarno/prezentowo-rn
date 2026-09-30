@@ -1,8 +1,9 @@
-import { useTranslation } from 'react-i18next'
+import { useLocalSearchParams } from 'expo-router'
 
-import { StubScreen } from '@/ui/components/StubScreen'
+import { InviteScreen } from '@/ui/screens/InviteScreen'
 
 export default function InviteRoute() {
-  const { t } = useTranslation()
-  return <StubScreen title={t('shell.invite')} variant="modal" />
+  const { code } = useLocalSearchParams<{ code: string }>()
+  // Keyed so a second invite link opened over this one starts fresh.
+  return <InviteScreen key={code} code={code} />
 }
