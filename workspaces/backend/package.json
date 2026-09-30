@@ -19,7 +19,8 @@
     "open-graph-scraper": "^6.12.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "sharp": "^0.35.5"
+    "sharp": "^0.35.5",
+    "undici": "^7.24.4"
   },
   "devDependencies": {
     "@meteorjs/rspack": "^2.2.0",

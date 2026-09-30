@@ -1,6 +1,11 @@
 import type { LinkImportOutcome } from '@prezentowo/types'
+import { Agent } from 'undici'
 
-import { isPrivateHost } from './linkImport.hosts'
+import {
+  PrivateAddressError,
+  guardedLookup,
+  isPrivateHost,
+} from './linkImport.hosts'
 import { readProductPage } from './linkImport.page'
 
 /** Resolves a pasted shop URL. Never throws for shop-side failures. */
@@ -20,8 +25,18 @@ const BROWSER_HEADERS = {
   'accept-language': 'pl-PL,pl;q=0.9,en;q=0.8',
 }
 
+// Every connection's address is checked as it's resolved (see guardedLookup),
+// which also covers DNS rebinding between hops. `undici` is pinned to the
+// major bundled with Meteor's Node, so global fetch accepts its Agent.
+const dispatcher = new Agent({ connect: { lookup: guardedLookup() } })
+
 const unreadable: LinkImportOutcome = { outcome: 'unreadable' }
 const infraFailure: LinkImportOutcome = { outcome: 'infra-failure' }
+
+// fetch rejects with `TypeError('fetch failed')`, the lookup error in `cause`.
+const isPrivateAddressError = (error: unknown): boolean =>
+  error instanceof PrivateAddressError ||
+  (error instanceof Error && isPrivateAddressError(error.cause))
 
 const isHtml = (response: Response) =>
   /html/i.test(response.headers.get('content-type') ?? 'text/html')
@@ -62,11 +77,14 @@ async function fetchPage(url: URL, signal: AbortSignal) {
   let current = url
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     if (isPrivateHost(current.hostname)) return undefined
-    const response = await fetch(current.href, {
+    // Node's fetch takes `dispatcher`; the DOM RequestInit type doesn't know it.
+    const init: RequestInit & { dispatcher: Agent } = {
       headers: BROWSER_HEADERS,
       redirect: 'manual',
       signal,
-    })
+      dispatcher,
+    }
+    const response = await fetch(current.href, init)
     const location = response.headers.get('location')
     if (response.status < 300 || response.status >= 400 || !location) {
       return { response, pageUrl: current }
@@ -88,7 +106,9 @@ export const selfHostedProvider: LinkImportProvider = {
     let fetched: Awaited<ReturnType<typeof fetchPage>>
     try {
       fetched = await fetchPage(url, signal)
-    } catch {
+    } catch (error) {
+      // A host resolving to a private address is the link's fault.
+      if (isPrivateAddressError(error)) return unreadable
       // Network error, DNS failure or timeout: our side, not the shop's.
       return infraFailure
     }

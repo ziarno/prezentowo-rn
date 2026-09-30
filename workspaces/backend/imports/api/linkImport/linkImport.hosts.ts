@@ -1,4 +1,5 @@
-import { BlockList, isIP } from 'net'
+import { type LookupAddress, type LookupAllOptions, promises as dns } from 'dns'
+import { BlockList, type LookupFunction, isIP } from 'net'
 
 // Loopback, private, link-local (cloud metadata), CGNAT and reserved ranges.
 const privateRanges = new BlockList()
@@ -22,18 +23,63 @@ for (const [network, prefix] of [
   privateRanges.addSubnet(network, prefix, 'ipv6')
 }
 
-// Hosts a shop link can't legitimately point at. A literal-address and
-// single-label check only: a public name resolving to a private address
-// still gets through.
+const isPrivateAddress = (address: string, family: number) =>
+  privateRanges.check(address, family === 6 ? 'ipv6' : 'ipv4')
+
+// Hosts a shop link can't legitimately point at, judged from the URL alone:
+// private literal addresses and single-label names. A public name resolving
+// to a private address is caught at connect time by `guardedLookup`.
 export const isPrivateHost = (hostname: string) => {
   const address = hostname.replace(/^\[|\]$/g, '')
   const version = isIP(address)
-  if (version) {
-    return privateRanges.check(address, version === 6 ? 'ipv6' : 'ipv4')
-  }
+  if (version) return isPrivateAddress(address, version)
   return (
     !hostname.includes('.') ||
     hostname === 'localhost' ||
     hostname.endsWith('.localhost')
   )
 }
+
+/** A shop host resolved to a private address. Carries neither host nor address. */
+export class PrivateAddressError extends Error {
+  name = 'PrivateAddressError'
+  code = 'EPRIVATEADDRESS'
+  constructor() {
+    super('Host resolves to a private address')
+  }
+}
+
+export type Resolver = (
+  hostname: string,
+  options: LookupAllOptions,
+) => Promise<LookupAddress[]>
+
+const systemResolver: Resolver = (hostname, options) =>
+  dns.lookup(hostname, options)
+
+/**
+ * A `net` lookup that resolves every address of the host and fails with
+ * `PrivateAddressError` if any is private, so the address the socket
+ * connects to is the one that was checked. DNS errors pass through as-is.
+ */
+export const guardedLookup =
+  (resolve: Resolver = systemResolver): LookupFunction =>
+  (hostname, options, callback) => {
+    resolve(hostname, { ...options, all: true }).then(
+      addresses => {
+        if (
+          !addresses.length ||
+          addresses.some(({ address, family }) =>
+            isPrivateAddress(address, family),
+          )
+        ) {
+          callback(new PrivateAddressError(), '', 0)
+        } else if (options.all) {
+          callback(null, addresses)
+        } else {
+          callback(null, addresses[0].address, addresses[0].family)
+        }
+      },
+      (error: NodeJS.ErrnoException) => callback(error, '', 0),
+    )
+  }

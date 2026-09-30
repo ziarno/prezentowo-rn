@@ -1,5 +1,6 @@
 import type { LinkImportOutcome } from '@prezentowo/types'
 import assert from 'assert'
+import type { LookupAddress } from 'dns'
 
 import { createUser } from '../../../tests/fixtures'
 import { callAsUser, resetDatabase } from '../../../tests/helpers'
@@ -9,6 +10,11 @@ import empikProduct from '../../../tests/shopPages/empikProduct'
 import moreleProduct from '../../../tests/shopPages/moreleProduct'
 import xkomCategory from '../../../tests/shopPages/xkomCategory'
 import xkomProduct from '../../../tests/shopPages/xkomProduct'
+import {
+  PrivateAddressError,
+  type Resolver,
+  guardedLookup,
+} from './linkImport.hosts'
 import './linkImport.methods'
 
 type Route = Response | ((init: RequestInit) => Response | Promise<Response>)
@@ -466,6 +472,49 @@ describe('gifts.importLink', function () {
       })
       assert.strictEqual(requests.length, 1)
     })
+
+    // What Node's fetch rejects with when guardedLookup refuses the address.
+    const refusedAtConnect = () => {
+      throw new TypeError('fetch failed', { cause: new PrivateAddressError() })
+    }
+
+    it('answers a public name resolving to a private address as unreadable', async function () {
+      routes['https://127.0.0.1.nip.io/'] = refusedAtConnect
+
+      assert.deepStrictEqual(await importLink('https://127.0.0.1.nip.io/'), {
+        outcome: 'unreadable',
+      })
+      assert.deepStrictEqual(logged, ['linkImport 127.0.0.1.nip.io unreadable'])
+    })
+
+    it('answers a redirect to a name resolving privately as unreadable', async function () {
+      routes['https://sklep.pl/k'] = new Response(null, {
+        status: 302,
+        headers: { location: 'https://rebind.example.com/' },
+      })
+      routes['https://rebind.example.com/'] = refusedAtConnect
+
+      assert.deepStrictEqual(await importLink('https://sklep.pl/k'), {
+        outcome: 'unreadable',
+      })
+    })
+
+    it('connects every hop through the address-checking dispatcher', async function () {
+      routes['https://sklep.pl/k'] = new Response(null, {
+        status: 302,
+        headers: { location: '/p/1' },
+      })
+      routes['https://sklep.pl/p/1'] = html(xkomProduct)
+
+      await importLink('https://sklep.pl/k')
+
+      assert.strictEqual(requests.length, 2)
+      const [first, second] = requests.map(
+        ({ init }) => (init as { dispatcher?: unknown }).dispatcher,
+      )
+      assert.ok(first)
+      assert.strictEqual(first, second)
+    })
   })
 
   describe('arguments', function () {
@@ -519,5 +568,89 @@ describe('gifts.importLink', function () {
       assert.ok(logged.every(line => !line.includes('secret-path')))
       assert.ok(logged.every(line => !line.includes(userId)))
     })
+  })
+})
+
+describe('guardedLookup', function () {
+  const v4 = (address: string): LookupAddress => ({ address, family: 4 })
+  const v6 = (address: string): LookupAddress => ({ address, family: 6 })
+
+  // Runs the lookup the way `net` does, resolving to the callback's arguments.
+  const lookup = (resolve: Resolver, all: boolean) =>
+    new Promise<[NodeJS.ErrnoException | null, unknown, unknown]>(done =>
+      guardedLookup(resolve)(
+        'shop.example',
+        { all },
+        (error, address, family) => done([error, address, family]),
+      ),
+    )
+  const resolvingTo =
+    (...addresses: LookupAddress[]): Resolver =>
+    async () =>
+      addresses
+
+  for (const all of [true, false]) {
+    for (const addresses of [
+      [v4('127.0.0.1')],
+      [v4('10.1.2.3')],
+      [v4('169.254.169.254')],
+      [v6('::1')],
+      [v6('::ffff:7f00:1')],
+      [v6('fd12::1')],
+      // One private address among public ones is enough.
+      [v4('93.184.215.14'), v4('192.168.0.10')],
+    ]) {
+      it(`refuses ${addresses.map(a => a.address).join(', ')} (all: ${all})`, async function () {
+        const [error] = await lookup(resolvingTo(...addresses), all)
+        assert.ok(error instanceof PrivateAddressError)
+      })
+    }
+  }
+
+  it('answers every address when net asks for all', async function () {
+    const addresses = [v4('93.184.215.14'), v6('2606:2800:21f:cb07::1')]
+
+    assert.deepStrictEqual(await lookup(resolvingTo(...addresses), true), [
+      null,
+      addresses,
+      undefined,
+    ])
+  })
+
+  it('answers the first address when net asks for one', async function () {
+    assert.deepStrictEqual(
+      await lookup(
+        resolvingTo(v6('2606:2800:21f:cb07::1'), v4('93.184.215.14')),
+        false,
+      ),
+      [null, '2606:2800:21f:cb07::1', 6],
+    )
+  })
+
+  it('always resolves every address, keeping the caller options', async function () {
+    let seen: unknown
+    const resolve: Resolver = async (hostname, options) => {
+      seen = { hostname, options }
+      return [v4('93.184.215.14')]
+    }
+
+    await new Promise<void>(done =>
+      guardedLookup(resolve)('shop.example', { family: 4 }, () => done()),
+    )
+
+    assert.deepStrictEqual(seen, {
+      hostname: 'shop.example',
+      options: { family: 4, all: true },
+    })
+  })
+
+  it('passes a DNS failure through untouched', async function () {
+    const notFound = Object.assign(new Error('getaddrinfo ENOTFOUND'), {
+      code: 'ENOTFOUND',
+    })
+
+    const [error] = await lookup(async () => Promise.reject(notFound), true)
+
+    assert.strictEqual(error, notFound)
   })
 })
