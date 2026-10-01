@@ -395,6 +395,16 @@
     "rotateTitle": "Zmienić link z zaproszeniem?",
     "rotateMessage": "Kto ma stary link, nie dołączy już przez niego.",
     "cancel": "Anuluj",
-    "rotateFailed": "Nie udało się zmienić linku. Spróbuj ponownie."
+    "rotateFailed": "Nie udało się zmienić linku. Spróbuj ponownie.",
+    "beneficiaryTag": "Dostaje prezenty",
+    "remove": "Usuń",
+    "removeTitle": "Usunąć z wydarzenia: {{name}}?",
+    "removeMessage": "Prezenty dla tej osoby zostaną usunięte. Te, które dodała dla innych, zostaną.",
+    "removeFailed": "Nie udało się usunąć: {{name}}. Spróbuj ponownie.",
+    "deleteEvent": "Usuń wydarzenie",
+    "deleteTitle": "Usunąć wydarzenie „{{title}}”?",
+    "deleteMessage": "Wszyscy uczestnicy stracą je razem ze wszystkimi prezentami. Tego nie da się cofnąć.",
+    "delete": "Usuń",
+    "deleteFailed": "Nie udało się usunąć wydarzenia. Spróbuj ponownie."
   }
 }

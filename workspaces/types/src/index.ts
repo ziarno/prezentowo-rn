@@ -151,6 +151,10 @@ export type UpdateEventArgs = {
   kind?: EventKind
 }
 
+// `6a`'s remove: `participantId` is the EventParticipant.id, real or
+// placeholder.
+export type RemoveParticipantArgs = { eventId: string; participantId: string }
+
 // `participantId` names the placeholder being claimed; without it the caller
 // joins as a new participant. The invite code is the only join capability.
 export type JoinEventArgs = { code: string; participantId?: string }

@@ -29,6 +29,7 @@ type GarlandButtonProps = {
   loading?: boolean
   children?: ReactNode
   className?: string
+  accessibilityLabel?: string
   hitSlop?:
     | number
     | { top: number; right: number; bottom: number; left: number }
@@ -41,6 +42,7 @@ export function GarlandButton({
   loading = false,
   children,
   className,
+  accessibilityLabel,
   hitSlop,
 }: GarlandButtonProps) {
   return (
@@ -51,6 +53,7 @@ export function GarlandButton({
         onPress={onPress}
         disabled={disabled || loading}
         hitSlop={hitSlop}
+        accessibilityLabel={accessibilityLabel}
         className={twMerge(
           BUTTON_CLASS[variant],
           // Dimmed only when it can't be pressed for a reason other than

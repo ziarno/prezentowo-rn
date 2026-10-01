@@ -3,6 +3,7 @@ import type {
   EventDoc,
   JoinEventArgs,
   JoinEventResult,
+  RemoveParticipantArgs,
   UpdateEventArgs,
 } from '@prezentowo/types'
 
@@ -34,4 +35,14 @@ export function updateEvent(args: UpdateEventArgs): Promise<void> {
 
 export function joinEvent(args: JoinEventArgs): Promise<JoinEventResult> {
   return call<JoinEventResult>('events.join', args)
+}
+
+// `6a`'s remove: the presents for them go too; the ones they added stay.
+export function removeParticipant(args: RemoveParticipantArgs): Promise<void> {
+  return call('events.removeParticipant', args)
+}
+
+// `6a`'s Delete event: everyone loses it, with all its presents.
+export function deleteEvent(eventId: string): Promise<void> {
+  return call('events.delete', { eventId })
 }

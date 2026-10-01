@@ -6,8 +6,9 @@ import { Alert, Pressable, ScrollView, Share, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import type { WizardStep } from '@/api/eventWizard'
-import { beneficiaryIdOf } from '@/api/events'
+import { beneficiaryIdOf, deleteEvent, removeParticipant } from '@/api/events'
 import { inviteLink, rotateInvite } from '@/api/invites'
+import type { ResolvedParticipant } from '@/api/participants'
 import { ArrowRightIcon, LockIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
@@ -122,29 +123,11 @@ export function EditEventScreen({ eventId }: { eventId: string }) {
         ) : null}
 
         <SectionLabel>{t('shell.people')}</SectionLabel>
-        <View>
-          {participants.map(p => (
-            <View
-              key={p.id}
-              className="flex-row items-center gap-3.5 border-t border-garland-ink-08 px-[22px] py-3"
-            >
-              <ParticipantAvatar
-                name={p.name}
-                avatarKey={p.avatarKey}
-                color={p.color}
-                size={34}
-              />
-              <Text className="flex-1 text-[15px] font-semibold text-garland-ink">
-                {p.name}
-              </Text>
-              {p.isYou ? (
-                <Text className="text-[10px] font-bold uppercase tracking-[0.8px] text-garland-green">
-                  {t('createEvent.people.host')}
-                </Text>
-              ) : null}
-            </View>
-          ))}
-        </View>
+        <PeopleList
+          eventId={eventId}
+          participants={participants}
+          beneficiaryId={beneficiaryId}
+        />
 
         <SectionLabel>{t('editEvent.inviteLink')}</SectionLabel>
         {invite ? (
@@ -158,8 +141,164 @@ export function EditEventScreen({ eventId }: { eventId: string }) {
             {t('createEvent.loading')}
           </Text>
         )}
+
+        <DeleteEventButton eventId={eventId} title={event.title} />
       </ScrollView>
     </SafeAreaView>
+  )
+}
+
+// Everyone but the host can be removed, and the beneficiary only once the
+// event is no longer for them.
+function PeopleList({
+  eventId,
+  participants,
+  beneficiaryId,
+}: {
+  eventId: string
+  participants: ResolvedParticipant[]
+  beneficiaryId: string | undefined
+}) {
+  const { t } = useTranslation()
+  const [removingId, setRemovingId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const confirmRemove = ({ id, name }: ResolvedParticipant) =>
+    Alert.alert(
+      t('editEvent.removeTitle', { name }),
+      t('editEvent.removeMessage', { name }),
+      [
+        { text: t('editEvent.cancel'), style: 'cancel' },
+        {
+          text: t('editEvent.remove'),
+          style: 'destructive',
+          onPress: async () => {
+            setRemovingId(id)
+            setError(null)
+            try {
+              await removeParticipant({ eventId, participantId: id })
+            } catch (e) {
+              setError(
+                isNetworkError(e)
+                  ? t('common.networkError')
+                  : t('editEvent.removeFailed', { name }),
+              )
+            } finally {
+              setRemovingId(null)
+            }
+          },
+        },
+      ],
+    )
+
+  return (
+    <View>
+      {participants.map(p => {
+        const isBeneficiary = p.id === beneficiaryId
+        return (
+          <View
+            key={p.id}
+            className="flex-row items-center gap-3.5 border-t border-garland-ink-08 px-[22px] py-3"
+          >
+            <ParticipantAvatar
+              name={p.name}
+              avatarKey={p.avatarKey}
+              color={p.color}
+              size={34}
+            />
+            <Text className="flex-1 text-[15px] font-semibold text-garland-ink">
+              {p.name}
+            </Text>
+            {p.isYou ? (
+              <Tag>{t('createEvent.people.host')}</Tag>
+            ) : isBeneficiary ? (
+              <Tag>{t('editEvent.beneficiaryTag')}</Tag>
+            ) : (
+              <GarlandButton
+                variant="link"
+                onPress={() => confirmRemove(p)}
+                loading={removingId === p.id}
+                disabled={removingId !== null}
+                hitSlop={8}
+                accessibilityLabel={t('createEvent.people.remove', {
+                  name: p.name,
+                })}
+                className="px-0"
+              >
+                <GarlandButtonText className="font-semibold text-garland-berry">
+                  {t('editEvent.remove')}
+                </GarlandButtonText>
+              </GarlandButton>
+            )}
+          </View>
+        )
+      })}
+      {error ? (
+        <Text className="px-[22px] pt-1 text-xs text-garland-berry">
+          {error}
+        </Text>
+      ) : null}
+    </View>
+  )
+}
+
+// Set apart at the bottom of `6a`: everyone loses the event, presents and
+// all, so it goes behind a confirm.
+function DeleteEventButton({
+  eventId,
+  title,
+}: {
+  eventId: string
+  title: string
+}) {
+  const { t } = useTranslation()
+  const [deleting, setDeleting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const confirmDelete = () =>
+    Alert.alert(
+      t('editEvent.deleteTitle', { title }),
+      t('editEvent.deleteMessage'),
+      [
+        { text: t('editEvent.cancel'), style: 'cancel' },
+        {
+          text: t('editEvent.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true)
+            setError(null)
+            try {
+              await deleteEvent(eventId)
+              router.dismissTo('/')
+            } catch (e) {
+              setError(
+                isNetworkError(e)
+                  ? t('common.networkError')
+                  : t('editEvent.deleteFailed'),
+              )
+              setDeleting(false)
+            }
+          },
+        },
+      ],
+    )
+
+  return (
+    <View className="mt-10 border-t border-garland-ink-08 px-[22px] pt-6">
+      <GarlandButton
+        variant="outline"
+        onPress={confirmDelete}
+        loading={deleting}
+        className="border-garland-berry"
+      >
+        <GarlandButtonText className="text-garland-berry">
+          {t('editEvent.deleteEvent')}
+        </GarlandButtonText>
+      </GarlandButton>
+      {error ? (
+        <Text className="mt-2 text-xs text-garland-berry">{error}</Text>
+      ) : null}
+    </View>
   )
 }
 
@@ -257,6 +396,14 @@ function InviteLinkRow({
 
 function Section({ children }: { children: ReactNode }) {
   return <View className="mt-5 border-b border-garland-ink-08">{children}</View>
+}
+
+function Tag({ children }: { children: string }) {
+  return (
+    <Text className="text-[10px] font-bold uppercase tracking-[0.8px] text-garland-green">
+      {children}
+    </Text>
+  )
 }
 
 function SectionLabel({ children }: { children: string }) {

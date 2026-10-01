@@ -7,6 +7,7 @@ import {
   type EventParticipantInput,
   type JoinEventArgs,
   type JoinEventResult,
+  type RemoveParticipantArgs,
   type UpdateEventArgs,
 } from '@prezentowo/types'
 import { Match, check } from 'meteor/check'
@@ -23,6 +24,10 @@ import {
 } from '../images/images.refs'
 import { insertInvite } from '../invites/invites.codes'
 import { eventForCode } from '../invites/invites.lookup'
+import {
+  cascadeEventDeletion,
+  cascadeParticipantRemoval,
+} from './events.cascade'
 import { Events } from './events.collection'
 import { loadOwnEvent } from './events.membership'
 
@@ -311,8 +316,81 @@ const joinEvent = async function (
   throw new Meteor.Error('serverError', 'concurrentJoin')
 }
 
+// The participant `6a` may remove: anyone but the creator and the current
+// beneficiary, whose presents are the point of the event.
+const removableParticipant = (
+  event: EventDoc,
+  participantId: string,
+): EventParticipant => {
+  const participant = event.participants.find(p => p.id === participantId)
+  if (!participant) {
+    throw new Meteor.Error('notFound', 'participantNotFound')
+  }
+  if (participant.kind === 'real' && participant.userId === event.ownerId) {
+    throw new Meteor.Error('invalidArgs', 'cannotRemoveCreator')
+  }
+  if (
+    event.type === 'many-to-one' &&
+    event.beneficiaryParticipantId === participantId
+  ) {
+    throw new Meteor.Error('invalidArgs', 'cannotRemoveBeneficiary')
+  }
+  return participant
+}
+
+const removeParticipant = async function (
+  this: Meteor.MethodThisType,
+  options: RemoveParticipantArgs,
+) {
+  check(options, { eventId: String, participantId: String })
+
+  if (!this.userId) {
+    throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
+  }
+  const event = await loadOwnEvent(options.eventId, this.userId)
+  const participant = removableParticipant(event, options.participantId)
+
+  // The pull only lands while they're still not the beneficiary: an
+  // `events.update` may have made them one since the read.
+  const stillRemovable = {
+    _id: event._id,
+    'participants.id': participant.id,
+    beneficiaryParticipantId: { $ne: participant.id },
+  } as unknown as Mongo.Selector<EventDoc>
+  const removed = await Events.updateAsync(stillRemovable, {
+    $pull: { participants: { id: participant.id } },
+  } as unknown as Mongo.Modifier<EventDoc>)
+  if (!removed) {
+    // Throws whichever reason now applies.
+    removableParticipant(
+      await loadOwnEvent(options.eventId, this.userId),
+      options.participantId,
+    )
+    throw new Meteor.Error('serverError', 'concurrentChange')
+  }
+
+  await cascadeParticipantRemoval(event, participant)
+}
+
+const deleteEvent = async function (
+  this: Meteor.MethodThisType,
+  options: { eventId: string },
+) {
+  check(options, { eventId: String })
+
+  if (!this.userId) {
+    throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
+  }
+  const event = await loadOwnEvent(options.eventId, this.userId)
+
+  await Events.removeAsync(event._id)
+  await cascadeEventDeletion(event)
+}
+
 Meteor.methods({
   'events.create': createEvent,
   'events.update': updateEvent,
   'events.join': joinEvent,
+  'events.removeParticipant': removeParticipant,
+  'events.delete': deleteEvent,
 })

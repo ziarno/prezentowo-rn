@@ -375,6 +375,16 @@
     "rotateTitle": "Rotate the invite link?",
     "rotateMessage": "Anyone who has the old link won't be able to join with it.",
     "cancel": "Cancel",
-    "rotateFailed": "Couldn't rotate the link. Try again."
+    "rotateFailed": "Couldn't rotate the link. Try again.",
+    "beneficiaryTag": "Gets presents",
+    "remove": "Remove",
+    "removeTitle": "Remove {{name}}?",
+    "removeMessage": "Presents for {{name}} will be deleted. Presents they added for others stay.",
+    "removeFailed": "Couldn't remove {{name}}. Try again.",
+    "deleteEvent": "Delete event",
+    "deleteTitle": "Delete “{{title}}”?",
+    "deleteMessage": "Everyone in the event loses it, along with all its presents. This can't be undone.",
+    "delete": "Delete",
+    "deleteFailed": "Couldn't delete the event. Try again."
   }
 }
