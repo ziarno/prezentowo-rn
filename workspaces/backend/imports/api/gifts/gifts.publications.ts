@@ -2,8 +2,7 @@ import type { GiftDoc } from '@prezentowo/types'
 import { check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 
-import { Events } from '../events/events.collection'
-import { isMemberOf } from '../events/events.membership'
+import { watchMembership } from '../events/events.membership'
 import { Gifts } from './gifts.collection'
 import { isHiddenFrom, isRecipient } from './gifts.visibility'
 
@@ -24,13 +23,18 @@ type AsyncObservableCursor = {
 // - Claim-quietly rule: the viewer's self-added gifts have `claimedBy`
 //   stripped, so they never learn whether — or by whom — they're reserved.
 // No owner exemption. Everyone else sees every gift with its full claim state.
+// Only while the viewer stays a member: their removal ends it.
 Meteor.publish('gifts.byEvent', async function (eventId: string) {
   check(eventId, String)
   const userId = this.userId
   if (!userId) return this.ready()
 
-  const event = await Events.findOneAsync(eventId)
-  if (!event || !isMemberOf(event, userId)) return this.ready()
+  // Both rules only ask which participant is the viewer, and that's fixed
+  // while the subscription runs: a member's entry is never reassigned (a
+  // placeholder is claimed by someone joining, who wasn't a member yet), and
+  // its removal stops the subscription. So this snapshot never goes stale.
+  const event = await watchMembership(this, eventId, userId)
+  if (!event) return this.ready()
 
   const mineIds = new Set<string>()
   const hiddenIds = new Set<string>()
@@ -72,12 +76,13 @@ Meteor.publish('gifts.byEvent', async function (eventId: string) {
 
 // Minimal profiles (name + avatar) for the real participants of an event, so
 // the client can render their names and avatars in the event/people screens.
+// Only while the viewer stays a member: their removal ends it.
 Meteor.publish('users.inEvent', async function (eventId: string) {
   check(eventId, String)
   if (!this.userId) return this.ready()
 
-  const event = await Events.findOneAsync(eventId)
-  if (!event || !isMemberOf(event, this.userId)) return this.ready()
+  const event = await watchMembership(this, eventId, this.userId)
+  if (!event) return this.ready()
 
   const userIds = event.participants
     .filter((p): p is typeof p & { userId: string } => p.kind === 'real')

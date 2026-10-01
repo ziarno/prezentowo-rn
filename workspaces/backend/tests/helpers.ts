@@ -109,7 +109,10 @@ export type SubscriptionMessage =
  * client-side view (merged fields per id); `messages` is every `added` /
  * `changed` / `removed` in order. Resolves once the publication is ready.
  * A publication that returns a cursor has it published as Meteor would.
- * Call `stop()` when done so its observers are torn down.
+ * Stopping — `stop()` here, or the publication's own `this.stop()` — works
+ * as in Meteor: everything published is `removed`, later output is dropped,
+ * and `stopped()` turns true. Call `stop()` when done so its observers are
+ * torn down.
  */
 export async function subscribeAsUser(
   userId: string | null,
@@ -130,15 +133,18 @@ export async function subscribeAsUser(
 
   let markReady!: () => void
   const ready = new Promise<void>(resolve => (markReady = resolve))
+  let stopped = false
 
   const sub: Subscription = {
     userId,
     connection: null,
     added: (collection, id, fields) => {
+      if (stopped) return
       messages.push({ msg: 'added', collection, id, fields })
       collectionStore(collection).set(id, { ...fields })
     },
     changed: (collection, id, fields) => {
+      if (stopped) return
       messages.push({ msg: 'changed', collection, id, fields })
       const doc = collectionStore(collection).get(id)
       if (!doc) throw new Error(`changed() for unknown ${collection}/${id}`)
@@ -148,15 +154,25 @@ export async function subscribeAsUser(
       }
     },
     removed: (collection, id) => {
+      if (stopped) return
       messages.push({ msg: 'removed', collection, id })
       collectionStore(collection).delete(id)
     },
     ready: () => markReady(),
-    onStop: fn => void stopCallbacks.push(fn),
+    onStop: fn => (stopped ? fn() : void stopCallbacks.push(fn)),
     error: error => {
       throw error
     },
-    stop: () => stopCallbacks.forEach(fn => fn()),
+    stop: () => {
+      if (stopped) return
+      for (const [collection, docs] of store) {
+        for (const id of [...docs.keys()]) sub.removed(collection, id)
+      }
+      stopped = true
+      // The client reads `nosub` as ready, so a sub stopped early resolves.
+      markReady()
+      stopCallbacks.splice(0).forEach(fn => fn())
+    },
   }
 
   const result = await handler.apply(sub, args)
@@ -180,6 +196,7 @@ export async function subscribeAsUser(
   return {
     messages,
     docs: (collection: string) => collectionStore(collection),
+    stopped: () => stopped,
     stop: () => sub.stop(),
   }
 }

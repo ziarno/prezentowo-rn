@@ -1,7 +1,12 @@
 import assert from 'assert'
 
 import { createFamilyEvent } from '../../../tests/fixtures'
-import { resetDatabase, subscribeAsUser } from '../../../tests/helpers'
+import {
+  callAsUser,
+  resetDatabase,
+  subscribeAsUser,
+  waitFor,
+} from '../../../tests/helpers'
 import './events.publications'
 
 describe('events.byId', function () {
@@ -35,5 +40,43 @@ describe('events.byId', function () {
       const sub = await subscribe(userId)
       assert.deepStrictEqual(sub.messages, [], String(userId))
     }
+  })
+
+  it('takes the event back from a participant once they are removed', async function () {
+    const { users, participants, eventId } = family
+    const sub = await subscribe(users.bartek)
+    assert.ok(sub.docs('events').has(eventId))
+
+    await callAsUser(users.ola, 'events.removeParticipant', {
+      eventId,
+      participantId: participants.bartek,
+    })
+
+    await waitFor(() => sub.stopped())
+    assert.strictEqual(sub.docs('events').size, 0)
+  })
+
+  it('keeps the event live for the members who stay', async function () {
+    const { users, participants, eventId } = family
+    const sub = await subscribe(users.celina)
+
+    await callAsUser(users.ola, 'events.removeParticipant', {
+      eventId,
+      participantId: participants.bartek,
+    })
+    await callAsUser(users.ola, 'events.update', { eventId, title: 'Święta' })
+
+    await waitFor(() => sub.docs('events').get(eventId)?.title === 'Święta')
+    assert.strictEqual(sub.stopped(), false)
+  })
+
+  it('ends once the event is deleted', async function () {
+    const { users, eventId } = family
+    const sub = await subscribe(users.bartek)
+
+    await callAsUser(users.ola, 'events.delete', { eventId })
+
+    await waitFor(() => sub.stopped())
+    assert.strictEqual(sub.docs('events').size, 0)
   })
 })

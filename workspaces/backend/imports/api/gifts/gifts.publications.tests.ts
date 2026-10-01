@@ -225,4 +225,92 @@ describe('gifts.byEvent', function () {
 
     assert.strictEqual(sub.docs('gifts').size, 0)
   })
+
+  describe('a participant removed while subscribed', function () {
+    it('has every gift taken back, and gets no later changes', async function () {
+      const { users, participants, eventId } = family
+      const forCelina = await addGiftAs(
+        users.ola,
+        eventId,
+        participants.celina,
+        'Scarf',
+      )
+      const forDziadek = await addGiftAs(
+        users.celina,
+        eventId,
+        participants.dziadek,
+        'Slippers',
+      )
+      const removedSub = await subscribe(users.bartek)
+      const stayingSub = await subscribe(users.ola)
+      assert.strictEqual(removedSub.docs('gifts').size, 2)
+
+      await callAsUser(users.ola, 'events.removeParticipant', {
+        eventId,
+        participantId: participants.bartek,
+      })
+      await waitFor(() => removedSub.stopped())
+      assert.strictEqual(removedSub.docs('gifts').size, 0)
+      const sentBefore = removedSub.messages.length
+
+      await callAsUser(users.ola, 'gifts.claim', { giftId: forDziadek })
+      await callAsUser(users.ola, 'gifts.update', {
+        giftId: forCelina,
+        title: 'Wool scarf',
+      })
+      await barrier(stayingSub)
+
+      assert.deepStrictEqual(
+        stayingSub.docs('gifts').get(forDziadek)?.claimedBy,
+        [users.ola],
+      )
+      assert.strictEqual(removedSub.messages.length, sentBefore)
+      assert.strictEqual(removedSub.docs('gifts').size, 0)
+    })
+  })
+})
+
+describe('users.inEvent', function () {
+  let family: Awaited<ReturnType<typeof createFamilyEvent>>
+  const subs: { stop: () => void }[] = []
+
+  const subscribe = async (userId: string) => {
+    const sub = await subscribeAsUser(userId, 'users.inEvent', family.eventId)
+    subs.push(sub)
+    return sub
+  }
+
+  beforeEach(async function () {
+    await resetDatabase()
+    family = await createFamilyEvent()
+  })
+
+  afterEach(function () {
+    subs.splice(0).forEach(sub => sub.stop())
+  })
+
+  it("sends members the real participants' profiles", async function () {
+    const { users } = family
+
+    const sub = await subscribe(users.celina)
+
+    assert.deepStrictEqual(
+      [...sub.docs('users').keys()].sort(),
+      [users.ola, users.bartek, users.celina].sort(),
+    )
+  })
+
+  it('takes the profiles back from a participant once they are removed', async function () {
+    const { users, participants, eventId } = family
+    const sub = await subscribe(users.bartek)
+    assert.ok(sub.docs('users').size > 0)
+
+    await callAsUser(users.ola, 'events.removeParticipant', {
+      eventId,
+      participantId: participants.bartek,
+    })
+
+    await waitFor(() => sub.stopped())
+    assert.strictEqual(sub.docs('users').size, 0)
+  })
 })
