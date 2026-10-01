@@ -12,3 +12,6 @@ _build
 
 # Uploaded images in development (settings.json imagesDir)
 .images/
+
+# Rendered link-preview cards (settings.json ogCardsDir)
+.og-cards/

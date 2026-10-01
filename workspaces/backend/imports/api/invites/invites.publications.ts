@@ -1,9 +1,10 @@
-import type { EventDoc, InviteDoc, InvitePreview } from '@prezentowo/types'
+import type { EventDoc, InviteDoc } from '@prezentowo/types'
 import { check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 
 import { Events } from '../events/events.collection'
 import { Invites } from './invites.collection'
+import { invitePreview, profilesFor } from './invites.preview'
 
 // A client-only collection: nothing on the server is stored under this name.
 const INVITE_PREVIEWS = 'invitePreviews'
@@ -18,63 +19,6 @@ type ObserveCursor<T> = {
   }) => Promise<{ stop: () => void }>
 }
 const observable = <T>(cursor: unknown) => cursor as ObserveCursor<T>
-
-type Profile = { name?: string; avatar?: string }
-
-// Everything `7a` shows before joining. UserIds and gifts never leave the
-// server: real participants go out by name and avatar, and placeholders are
-// listed only while unclaimed.
-const invitePreview = (
-  code: string,
-  event: EventDoc,
-  profileOf: (userId: string) => Profile | undefined,
-): InvitePreview => ({
-  code,
-  eventId: event._id,
-  title: event.title,
-  date: event.date,
-  ...(event.background ? { background: event.background } : {}),
-  inviterName: profileOf(event.ownerId)?.name ?? '',
-  realParticipants: event.participants.flatMap(p => {
-    if (p.kind !== 'real') return []
-    const profile = profileOf(p.userId)
-    return [
-      {
-        id: p.id,
-        name: profile?.name ?? '',
-        ...(profile?.avatar ? { avatar: profile.avatar } : {}),
-      },
-    ]
-  }),
-  unclaimedPlaceholders: event.participants.flatMap(p =>
-    p.kind === 'placeholder'
-      ? [
-          {
-            id: p.id,
-            name: p.name,
-            color: p.color,
-            ...(p.avatar ? { avatar: p.avatar } : {}),
-          },
-        ]
-      : [],
-  ),
-})
-
-// The profiles of the event's creator and real participants.
-async function profilesFor(event: EventDoc) {
-  const userIds = [
-    event.ownerId,
-    ...event.participants.flatMap(p => (p.kind === 'real' ? [p.userId] : [])),
-  ]
-  const users = await Meteor.users
-    .find(
-      { _id: { $in: userIds } },
-      { fields: { 'profile.name': 1, 'profile.avatar': 1 } },
-    )
-    .fetchAsync()
-  const byId = new Map(users.map(u => [u._id, u.profile as Profile]))
-  return (userId: string) => byId.get(userId)
-}
 
 // `7a`'s data, readable signed out: one `InvitePreview` (keyed by its code)
 // kept live while the code stays valid, and removed once it's rotated away or

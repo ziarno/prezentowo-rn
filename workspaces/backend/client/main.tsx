@@ -1,3 +1,5 @@
 import { Meteor } from 'meteor/meteor'
 
-Meteor.startup(() => {})
+import { hydrateLanding } from '../imports/landing/landing.client'
+
+Meteor.startup(hydrateLanding)

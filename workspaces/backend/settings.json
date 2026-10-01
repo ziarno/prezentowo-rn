@@ -15,5 +15,6 @@
       "magicLinkPath": "magic-link"
     }
   },
-  "imagesDir": ".images"
+  "imagesDir": ".images",
+  "ogCardsDir": ".og-cards"
 }

@@ -1,10 +1,10 @@
 import type { ImageSize } from '@prezentowo/types'
 import { mkdir, rm, writeFile } from 'fs/promises'
-import { Meteor } from 'meteor/meteor'
 import { Random } from 'meteor/random'
-import { isAbsolute, join, resolve } from 'path'
+import { join } from 'path'
 import sharp from 'sharp'
 
+import { settingsDir } from '../settingsDir'
 import { Images } from './images.collection'
 
 export const IMAGE_SIZES: readonly ImageSize[] = [400, 1000, 1600]
@@ -30,19 +30,10 @@ export class NotAnImageError extends Error {
 }
 
 /**
- * Where uploads live, from `imagesDir` in settings.json. A relative path is
- * resolved against the app directory `meteor` runs in. In production it must
- * be a dedicated filesystem, not the Mongo volume (docs/spec.md §3.1).
+ * Where uploads live, from `imagesDir` in settings.json. In production it
+ * must be a dedicated filesystem, not the Mongo volume (docs/spec.md §3.1).
  */
-export function imagesDir(): string {
-  const dir: unknown = Meteor.settings.imagesDir
-  if (typeof dir !== 'string' || !dir) {
-    throw new Error('Meteor.settings.imagesDir is not set')
-  }
-  // `meteor run` starts the server inside .meteor/local/build, but keeps the
-  // PWD of the shell it was started from.
-  return isAbsolute(dir) ? dir : resolve(process.env.PWD ?? process.cwd(), dir)
-}
+export const imagesDir = () => settingsDir('imagesDir')
 
 // Random.secret()'s alphabet and default length (43 chars, 256 bits).
 // Anything else was never an upload id, which keeps a crafted one like `..`
