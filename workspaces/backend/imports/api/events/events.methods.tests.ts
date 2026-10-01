@@ -6,14 +6,16 @@ import {
   createFamilyEvent,
   createUser,
 } from '../../../tests/fixtures'
-import { callAsUser, resetDatabase } from '../../../tests/helpers'
+import {
+  callAsUser,
+  rejectsWithReason,
+  resetDatabase,
+} from '../../../tests/helpers'
 import { isStored, uploadAs, useImagesSandbox } from '../../../tests/images'
 import { INVITE_CODE_ALPHABET } from '../invites/invites.codes'
 import { Invites, createInviteIndexes } from '../invites/invites.collection'
 import { Events } from './events.collection'
 import './events.methods'
-
-const reasonOf = (e: Error) => (e as Error & { reason?: unknown }).reason
 
 describe('events.create', function () {
   let ola: string
@@ -41,10 +43,7 @@ describe('events.create', function () {
   }
 
   const rejectsWith = (args: Record<string, unknown>, reason: string) =>
-    assert.rejects(create(args), (e: Error) => {
-      assert.strictEqual(reasonOf(e), reason)
-      return true
-    })
+    rejectsWithReason(create(args), reason)
 
   describe('kind', function () {
     it('stores a many-to-many event without a beneficiary', async function () {
@@ -264,11 +263,7 @@ describe('events.update', function () {
     args: Record<string, unknown>,
     reason: string,
     as = family.users.ola,
-  ) =>
-    assert.rejects(update(args, as), (e: Error) => {
-      assert.strictEqual(reasonOf(e), reason)
-      return true
-    })
+  ) => rejectsWithReason(update(args, as), reason)
 
   describe('who', function () {
     it('rejects every caller but the creator', async function () {

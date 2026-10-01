@@ -1,3 +1,4 @@
+import assert from 'assert'
 import { Accounts } from 'meteor/accounts-base'
 import { Meteor } from 'meteor/meteor'
 import { MongoInternals } from 'meteor/mongo'
@@ -31,6 +32,16 @@ export async function resetDatabase() {
       .map(c => c.deleteMany({})),
   )
 }
+
+/**
+ * Asserts `promise` rejects with a `Meteor.Error` whose reason is `reason`,
+ * e.g. `'notTheEventCreator'`.
+ */
+export const rejectsWithReason = (promise: Promise<unknown>, reason: string) =>
+  assert.rejects(promise, (e: Error) => {
+    assert.strictEqual((e as Error & { reason?: unknown }).reason, reason)
+    return true
+  })
 
 /**
  * Runs a registered Meteor method as `userId` (or signed out, with `null`),

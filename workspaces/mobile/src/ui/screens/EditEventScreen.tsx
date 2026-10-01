@@ -160,36 +160,17 @@ function PeopleList({
   beneficiaryId: string | undefined
 }) {
   const { t } = useTranslation()
-  const [removingId, setRemovingId] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const { confirm, pending: removingId, error } = useConfirmedAction()
 
   const confirmRemove = ({ id, name }: ResolvedParticipant) =>
-    Alert.alert(
-      t('editEvent.removeTitle', { name }),
-      t('editEvent.removeMessage', { name }),
-      [
-        { text: t('editEvent.cancel'), style: 'cancel' },
-        {
-          text: t('editEvent.remove'),
-          style: 'destructive',
-          onPress: async () => {
-            setRemovingId(id)
-            setError(null)
-            try {
-              await removeParticipant({ eventId, participantId: id })
-            } catch (e) {
-              setError(
-                isNetworkError(e)
-                  ? t('common.networkError')
-                  : t('editEvent.removeFailed', { name }),
-              )
-            } finally {
-              setRemovingId(null)
-            }
-          },
-        },
-      ],
-    )
+    confirm({
+      key: id,
+      title: t('editEvent.removeTitle', { name }),
+      message: t('editEvent.removeMessage', { name }),
+      action: t('editEvent.remove'),
+      failed: t('editEvent.removeFailed', { name }),
+      run: () => removeParticipant({ eventId, participantId: id }),
+    })
 
   return (
     <View>
@@ -252,43 +233,26 @@ function DeleteEventButton({
   title: string
 }) {
   const { t } = useTranslation()
-  const [deleting, setDeleting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { confirm, pending, error } = useConfirmedAction()
 
   const confirmDelete = () =>
-    Alert.alert(
-      t('editEvent.deleteTitle', { title }),
-      t('editEvent.deleteMessage'),
-      [
-        { text: t('editEvent.cancel'), style: 'cancel' },
-        {
-          text: t('editEvent.delete'),
-          style: 'destructive',
-          onPress: async () => {
-            setDeleting(true)
-            setError(null)
-            try {
-              await deleteEvent(eventId)
-              router.dismissTo('/')
-            } catch (e) {
-              setError(
-                isNetworkError(e)
-                  ? t('common.networkError')
-                  : t('editEvent.deleteFailed'),
-              )
-              setDeleting(false)
-            }
-          },
-        },
-      ],
-    )
+    confirm({
+      title: t('editEvent.deleteTitle', { title }),
+      message: t('editEvent.deleteMessage'),
+      action: t('editEvent.delete'),
+      failed: t('editEvent.deleteFailed'),
+      run: async () => {
+        await deleteEvent(eventId)
+        router.dismissTo('/')
+      },
+    })
 
   return (
     <View className="mt-10 border-t border-garland-ink-08 px-[22px] pt-6">
       <GarlandButton
         variant="outline"
         onPress={confirmDelete}
-        loading={deleting}
+        loading={pending !== null}
         className="border-garland-berry"
       >
         <GarlandButtonText className="text-garland-berry">
@@ -313,8 +277,7 @@ function InviteLinkRow({
 }) {
   const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
-  const [rotating, setRotating] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { confirm, pending, error } = useConfirmedAction()
   const link = inviteLink(code)
 
   const copy = async () => {
@@ -323,31 +286,16 @@ function InviteLinkRow({
   }
 
   const rotate = () =>
-    Alert.alert(t('editEvent.rotateTitle'), t('editEvent.rotateMessage'), [
-      { text: t('editEvent.cancel'), style: 'cancel' },
-      {
-        text: t('editEvent.rotate'),
-        style: 'destructive',
-        onPress: async () => {
-          setRotating(true)
-          setError(null)
-          try {
-            await rotateInvite(eventId)
-            setCopied(false)
-          } catch (e) {
-            // Any other server reason means the screen is stale (no longer
-            // the creator, event gone): the generic message covers it.
-            setError(
-              isNetworkError(e)
-                ? t('common.networkError')
-                : t('editEvent.rotateFailed'),
-            )
-          } finally {
-            setRotating(false)
-          }
-        },
+    confirm({
+      title: t('editEvent.rotateTitle'),
+      message: t('editEvent.rotateMessage'),
+      action: t('editEvent.rotate'),
+      failed: t('editEvent.rotateFailed'),
+      run: async () => {
+        await rotateInvite(eventId)
+        setCopied(false)
       },
-    ])
+    })
 
   return (
     <View className="px-[22px]">
@@ -379,7 +327,7 @@ function InviteLinkRow({
       <GarlandButton
         variant="link"
         onPress={rotate}
-        loading={rotating}
+        loading={pending !== null}
         className="mt-3 self-start px-0"
       >
         <GarlandButtonText>{t('editEvent.rotate')}</GarlandButtonText>
@@ -392,6 +340,57 @@ function InviteLinkRow({
       ) : null}
     </View>
   )
+}
+
+type ConfirmedAction = {
+  // Which of several actions sharing the hook is running, e.g. a row's id.
+  key?: string
+  title: string
+  message: string
+  // The destructive button's label.
+  action: string
+  // Shown when `run` fails for a server reason. Any reason means the screen
+  // is stale (no longer the creator, event or person gone), so one generic
+  // message per action covers them all.
+  failed: string
+  run: () => Promise<void>
+}
+
+// `6a`'s destructive actions: each runs only after a confirm dialog, then
+// reports whether it's still running and why it failed.
+function useConfirmedAction() {
+  const { t } = useTranslation()
+  const [pending, setPending] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const confirm = ({
+    key = '',
+    title,
+    message,
+    action,
+    failed,
+    run,
+  }: ConfirmedAction) =>
+    Alert.alert(title, message, [
+      { text: t('editEvent.cancel'), style: 'cancel' },
+      {
+        text: action,
+        style: 'destructive',
+        onPress: async () => {
+          setPending(key)
+          setError(null)
+          try {
+            await run()
+          } catch (e) {
+            setError(isNetworkError(e) ? t('common.networkError') : failed)
+          } finally {
+            setPending(null)
+          }
+        },
+      },
+    ])
+
+  return { confirm, pending, error }
 }
 
 function Section({ children }: { children: ReactNode }) {

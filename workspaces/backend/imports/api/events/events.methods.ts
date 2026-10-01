@@ -318,7 +318,7 @@ const joinEvent = async function (
 
 // The participant `6a` may remove: anyone but the creator and the current
 // beneficiary, whose presents are the point of the event.
-const removableParticipant = (
+const assertRemovable = (
   event: EventDoc,
   participantId: string,
 ): EventParticipant => {
@@ -348,7 +348,7 @@ const removeParticipant = async function (
     throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
   }
   const event = await loadOwnEvent(options.eventId, this.userId)
-  const participant = removableParticipant(event, options.participantId)
+  const participant = assertRemovable(event, options.participantId)
 
   // The pull only lands while they're still not the beneficiary: an
   // `events.update` may have made them one since the read.
@@ -362,7 +362,7 @@ const removeParticipant = async function (
   } as unknown as Mongo.Modifier<EventDoc>)
   if (!removed) {
     // Throws whichever reason now applies.
-    removableParticipant(
+    assertRemovable(
       await loadOwnEvent(options.eventId, this.userId),
       options.participantId,
     )

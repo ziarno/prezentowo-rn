@@ -6,19 +6,15 @@ import {
   createFamilyEvent,
   createUser,
 } from '../../../tests/fixtures'
-import { callAsUser, resetDatabase } from '../../../tests/helpers'
+import {
+  callAsUser,
+  rejectsWithReason,
+  resetDatabase,
+} from '../../../tests/helpers'
 import { Gifts } from '../gifts/gifts.collection'
 import { Invites, createInviteIndexes } from '../invites/invites.collection'
 import { Events } from './events.collection'
 import './events.methods'
-
-const reasonOf = (e: Error) => (e as Error & { reason?: unknown }).reason
-
-const rejectsWith = (promise: Promise<unknown>, reason: string) =>
-  assert.rejects(promise, (e: Error) => {
-    assert.strictEqual(reasonOf(e), reason)
-    return true
-  })
 
 describe('events.join', function () {
   let family: Awaited<ReturnType<typeof createFamilyEvent>>
@@ -84,9 +80,9 @@ describe('events.join', function () {
     const { users, participants } = family
     const before = await eventOf()
 
-    await rejectsWith(join(users.bartek, { code }), 'alreadyAParticipant')
-    await rejectsWith(join(users.ola, { code }), 'alreadyAParticipant')
-    await rejectsWith(
+    await rejectsWithReason(join(users.bartek, { code }), 'alreadyAParticipant')
+    await rejectsWithReason(join(users.ola, { code }), 'alreadyAParticipant')
+    await rejectsWithReason(
       join(users.bartek, { code, participantId: participants.dziadek }),
       'alreadyAParticipant',
     )
@@ -97,19 +93,19 @@ describe('events.join', function () {
   it('rejects a second join by someone who just joined', async function () {
     await join(newcomer, { code })
 
-    await rejectsWith(join(newcomer, { code }), 'alreadyAParticipant')
+    await rejectsWithReason(join(newcomer, { code }), 'alreadyAParticipant')
   })
 
   it('rejects an unknown code', async function () {
     const unknown = code === 'ZZZZ' ? 'YYYY' : 'ZZZZ'
 
-    await rejectsWith(join(newcomer, { code: unknown }), 'inviteNotFound')
+    await rejectsWithReason(join(newcomer, { code: unknown }), 'inviteNotFound')
   })
 
   it('rejects a code once the invite has been rotated away', async function () {
     await Invites.updateAsync({ code }, { $set: { code: 'Rot8' } })
 
-    await rejectsWith(join(newcomer, { code }), 'inviteNotFound')
+    await rejectsWithReason(join(newcomer, { code }), 'inviteNotFound')
     await join(newcomer, { code: 'Rot8' })
   })
 
@@ -123,11 +119,11 @@ describe('events.join', function () {
   })
 
   it('rejects claiming someone who is not a placeholder', async function () {
-    await rejectsWith(
+    await rejectsWithReason(
       join(newcomer, { code, participantId: family.participants.bartek }),
       'mustBeAPlaceholder',
     )
-    await rejectsWith(
+    await rejectsWithReason(
       join(newcomer, { code, participantId: 'nobody' }),
       'placeholderNotFound',
     )
@@ -151,6 +147,6 @@ describe('events.join', function () {
   })
 
   it('requires a signed-in caller', async function () {
-    await rejectsWith(join(null, { code }), 'mustBeLoggedIn')
+    await rejectsWithReason(join(null, { code }), 'mustBeLoggedIn')
   })
 })

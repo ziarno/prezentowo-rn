@@ -2,21 +2,17 @@ import type { EventDoc } from '@prezentowo/types'
 import assert from 'assert'
 
 import { addGiftAs, createFamilyEvent } from '../../../tests/fixtures'
-import { callAsUser, resetDatabase } from '../../../tests/helpers'
+import {
+  callAsUser,
+  rejectsWithReason,
+  resetDatabase,
+} from '../../../tests/helpers'
 import { isStored, uploadAs, useImagesSandbox } from '../../../tests/images'
 import { Gifts } from '../gifts/gifts.collection'
 import { Invites, createInviteIndexes } from '../invites/invites.collection'
 import '../invites/invites.methods'
 import { Events } from './events.collection'
 import './events.methods'
-
-const reasonOf = (e: Error) => (e as Error & { reason?: unknown }).reason
-
-const rejectsWith = (promise: Promise<unknown>, reason: string) =>
-  assert.rejects(promise, (e: Error) => {
-    assert.strictEqual(reasonOf(e), reason)
-    return true
-  })
 
 const eventOf = async (eventId: string) =>
   (await Events.findOneAsync(eventId)) as EventDoc
@@ -48,7 +44,7 @@ describe('events.removeParticipant', function () {
     it('rejects every caller but the creator', async function () {
       const { bartek, outsider } = family.users
       for (const caller of [bartek, outsider]) {
-        await rejectsWith(
+        await rejectsWithReason(
           remove(family.participants.celina, caller),
           'notTheEventCreator',
         )
@@ -58,14 +54,14 @@ describe('events.removeParticipant', function () {
     })
 
     it('rejects a signed-out caller', async function () {
-      await rejectsWith(
+      await rejectsWithReason(
         remove(family.participants.celina, null),
         'mustBeLoggedIn',
       )
     })
 
     it('rejects an unknown event', async function () {
-      await rejectsWith(
+      await rejectsWithReason(
         callAsUser(family.users.ola, 'events.removeParticipant', {
           eventId: 'nope',
           participantId: family.participants.celina,
@@ -86,7 +82,7 @@ describe('events.removeParticipant', function () {
         event.participants.map(p => p.id),
         [participants.ola, participants.bartek, participants.dziadek],
       )
-      await rejectsWith(
+      await rejectsWithReason(
         addGiftAs(users.celina, eventId, participants.bartek, 'Scarf'),
         'notAParticipant',
       )
@@ -100,11 +96,14 @@ describe('events.removeParticipant', function () {
     })
 
     it('rejects a participant the event does not have', async function () {
-      await rejectsWith(remove('stranger'), 'participantNotFound')
+      await rejectsWithReason(remove('stranger'), 'participantNotFound')
     })
 
     it('rejects removing the creator', async function () {
-      await rejectsWith(remove(family.participants.ola), 'cannotRemoveCreator')
+      await rejectsWithReason(
+        remove(family.participants.ola),
+        'cannotRemoveCreator',
+      )
     })
 
     it('rejects removing the current beneficiary', async function () {
@@ -117,7 +116,10 @@ describe('events.removeParticipant', function () {
         },
       })
 
-      await rejectsWith(remove(participants.dziadek), 'cannotRemoveBeneficiary')
+      await rejectsWithReason(
+        remove(participants.dziadek),
+        'cannotRemoveBeneficiary',
+      )
 
       const event = await eventOf(eventId)
       assert.ok(event.participants.some(p => p.id === participants.dziadek))
@@ -268,17 +270,20 @@ describe('events.delete', function () {
     it('rejects every caller but the creator', async function () {
       const { bartek, outsider } = family.users
       for (const caller of [bartek, outsider]) {
-        await rejectsWith(deleteEvent(caller), 'notTheEventCreator')
+        await rejectsWithReason(deleteEvent(caller), 'notTheEventCreator')
       }
       assert.ok(await Events.findOneAsync(family.eventId))
     })
 
     it('rejects a signed-out caller', async function () {
-      await rejectsWith(deleteEvent(null), 'mustBeLoggedIn')
+      await rejectsWithReason(deleteEvent(null), 'mustBeLoggedIn')
     })
 
     it('rejects an unknown event', async function () {
-      await rejectsWith(deleteEvent(family.users.ola, 'nope'), 'eventNotFound')
+      await rejectsWithReason(
+        deleteEvent(family.users.ola, 'nope'),
+        'eventNotFound',
+      )
     })
   })
 
@@ -294,7 +299,7 @@ describe('events.delete', function () {
       assert.strictEqual(await Events.findOneAsync(eventId), undefined)
       assert.strictEqual(await Gifts.find({ eventId }).countAsync(), 0)
       assert.strictEqual(await Invites.find({ eventId }).countAsync(), 0)
-      await rejectsWith(
+      await rejectsWithReason(
         callAsUser(users.outsider, 'invites.ignore', { code }),
         'inviteNotFound',
       )

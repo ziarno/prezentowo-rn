@@ -2,11 +2,13 @@ import assert from 'assert'
 import { MongoInternals } from 'meteor/mongo'
 
 import { createFamilyEvent } from '../../../tests/fixtures'
-import { callAsUser, resetDatabase } from '../../../tests/helpers'
+import {
+  callAsUser,
+  rejectsWithReason,
+  resetDatabase,
+} from '../../../tests/helpers'
 import { Invites, createInviteIndexes } from './invites.collection'
 import './invites.methods'
-
-const reasonOf = (e: Error) => (e as Error & { reason?: unknown }).reason
 
 // Every document in the app database, by collection.
 const snapshot = async () => {
@@ -43,16 +45,16 @@ describe('invites.ignore', function () {
   })
 
   it('rejects an unknown code', async function () {
-    await assert.rejects(
+    await rejectsWithReason(
       callAsUser(family.users.outsider, 'invites.ignore', { code: 'ZZZZ' }),
-      (e: Error) => reasonOf(e) === 'inviteNotFound',
+      'inviteNotFound',
     )
   })
 
   it('requires a signed-in caller', async function () {
-    await assert.rejects(
+    await rejectsWithReason(
       callAsUser(null, 'invites.ignore', { code }),
-      (e: Error) => reasonOf(e) === 'mustBeLoggedIn',
+      'mustBeLoggedIn',
     )
   })
 })
@@ -91,13 +93,13 @@ describe('invites.rotate', function () {
   it('kills the old code immediately', async function () {
     await rotate()
 
-    await assert.rejects(
+    await rejectsWithReason(
       callAsUser(family.users.outsider, 'invites.ignore', { code }),
-      (e: Error) => reasonOf(e) === 'inviteNotFound',
+      'inviteNotFound',
     )
-    await assert.rejects(
+    await rejectsWithReason(
       callAsUser(family.users.outsider, 'events.join', { code }),
-      (e: Error) => reasonOf(e) === 'inviteNotFound',
+      'inviteNotFound',
     )
   })
 
@@ -116,10 +118,7 @@ describe('invites.rotate', function () {
 
   it('rejects every caller but the creator', async function () {
     for (const caller of [family.users.bartek, family.users.outsider]) {
-      await assert.rejects(
-        rotate(caller),
-        (e: Error) => reasonOf(e) === 'notTheEventCreator',
-      )
+      await rejectsWithReason(rotate(caller), 'notTheEventCreator')
     }
     const invite = (await Invites.findOneAsync({ eventId: family.eventId }))!
     assert.strictEqual(invite.code, code)
@@ -133,9 +132,6 @@ describe('invites.rotate', function () {
   })
 
   it('requires a signed-in caller', async function () {
-    await assert.rejects(
-      rotate(null),
-      (e: Error) => reasonOf(e) === 'mustBeLoggedIn',
-    )
+    await rejectsWithReason(rotate(null), 'mustBeLoggedIn')
   })
 })
