@@ -9,12 +9,13 @@ import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { eventWhen } from '@/localization/eventDates'
 import { EventBackground } from '@/ui/components/EventBackground'
 import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
+import { RecentActivity } from '@/ui/components/RecentActivity'
 
 const AVATAR_SIZE = 28
 const MAX_AVATARS = 5
 
 // A `3a` row: the event's background band, then title, date with countdown,
-// and who's taking part.
+// who's taking part, and the latest few activity items.
 export function EventCard({
   event,
   onPress,
@@ -23,7 +24,7 @@ export function EventCard({
   onPress: () => void
 }) {
   const { t, i18n } = useTranslation()
-  const { participants } = useEventParticipants(event._id)
+  const { participants, resolve } = useEventParticipants(event._id)
 
   const { date, countdown } = eventWhen(
     t,
@@ -90,6 +91,7 @@ export function EventCard({
             ) : null}
           </View>
         ) : null}
+        <RecentActivity event={event} resolve={resolve} />
       </View>
     </Pressable>
   )

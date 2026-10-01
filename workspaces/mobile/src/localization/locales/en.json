@@ -338,7 +338,10 @@
   },
   "feed": {
     "loading": "Loading…",
-    "notFound": "This event isn't here anymore."
+    "notFound": "This event isn't here anymore.",
+    "empty": "Nothing has happened here yet.",
+    "withBuyer_one": "{{withBuyer}} of {{count}} present has a buyer",
+    "withBuyer_other": "{{withBuyer}} of {{count}} presents have a buyer"
   },
   "invite": {
     "title": "Invite",
@@ -386,5 +389,51 @@
     "deleteMessage": "Everyone in the event loses it, along with all its presents. This can't be undone.",
     "delete": "Delete",
     "deleteFailed": "Couldn't delete the event. Try again."
+  },
+  "activity": {
+    "feed": {
+      "joined": "<0>{{actor}}</0> joined the event",
+      "joinedYou": "You joined the event",
+      "selfAdded": "<0>{{actor}}</0> added <1>{{gift}}</1> to their list",
+      "selfAddedYou": "You added <1>{{gift}}</1> to your list",
+      "suggested": "<0>{{actor}}</0> added a present",
+      "suggestedYou": "You added a present",
+      "suggestedFor": "<0>{{actor}}</0> added a present for <0>{{recipient}}</0>",
+      "suggestedForYou": "You added a present for <0>{{recipient}}</0>",
+      "claimed": "<0>{{actor}}</0> is buying a present",
+      "claimedYou": "You're buying a present",
+      "claimedFor": "<0>{{actor}}</0> is buying a present for <0>{{recipient}}</0>",
+      "claimedForYou": "You're buying a present for <0>{{recipient}}</0>"
+    },
+    "home": {
+      "joined": "{{actor}} joined the event",
+      "joinedYou": "You joined the event",
+      "selfAdded": "{{actor}} added <1>{{gift}}</1>",
+      "selfAddedYou": "You added <1>{{gift}}</1>",
+      "suggested": "{{actor}} added <1>{{gift}}</1>",
+      "suggestedYou": "You added <1>{{gift}}</1>",
+      "suggestedFor": "{{actor}} added <1>{{gift}}</1> for {{recipient}}",
+      "suggestedForYou": "You added <1>{{gift}}</1> for {{recipient}}",
+      "claimed": "{{actor}} is buying <1>{{gift}}</1>",
+      "claimedYou": "You're buying <1>{{gift}}</1>",
+      "claimedFor": "{{actor}} is buying <1>{{gift}}</1> for {{recipient}}",
+      "claimedForYou": "You're buying <1>{{gift}}</1> for {{recipient}}"
+    },
+    "ago": {
+      "now": "just now",
+      "minute_one": "a minute ago",
+      "minute_other": "{{count}} minutes ago",
+      "hour_one": "an hour ago",
+      "hour_other": "{{count}} hours ago",
+      "yesterday": "yesterday",
+      "day_one": "a day ago",
+      "day_other": "{{count}} days ago"
+    },
+    "agoShort": {
+      "now": "now",
+      "minute": "{{count}}m",
+      "hour": "{{count}}h",
+      "day": "{{count}}d"
+    }
   }
 }

@@ -14,14 +14,19 @@ import Animated, {
 } from 'react-native-reanimated'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { activityLines, buyerSummary } from '@/api/activityFeed'
 import { type CoverTone, coverTone } from '@/api/stockArt'
 import { BackIcon, HamburgerIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
+import { useEventActivity } from '@/hooks/useEventActivity'
 import { useEventById } from '@/hooks/useEventById'
+import { useEventGifts } from '@/hooks/useEventGifts'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useHasScreenBeneath } from '@/hooks/useHasScreenBeneath'
 import { eventWhen } from '@/localization/eventDates'
+import { ActivityFeedItem } from '@/ui/components/ActivityFeedItem'
 import { EventBackground } from '@/ui/components/EventBackground'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
 
@@ -32,7 +37,7 @@ const BAR_HEIGHT = 56
 
 // `3c`–`3c4`: the event's cover over its feed. The cover is an absolutely
 // positioned header that collapses from `3c` to the compact `3c3` as the feed
-// scrolls, and stays that size. The activity list lands with its own slice.
+// scrolls, and stays that size.
 export function EventFeedScreen({ eventId }: { eventId: string }) {
   const { t } = useTranslation()
   const { event, ready } = useEventById(eventId)
@@ -57,10 +62,90 @@ export function EventFeedScreen({ eventId }: { eventId: string }) {
       tone={tone}
       cover={<CoverDetails eventId={eventId} date={event.date} tone={tone} />}
     >
-      <Text className="py-10 text-center text-sm text-garland-ink-60">
-        {t('shell.comingSoon')}
-      </Text>
+      <ActivityList event={event} />
     </CollapsingCover>
+  )
+}
+
+// The feed: how many presents have a buyer, then every activity item the
+// viewer may see, newest first.
+function ActivityList({ event }: { event: EventDoc }) {
+  const { t } = useTranslation()
+  const user = useCurrentUser()
+  const { items, ready } = useEventActivity(event._id)
+  const { gifts } = useEventGifts(event._id)
+  const { resolve } = useEventParticipants(event._id)
+  const now = new Date()
+
+  const lines = activityLines(event, items, user?._id)
+  const buyers = buyerSummary(event, gifts, user?._id)
+
+  const openGift = (giftId: string) =>
+    router.push({
+      pathname: '/event/[eventId]/gift/[giftId]',
+      params: { eventId: event._id, giftId },
+    })
+  const openPerson = (participantId: string) =>
+    router.push({
+      pathname: '/event/[eventId]/person/[participantId]',
+      params: { eventId: event._id, participantId },
+    })
+
+  return (
+    <View className="gap-2.5 pt-5">
+      {buyers.total > 0 ? (
+        <View className="rounded-2xl bg-garland-paper2 px-3.5 py-3">
+          <Text className="text-sm font-semibold text-garland-ink">
+            {t('feed.withBuyer', {
+              count: buyers.total,
+              withBuyer: buyers.withBuyer,
+            })}
+          </Text>
+        </View>
+      ) : null}
+
+      <Text className="mt-1 text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
+        {t('shell.activity')}
+      </Text>
+
+      {lines.length === 0 ? (
+        <Text className="py-6 text-center text-sm text-garland-ink-60">
+          {ready ? t('feed.empty') : t('feed.loading')}
+        </Text>
+      ) : (
+        lines.map(({ item, line }) => {
+          const gift =
+            'giftId' in line
+              ? gifts.find(g => g._id === line.giftId)
+              : undefined
+          const actor = resolve(line.actorId)
+          return (
+            <ActivityFeedItem
+              key={item._id}
+              line={line}
+              createdAt={item.createdAt}
+              now={now}
+              actor={actor}
+              recipient={
+                'recipientId' in line && line.recipientId
+                  ? resolve(line.recipientId)
+                  : undefined
+              }
+              gift={gift}
+              // A present opens while it's still there; a join opens the
+              // person's list while they're still in the event.
+              onPress={
+                gift
+                  ? () => openGift(gift._id)
+                  : line.kind === 'joined' && actor
+                    ? () => openPerson(actor.id)
+                    : undefined
+              }
+            />
+          )
+        })
+      )}
+    </View>
   )
 }
 

@@ -6,6 +6,12 @@
       "runtimeExecutable": "yarn",
       "runtimeArgs": ["workspace", "backend", "start"],
       "port": 8100
+    },
+    {
+      "name": "mobile",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["workspace", "mobile", "start"],
+      "port": 8081
     }
   ]
 }

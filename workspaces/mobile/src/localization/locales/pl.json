@@ -358,7 +358,12 @@
   },
   "feed": {
     "loading": "Ładowanie…",
-    "notFound": "Tego wydarzenia już tu nie ma."
+    "notFound": "Tego wydarzenia już tu nie ma.",
+    "empty": "Nic się tu jeszcze nie wydarzyło.",
+    "withBuyer_one": "Prezenty z kupującym: {{withBuyer}} z {{count}}",
+    "withBuyer_few": "Prezenty z kupującym: {{withBuyer}} z {{count}}",
+    "withBuyer_many": "Prezenty z kupującym: {{withBuyer}} z {{count}}",
+    "withBuyer_other": "Prezenty z kupującym: {{withBuyer}} z {{count}}"
   },
   "invite": {
     "title": "Zaproszenie",
@@ -406,5 +411,57 @@
     "deleteMessage": "Wszyscy uczestnicy stracą je razem ze wszystkimi prezentami. Tego nie da się cofnąć.",
     "delete": "Usuń",
     "deleteFailed": "Nie udało się usunąć wydarzenia. Spróbuj ponownie."
+  },
+  "activity": {
+    "feed": {
+      "joined": "<0>{{actor}}</0> dołącza do wydarzenia",
+      "joinedYou": "Dołączasz do wydarzenia",
+      "selfAdded": "<0>{{actor}}</0> dodaje <1>{{gift}}</1> do swojej listy",
+      "selfAddedYou": "Dodajesz <1>{{gift}}</1> do swojej listy",
+      "suggested": "<0>{{actor}}</0> proponuje prezent",
+      "suggestedYou": "Proponujesz prezent",
+      "suggestedFor": "<0>{{actor}}</0> proponuje prezent dla: <0>{{recipient}}</0>",
+      "suggestedForYou": "Proponujesz prezent dla: <0>{{recipient}}</0>",
+      "claimed": "<0>{{actor}}</0> kupuje prezent",
+      "claimedYou": "Kupujesz prezent",
+      "claimedFor": "<0>{{actor}}</0> kupuje prezent dla: <0>{{recipient}}</0>",
+      "claimedForYou": "Kupujesz prezent dla: <0>{{recipient}}</0>"
+    },
+    "home": {
+      "joined": "{{actor}} dołącza do wydarzenia",
+      "joinedYou": "Dołączasz do wydarzenia",
+      "selfAdded": "{{actor}} dodaje <1>{{gift}}</1>",
+      "selfAddedYou": "Dodajesz <1>{{gift}}</1>",
+      "suggested": "{{actor}} proponuje <1>{{gift}}</1>",
+      "suggestedYou": "Proponujesz <1>{{gift}}</1>",
+      "suggestedFor": "{{actor}} proponuje <1>{{gift}}</1> dla: {{recipient}}",
+      "suggestedForYou": "Proponujesz <1>{{gift}}</1> dla: {{recipient}}",
+      "claimed": "{{actor}} kupuje <1>{{gift}}</1>",
+      "claimedYou": "Kupujesz <1>{{gift}}</1>",
+      "claimedFor": "{{actor}} kupuje <1>{{gift}}</1> dla: {{recipient}}",
+      "claimedForYou": "Kupujesz <1>{{gift}}</1> dla: {{recipient}}"
+    },
+    "ago": {
+      "now": "przed chwilą",
+      "minute_one": "minutę temu",
+      "minute_few": "{{count}} minuty temu",
+      "minute_many": "{{count}} minut temu",
+      "minute_other": "{{count}} minuty temu",
+      "hour_one": "godzinę temu",
+      "hour_few": "{{count}} godziny temu",
+      "hour_many": "{{count}} godzin temu",
+      "hour_other": "{{count}} godziny temu",
+      "yesterday": "wczoraj",
+      "day_one": "dzień temu",
+      "day_few": "{{count}} dni temu",
+      "day_many": "{{count}} dni temu",
+      "day_other": "{{count}} dnia temu"
+    },
+    "agoShort": {
+      "now": "teraz",
+      "minute": "{{count}} min",
+      "hour": "{{count}} godz.",
+      "day": "{{count}} d."
+    }
   }
 }

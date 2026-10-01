@@ -8,16 +8,19 @@ import { PlusIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
 import { useMyEvents } from '@/hooks/useMyEvents'
+import { useRecentActivitySubscription } from '@/hooks/useRecentActivity'
 import { EventCard } from '@/ui/components/EventCard'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
 
 const openCreateEvent = () => router.push('/create-event')
 
-// `3a`: the signed-in user's events, each opening its feed, and a ＋ FAB.
+// `3a`: the signed-in user's events, each with its recent activity and
+// opening its feed, and a ＋ FAB.
 export function HomeScreen() {
   const { t } = useTranslation()
   const { events, ready } = useMyEvents()
+  useRecentActivitySubscription()
 
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
