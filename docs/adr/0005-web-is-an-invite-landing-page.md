@@ -1,6 +1,6 @@
 # Web is an invite landing page, not an app
 
-On the web, Prezentowo is one unauthenticated page, `GET /e/:code`, served by Meteor as a plain React bundle. It shows the event title, the inviter's name and app-store links. The same domain hosts `apple-app-site-association` and `assetlinks.json`, so an installed app opens `https://prezentowo.pl/e/<code>` directly and the landing page is only the fallback.
+On the web, Prezentowo is one unauthenticated page, `GET /e/:code`, served by Meteor as a plain React bundle. It shows the event title, the inviter's name and app-store links. The same domain hosts `apple-app-site-association` and `assetlinks.json`, so an installed app opens `https://prezentowo.jarno.pl/e/<code>` directly and the landing page is only the fallback.
 
 ## Considered Options
 

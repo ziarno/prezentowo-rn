@@ -25,8 +25,9 @@ function sendJson(res: Response, body: unknown) {
 }
 
 /**
- * Universal Links for `https://prezentowo.pl/e/<code>` (docs/spec.md §3.4).
- * The card image under the same prefix stays a plain file.
+ * Universal Links for `https://prezentowo.jarno.pl/e/<code>`
+ * (docs/spec.md §3.4). The card image under the same prefix stays a plain
+ * file.
  */
 function appleAppSiteAssociation(_req: Request, res: Response) {
   const { appleTeamId } = appLinksSettings()

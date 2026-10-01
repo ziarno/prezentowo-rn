@@ -1,5 +1,6 @@
 import type { InviteDoc, InvitePreview } from '@prezentowo/types'
 
+import { WEB_URL } from '@/constants/web'
 import { call, collection } from '@/sync'
 
 // Client-only: `invites.byCode` publishes one preview per code, keyed by it.
@@ -13,7 +14,7 @@ const Invites = collection<InviteDoc>('invites')
 // Link / App Link that opens the app when it's installed, and the web landing
 // page when it isn't. `prezentowo://e/<code>` still opens the app.
 export const inviteLink = (code: string) =>
-  `https://prezentowo.pl/e/${encodeURIComponent(code)}`
+  `${WEB_URL}/e/${encodeURIComponent(code)}`
 
 export function findInvitePreview(code: string): InvitePreview | undefined {
   return InvitePreviews.findOne(code)

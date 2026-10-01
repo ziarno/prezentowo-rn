@@ -54,7 +54,7 @@ Four steps, progress bar, `Back` / `Next` at the bottom. Many-to-one events get
 
 | Id | Screen |
 | --- | --- |
-| `6a` | One screen holding everything creation set, each row leading back to that step. Background, name, date, event type (**shown but locked once presents exist**), participants, **invite link** (`prezentowo.pl/e/x7k2` + copy). `Delete event` at the bottom, separated — **creator only**. |
+| `6a` | One screen holding everything creation set, each row leading back to that step. Background, name, date, event type (**shown but locked once presents exist**), participants, **invite link** (`prezentowo.jarno.pl/e/x7k2` + copy). `Delete event` at the bottom, separated — **creator only**. |
 
 ## 4. Being invited (`t7`)
 

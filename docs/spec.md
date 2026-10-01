@@ -306,7 +306,7 @@ The Dev login is **not** a method. It is an `Accounts.registerLoginHandler` for 
 - OG tags are in the server-rendered HTML and always `pl`: `og:title` "{inviterName} zaprasza Cię do: {title}", and a per-event 1200×630 `og:image` rendered with `sharp`, cached by code + title. An invalid code gets a generic title and a static brand card.
 - An invalid or rotated code renders one identical "link doesn't work anymore" page with HTTP 404.
 - The Play Store button carries `&referrer=code%3D<code>`. On first launch the app reads it with `expo-application` `getInstallReferrerAsync()` and treats it as a pending invite (§4.3). iOS has no equivalent and relies on the copy. No attribution SDK.
-- `GET /.well-known/apple-app-site-association` and `GET /.well-known/assetlinks.json` enable Universal Links and App Links for `https://prezentowo.pl/e/*`.
+- `GET /.well-known/apple-app-site-association` and `GET /.well-known/assetlinks.json` enable Universal Links and App Links for `https://prezentowo.jarno.pl/e/*`.
 
 ---
 
@@ -353,7 +353,7 @@ src/app/
 
 ### 4.3 Deep links
 
-- `https://prezentowo.pl/e/<code>`: a Universal Link / App Link, with the app's associated domains and intent filter set in `app.json`. Without the app it opens the web landing page (§3.4).
+- `https://prezentowo.jarno.pl/e/<code>`: a Universal Link / App Link, with the app's associated domains and intent filter set in `app.json`. Without the app it opens the web landing page (§3.4). The host is a subdomain of `jarno.pl` for now and may move to Prezentowo's own domain later: `WEB_URL` in `src/constants/web.ts` and the two `app.json` entries change together.
 - `prezentowo://e/<code>` still opens the app (the landing page's "Open the invite" uses it).
 - Invite share text always uses the current best form.
 - Android deferred deep link: on first launch, a Play Install Referrer carrying `code=<code>` (§3.4) becomes the pending invite `{ code }`, the same hand-off as a signed-out `7a` Join. Needs `expo-application`, which means a dev-build rebuild.

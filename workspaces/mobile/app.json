@@ -13,7 +13,7 @@
       "infoPlist": {
         "CFBundleAllowMixedLocalizations": true
       },
-      "associatedDomains": ["applinks:prezentowo.pl"]
+      "associatedDomains": ["applinks:prezentowo.jarno.pl"]
     },
     "android": {
       "package": "com.prezentowo.app",
@@ -31,7 +31,7 @@
           "data": [
             {
               "scheme": "https",
-              "host": "prezentowo.pl",
+              "host": "prezentowo.jarno.pl",
               "pathPrefix": "/e/"
             }
           ],
