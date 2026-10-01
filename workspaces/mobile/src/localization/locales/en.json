@@ -358,5 +358,23 @@
     "ignore": "Ignore",
     "openEvent": "Open event",
     "shareMessage": "Join “{{title}}” on Prezentowo: {{link}}"
+  },
+  "editEvent": {
+    "background": "Background",
+    "changeBackground": "Change",
+    "type": "Type",
+    "for": "For",
+    "kindLocked": "Presents have been added, so who gets them can't change anymore.",
+    "creatorOnly": "Only the person who created this event can edit it.",
+    "inviteLink": "Invite link",
+    "copy": "Copy",
+    "copied": "Copied",
+    "share": "Share",
+    "rotate": "Rotate link",
+    "rotateHint": "Rotating makes a new link. The old one stops working right away.",
+    "rotateTitle": "Rotate the invite link?",
+    "rotateMessage": "Anyone who has the old link won't be able to join with it.",
+    "cancel": "Cancel",
+    "rotateFailed": "Couldn't rotate the link. Try again."
   }
 }

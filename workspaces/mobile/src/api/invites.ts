@@ -23,3 +23,8 @@ export function findInviteForEvent(eventId: string): InviteDoc | undefined {
 export function ignoreInvite(code: string): Promise<void> {
   return call('invites.ignore', { code })
 }
+
+// `6a`'s Rotate link: the old code stops working at once.
+export function rotateInvite(eventId: string): Promise<void> {
+  return call('invites.rotate', { eventId })
+}

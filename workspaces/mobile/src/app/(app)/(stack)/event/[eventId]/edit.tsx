@@ -1,8 +1,8 @@
-import { useTranslation } from 'react-i18next'
+import { useLocalSearchParams } from 'expo-router'
 
-import { StubScreen } from '@/ui/components/StubScreen'
+import { EditEventScreen } from '@/ui/screens/EditEventScreen'
 
 export default function EditEventRoute() {
-  const { t } = useTranslation()
-  return <StubScreen title={t('shell.editEvent')} />
+  const { eventId } = useLocalSearchParams<{ eventId: string }>()
+  return <EditEventScreen eventId={eventId} />
 }

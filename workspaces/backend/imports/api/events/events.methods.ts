@@ -7,17 +7,24 @@ import {
   type EventParticipantInput,
   type JoinEventArgs,
   type JoinEventResult,
+  type UpdateEventArgs,
 } from '@prezentowo/types'
 import { Match, check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 import type { Mongo } from 'meteor/mongo'
 import { Random } from 'meteor/random'
 
+import { Gifts } from '../gifts/gifts.collection'
 import { imageRefPattern } from '../images/images.patterns'
-import { assertOwnUpload, assertStockArt } from '../images/images.refs'
+import {
+  assertOwnUpload,
+  assertStockArt,
+  releaseImage,
+} from '../images/images.refs'
 import { insertInvite } from '../invites/invites.codes'
 import { eventForCode } from '../invites/invites.lookup'
 import { Events } from './events.collection'
+import { loadOwnEvent } from './events.membership'
 
 const participantPattern = Match.Where(
   (value: unknown): value is EventParticipantInput => {
@@ -153,6 +160,90 @@ const createEvent = async function (
   return { _id }
 }
 
+// A sent kind, checked against the event's own participants.
+const validKind = (kind: unknown, event: EventDoc): EventKind => {
+  const { type, beneficiaryParticipantId } = (kind ?? {}) as {
+    type?: unknown
+    beneficiaryParticipantId?: unknown
+  }
+  if (type === 'many-to-many') return { type }
+  if (type !== 'many-to-one') {
+    throw new Meteor.Error('invalidArgs', 'invalidKind')
+  }
+  if (!event.participants.some(p => p.id === beneficiaryParticipantId)) {
+    throw new Meteor.Error('invalidArgs', 'invalidBeneficiary')
+  }
+  return { type, beneficiaryParticipantId: beneficiaryParticipantId as string }
+}
+
+const updateEvent = async function (
+  this: Meteor.MethodThisType,
+  options: UpdateEventArgs,
+) {
+  check(
+    options,
+    Match.ObjectIncluding({
+      eventId: String,
+      title: Match.Optional(String),
+      date: Match.Optional(String),
+      background: Match.Optional(Match.OneOf(null, imageRefPattern)),
+      // Validated by validKind, which names the error.
+      kind: Match.Optional(Match.Any),
+    }),
+  )
+
+  if (!this.userId) {
+    throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
+  }
+  const userId = this.userId
+
+  const event = await loadOwnEvent(options.eventId, userId)
+
+  const $set: Record<string, unknown> = {}
+  const $unset: Record<string, ''> = {}
+
+  if (options.title !== undefined) {
+    const title = options.title.trim()
+    if (!title) throw new Meteor.Error('invalidArgs', 'missingFields')
+    $set.title = title
+  }
+  if (options.date !== undefined) {
+    const date = options.date.trim()
+    if (!isCalendarDate(date)) {
+      throw new Meteor.Error('invalidArgs', 'invalidDate')
+    }
+    $set.date = date
+  }
+  assertStockArt(options.background, BACKGROUND_ILLUSTRATION_IDS)
+  await assertOwnUpload(options.background, userId)
+  if (options.background) $set.background = options.background
+  if (options.background === null) $unset.background = ''
+
+  if (options.kind !== undefined) {
+    const kind = validKind(options.kind, event)
+    // Presents are given to someone, so who they're for can't move under
+    // them (docs/spec.md §2.2).
+    if (
+      await Gifts.findOneAsync({ eventId: event._id }, { fields: { _id: 1 } })
+    ) {
+      throw new Meteor.Error('invalidArgs', 'kindLocked')
+    }
+    Object.assign($set, kind)
+    if (kind.type === 'many-to-many') $unset.beneficiaryParticipantId = ''
+  }
+
+  const modifier = {
+    ...(Object.keys($set).length > 0 ? { $set } : {}),
+    ...(Object.keys($unset).length > 0 ? { $unset } : {}),
+  }
+  if (Object.keys(modifier).length > 0) {
+    await Events.updateAsync(event._id, modifier)
+  }
+  if (options.background !== undefined) {
+    await releaseImage(event.background, options.background)
+  }
+}
+
 // Another join may rewrite the participant list between our read and write,
 // so the write only lands on the list it was computed from; otherwise it's
 // recomputed from a fresh read, a few times at most.
@@ -222,5 +313,6 @@ const joinEvent = async function (
 
 Meteor.methods({
   'events.create': createEvent,
+  'events.update': updateEvent,
   'events.join': joinEvent,
 })

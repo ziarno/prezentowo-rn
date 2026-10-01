@@ -34,6 +34,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { errorMessage } from '@/localization/errorMessage'
+import type { MeteorError } from '@/sync'
 import {
   AvatarPickerModal,
   type AvatarPickerModalHandle,
@@ -52,6 +53,13 @@ import {
 } from '@/ui/components/Wizard'
 
 const COVER_PREVIEW_HEIGHT = 180
+
+// Server reasons the wizard explains in its own words. `kindLocked` can
+// reach an edit `6a` left open: a present hidden from the creator still
+// locks the kind.
+const SAVE_ERRORS: Record<string, string> = {
+  kindLocked: 'editEvent.kindLocked',
+}
 
 // How a person in the draft is shown.
 type PersonView = { name: string; avatarKey?: string; color?: string }
@@ -236,13 +244,17 @@ function EventWizard({
       await onSubmit(uploaded)
     } catch (e) {
       leaving.current = false
+      const reason = (e as Partial<MeteorError> | undefined)?.reason
+      const known = typeof reason === 'string' ? SAVE_ERRORS[reason] : undefined
       setSubmitError(
-        errorMessage(
-          e,
-          mode === 'create'
-            ? t('createEvent.createFailed')
-            : t('createEvent.saveFailed'),
-        ),
+        known
+          ? t(known)
+          : errorMessage(
+              e,
+              mode === 'create'
+                ? t('createEvent.createFailed')
+                : t('createEvent.saveFailed'),
+            ),
       )
     } finally {
       setSubmitting(false)

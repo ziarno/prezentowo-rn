@@ -5,6 +5,7 @@ import {
   INVITE_CODE_ALPHABET,
   insertInvite,
   randomInviteCode,
+  rotateInvite,
 } from './invites.codes'
 import { Invites, createInviteIndexes } from './invites.collection'
 
@@ -70,5 +71,26 @@ describe('invites', function () {
       await Invites.find({ eventId: 'event-1' }).countAsync(),
       1,
     )
+  })
+
+  it('rotates to a fresh code when the new code is taken', async function () {
+    await insertInvite('event-1', 'owner', sequence('AAAA'))
+    await insertInvite('event-2', 'owner', sequence('BBBB'))
+
+    const code = await rotateInvite('event-2', sequence('AAAA', 'CCCC'))
+
+    assert.strictEqual(code, 'CCCC')
+    const invite = await Invites.findOneAsync({ eventId: 'event-2' })
+    assert.strictEqual(invite?.code, 'CCCC')
+    const other = await Invites.findOneAsync({ eventId: 'event-1' })
+    assert.strictEqual(other?.code, 'AAAA')
+  })
+
+  it('never rotates to the code it replaces', async function () {
+    await insertInvite('event-1', 'owner', sequence('AAAA'))
+
+    const code = await rotateInvite('event-1', sequence('AAAA', 'BBBB'))
+
+    assert.strictEqual(code, 'BBBB')
   })
 })

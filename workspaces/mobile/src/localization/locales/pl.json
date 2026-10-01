@@ -378,5 +378,23 @@
     "ignore": "Zignoruj",
     "openEvent": "Otwórz wydarzenie",
     "shareMessage": "Dołącz do „{{title}}” w Prezentowo: {{link}}"
+  },
+  "editEvent": {
+    "background": "Tło",
+    "changeBackground": "Zmień",
+    "type": "Rodzaj",
+    "for": "Dla kogo",
+    "kindLocked": "Dodano już prezenty, więc nie można zmienić, kto je dostaje.",
+    "creatorOnly": "Tylko osoba, która utworzyła to wydarzenie, może je edytować.",
+    "inviteLink": "Link z zaproszeniem",
+    "copy": "Kopiuj",
+    "copied": "Skopiowano",
+    "share": "Udostępnij",
+    "rotate": "Zmień link",
+    "rotateHint": "Zmiana tworzy nowy link. Stary przestaje działać od razu.",
+    "rotateTitle": "Zmienić link z zaproszeniem?",
+    "rotateMessage": "Kto ma stary link, nie dołączy już przez niego.",
+    "cancel": "Anuluj",
+    "rotateFailed": "Nie udało się zmienić linku. Spróbuj ponownie."
   }
 }

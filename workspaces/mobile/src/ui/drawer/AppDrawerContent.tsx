@@ -171,18 +171,21 @@ function EventMenu({ eventId, go }: MenuProps & { eventId: string }) {
           label={t('shell.backHome')}
           onPress={() => go(() => router.dismissTo('/'))}
         />
-        <MenuRow
-          Icon={PencilIcon}
-          label={t('shell.editEvent')}
-          onPress={() =>
-            go(() =>
-              router.push({
-                pathname: '/event/[eventId]/edit',
-                params: { eventId },
-              }),
-            )
-          }
-        />
+        {/* `6a` is the creator's. */}
+        {event && event.ownerId === user?._id ? (
+          <MenuRow
+            Icon={PencilIcon}
+            label={t('shell.editEvent')}
+            onPress={() =>
+              go(() =>
+                router.push({
+                  pathname: '/event/[eventId]/edit',
+                  params: { eventId },
+                }),
+              )
+            }
+          />
+        ) : null}
         <MenuRow
           Icon={BellIcon}
           label={t('shell.activity')}
