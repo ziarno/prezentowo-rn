@@ -30,20 +30,45 @@ describe('uploadDraftImage', () => {
     const send = jest.fn(async () => upload('new'))
 
     await expect(
-      uploadDraftImage({ kind: 'local', uri: 'file:///photo.jpg' }, send),
+      uploadDraftImage(
+        { kind: 'local', uri: 'file:///photo.jpg' },
+        send,
+        jest.fn(),
+      ),
     ).resolves.toEqual(upload('new'))
     expect(send).toHaveBeenCalledWith('file:///photo.jpg')
   })
 
+  it('downloads an imported shop photo, then uploads the local copy', async () => {
+    const send = jest.fn(async () => upload('new'))
+    const download = jest.fn(async () => 'file:///cache/import.jpg')
+
+    await expect(
+      uploadDraftImage(
+        { kind: 'remote', uri: 'https://shop.test/p.jpg' },
+        send,
+        download,
+      ),
+    ).resolves.toEqual(upload('new'))
+    expect(download).toHaveBeenCalledWith('https://shop.test/p.jpg')
+    expect(send).toHaveBeenCalledWith('file:///cache/import.jpg')
+  })
+
   it('passes a saved image, or none, through without uploading', async () => {
     const send = jest.fn(async () => upload('new'))
+    const download = jest.fn(async () => 'file:///cache/import.jpg')
 
-    await expect(uploadDraftImage(upload('a'), send)).resolves.toEqual(
-      upload('a'),
+    await expect(
+      uploadDraftImage(upload('a'), send, download),
+    ).resolves.toEqual(upload('a'))
+    await expect(uploadDraftImage(art('p3'), send, download)).resolves.toEqual(
+      art('p3'),
     )
-    await expect(uploadDraftImage(art('p3'), send)).resolves.toEqual(art('p3'))
-    await expect(uploadDraftImage(undefined, send)).resolves.toBeUndefined()
+    await expect(
+      uploadDraftImage(undefined, send, download),
+    ).resolves.toBeUndefined()
     expect(send).not.toHaveBeenCalled()
+    expect(download).not.toHaveBeenCalled()
   })
 })
 
@@ -55,5 +80,8 @@ describe('savedImage', () => {
 
   it('refuses a photo that has not been uploaded yet', () => {
     expect(() => savedImage({ kind: 'local', uri: 'file:///p.jpg' })).toThrow()
+    expect(() =>
+      savedImage({ kind: 'remote', uri: 'https://shop.test/p.jpg' }),
+    ).toThrow()
   })
 })

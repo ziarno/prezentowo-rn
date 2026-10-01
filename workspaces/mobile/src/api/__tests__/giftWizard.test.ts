@@ -4,6 +4,7 @@ import type { EventDoc, GiftDoc } from '@prezentowo/types'
 import type { GiftDraft } from '../giftWizard'
 import {
   draftFromGift,
+  draftFromImport,
   emptyGiftDraft,
   giftStepError,
   giftWizardSteps,
@@ -135,6 +136,57 @@ describe('emptyGiftDraft', () => {
     })
     expect(a.clientId).toMatch(/^[A-Za-z0-9]{17}$/)
     expect(a.clientId).not.toBe(b.clientId)
+  })
+})
+
+describe('draftFromImport', () => {
+  it('fills the draft from the shop, keeping its recipient and client id', () => {
+    expect(
+      draftFromImport(draft({ title: '', url: 'x-kom.pl/p/1' }), {
+        title: 'Kettle',
+        description: 'Steel, 1.7 l',
+        url: 'https://www.x-kom.pl/p/1-kettle.html',
+        imageUrl: 'https://cdn.x-kom.pl/1.jpg',
+        missing: [],
+      }),
+    ).toEqual({
+      forParticipantId: 'p-anna',
+      title: 'Kettle',
+      description: 'Steel, 1.7 l',
+      url: 'https://www.x-kom.pl/p/1-kettle.html',
+      image: { kind: 'remote', uri: 'https://cdn.x-kom.pl/1.jpg' },
+      clientId: 'client-1',
+    })
+  })
+
+  it('keeps what the person already typed or picked', () => {
+    const picked = { kind: 'illustration', id: 'p3' } as const
+    expect(
+      draftFromImport(
+        draft({ title: 'Kettle for mum', description: 'Red', image: picked }),
+        {
+          title: 'Kettle',
+          description: 'Steel, 1.7 l',
+          url: 'https://shop.test/kettle',
+          imageUrl: 'https://shop.test/kettle.jpg',
+          missing: [],
+        },
+      ),
+    ).toMatchObject({
+      title: 'Kettle for mum',
+      description: 'Red',
+      url: 'https://shop.test/kettle',
+      image: picked,
+    })
+  })
+
+  it('leaves a field the shop could not fill as it was', () => {
+    expect(
+      draftFromImport(draft({ title: '' }), {
+        url: 'https://shop.test/kettle',
+        missing: ['title', 'description', 'image'],
+      }),
+    ).toEqual(draft({ title: '', url: 'https://shop.test/kettle' }))
   })
 })
 

@@ -2,14 +2,15 @@ import type {
   AddGiftArgs,
   EventDoc,
   GiftDoc,
+  ImportedFields,
   UpdateGiftArgs,
 } from '@prezentowo/types'
 
 import { type DraftImage, imageChange, savedImage } from './draftImage'
 import { beneficiaryIdOf } from './events'
 
-// The add-present wizard's steps: `5a` name, `5b` photo, `5c` description
-// and link, `5d` summary. Link import on `5a` lands with its own slice.
+// The add-present wizard's steps: `5a` name (or a link to import), `5b`
+// photo, `5c` description and link, `5d` summary.
 export type GiftWizardStep = 'title' | 'photo' | 'details' | 'summary'
 
 export type GiftWizardMode = 'add' | 'edit'
@@ -109,6 +110,28 @@ export function draftFromGift(gift: GiftDoc): GiftDraft {
     url: gift.url ?? '',
     image: gift.image,
     clientId: newClientId(),
+  }
+}
+
+/**
+ * The draft after a link import on `5a`: the shop fills what the person left
+ * empty, and the link becomes the shop's canonical one. Its photo stays on
+ * the shop's server until the wizard saves.
+ */
+export function draftFromImport(
+  draft: GiftDraft,
+  fields: ImportedFields,
+): GiftDraft {
+  return {
+    ...draft,
+    title: draft.title.trim() ? draft.title : (fields.title ?? draft.title),
+    description: draft.description.trim()
+      ? draft.description
+      : (fields.description ?? draft.description),
+    url: fields.url,
+    image:
+      draft.image ??
+      (fields.imageUrl ? { kind: 'remote', uri: fields.imageUrl } : undefined),
   }
 }
 

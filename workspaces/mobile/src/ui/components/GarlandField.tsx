@@ -6,11 +6,14 @@ import { garland } from '@/constants/colors'
 type GarlandFieldProps = TextInputProps & {
   label: string
   errorMessage?: string
+  // A quiet line under the input, shown when there's no error.
+  note?: string
 }
 
 export function GarlandField({
   label,
   errorMessage,
+  note,
   style,
   ...inputProps
 }: GarlandFieldProps) {
@@ -35,6 +38,10 @@ export function GarlandField({
       {invalid ? (
         <Text className="mt-1.5 text-xs text-garland-berry">
           {errorMessage}
+        </Text>
+      ) : note ? (
+        <Text className="mt-1.5 text-xs leading-[17px] text-garland-ink-60">
+          {note}
         </Text>
       ) : null}
     </View>

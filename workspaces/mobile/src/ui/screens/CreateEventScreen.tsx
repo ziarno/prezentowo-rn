@@ -25,7 +25,7 @@ import {
   wizardSteps,
 } from '@/api/eventWizard'
 import { createEvent, updateEvent } from '@/api/events'
-import { uploadImage } from '@/api/images'
+import { downloadImage, uploadImage } from '@/api/images'
 import { CheckIcon, CloseIcon, PlusIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { type AvatarKey, isAvatarKey } from '@/constants/avatars'
@@ -226,7 +226,11 @@ function EventWizard({
     try {
       // Kept in the draft, so a retry after a failed save doesn't upload
       // the photo again.
-      const background = await uploadDraftImage(draft.background, uploadImage)
+      const background = await uploadDraftImage(
+        draft.background,
+        uploadImage,
+        downloadImage,
+      )
       const uploaded = { ...draft, background }
       setDraft(uploaded)
       await onSubmit(uploaded)

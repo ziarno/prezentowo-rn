@@ -140,7 +140,8 @@
       "expectedOneFile": "Wybierz jedno zdjęcie do przesłania.",
       "tooLarge": "To zdjęcie jest za duże, by je przesłać.",
       "notAnImage": "Tego pliku nie da się użyć jako zdjęcia.",
-      "failed": "Nie udało się przesłać zdjęcia. Spróbuj ponownie."
+      "failed": "Nie udało się przesłać zdjęcia. Spróbuj ponownie.",
+      "downloadFailed": "Nie udało się pobrać zdjęcia ze sklepu. Wybierz inne albo je usuń."
     }
   },
   "person": {
@@ -198,6 +199,17 @@
     "title": {
       "heading": "Jaki to prezent?"
     },
+    "link": {
+      "or": "albo",
+      "label": "Link do sklepu",
+      "placeholder": "Wklej link do produktu",
+      "create": "🔗 Utwórz z linku",
+      "hint": "Wklej link ze sklepu, a resztę uzupełnimy.",
+      "unreadable": "Nie udało się odczytać tego linku — uzupełnij prezent samodzielnie.",
+      "blocked": "Linków z {{shop}} nie da się zaimportować — uzupełnij prezent samodzielnie.",
+      "failed": "Nie udało się teraz zaimportować linku.",
+      "tryAgain": "Spróbuj ponownie"
+    },
     "photo": {
       "heading": "Dodać zdjęcie?",
       "noPhoto": "Nic nie wybrano — pokażemy jedną z naszych ilustracji."
@@ -209,6 +221,12 @@
     "summary": {
       "heading": "Sprawdź wszystko",
       "forLabel": "Dla"
+    },
+    "review": {
+      "generic": "Uzupełnione ze sklepu — sprawdź wszystko przed dodaniem.",
+      "title": "Sklep nie podał nazwy. Dodaj ją.",
+      "description": "Sklep nie podał opisu.",
+      "image": "Sklep nie podał zdjęcia. Wybierz jakieś albo zostaw tak."
     },
     "errors": {
       "titleRequired": "Nazwij prezent.",

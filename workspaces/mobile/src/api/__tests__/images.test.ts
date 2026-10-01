@@ -1,7 +1,12 @@
 /// <reference types="jest" />
 import { NetworkError } from '@/sync/errors'
 
-import { ImageUploadError, uploadImage, uploadImageUrl } from '../images'
+import {
+  ImageUploadError,
+  downloadImage,
+  uploadImage,
+  uploadImageUrl,
+} from '../images'
 
 type Size = { width?: number | null; height?: number | null }
 
@@ -46,12 +51,26 @@ jest.mock('expo-image-manipulator', () => {
 })
 
 // expo-file-system's File, which expo/fetch sends as a file part. Records
-// the path of every one made.
+// the path of every one made, and every download.
 const mockFileUris: string[] = []
+const mockDownloads: { url: string; to: string; options: unknown }[] = []
+let mockDownload: () => Promise<void>
 jest.mock('expo-file-system', () => ({
+  Paths: { cache: 'file:///cache' },
   File: class {
-    constructor(uri: string) {
-      mockFileUris.push(uri)
+    uri: string
+    constructor(...parts: string[]) {
+      this.uri = parts.join('/')
+      mockFileUris.push(this.uri)
+    }
+    static async downloadFileAsync(
+      url: string,
+      to: { uri: string },
+      options: unknown,
+    ) {
+      mockDownloads.push({ url, to: to.uri, options })
+      await mockDownload()
+      return to
     }
   },
 }))
@@ -86,6 +105,8 @@ beforeEach(() => {
   mockResizes.length = 0
   mockSaves.length = 0
   mockFileUris.length = 0
+  mockDownloads.length = 0
+  mockDownload = async () => {}
   mockToken = 'resume-token'
   sent = []
   respond = async () => json(200, { id: 'abc' })
@@ -194,6 +215,41 @@ describe('uploadImage', () => {
 
     expect(error).toBeInstanceOf(NetworkError)
     expect(error.kind).toBe('timeout')
+  })
+})
+
+describe('downloadImage', () => {
+  it('downloads the shop photo into the cache and resolves with its path', async () => {
+    const uri = await downloadImage('https://cdn.shop.test/kettle.jpg')
+
+    expect(mockDownloads).toEqual([
+      {
+        url: 'https://cdn.shop.test/kettle.jpg',
+        to: uri,
+        options: { idempotent: true },
+      },
+    ])
+    expect(uri).toMatch(/^file:\/\/\/cache\/import-[A-Za-z0-9]+$/)
+  })
+
+  it('downloads each photo to its own file', async () => {
+    const a = await downloadImage('https://cdn.shop.test/a.jpg')
+    const b = await downloadImage('https://cdn.shop.test/b.jpg')
+
+    expect(a).not.toBe(b)
+  })
+
+  it('rejects with downloadFailed when the shop refuses the photo', async () => {
+    mockDownload = async () => {
+      throw new Error('response has status 403')
+    }
+
+    const error = await downloadImage('https://cdn.shop.test/a.jpg').catch(
+      e => e,
+    )
+
+    expect(error).toBeInstanceOf(ImageUploadError)
+    expect(error.code).toBe('downloadFailed')
   })
 })
 

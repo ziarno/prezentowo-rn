@@ -55,12 +55,15 @@ export function WizardFooter({
   onPrimary,
   onBack,
   submitting,
+  disabled = false,
 }: {
   primaryLabel: string
   onPrimary: () => void
   // Omitted on the first step.
   onBack?: () => void
   submitting: boolean
+  // Busy elsewhere on the step, e.g. `5a`'s link import.
+  disabled?: boolean
 }) {
   const { t } = useTranslation()
   return (
@@ -72,14 +75,18 @@ export function WizardFooter({
           <GarlandButton
             variant="outline"
             onPress={onBack}
-            disabled={submitting}
+            disabled={submitting || disabled}
           >
             <GarlandButtonText>{t('wizard.back')}</GarlandButtonText>
           </GarlandButton>
         </View>
       ) : null}
       <View className="flex-1">
-        <GarlandButton onPress={onPrimary} loading={submitting}>
+        <GarlandButton
+          onPress={onPrimary}
+          loading={submitting}
+          disabled={disabled}
+        >
           <GarlandButtonText>{primaryLabel}</GarlandButtonText>
         </GarlandButton>
       </View>

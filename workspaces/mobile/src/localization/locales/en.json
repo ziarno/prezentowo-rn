@@ -140,7 +140,8 @@
       "expectedOneFile": "Choose one photo to upload.",
       "tooLarge": "That photo is too large to upload.",
       "notAnImage": "That file isn't a photo we can use.",
-      "failed": "Couldn't upload the photo. Try again."
+      "failed": "Couldn't upload the photo. Try again.",
+      "downloadFailed": "Couldn't download the shop's photo. Pick another, or remove it."
     }
   },
   "person": {
@@ -196,6 +197,17 @@
     "title": {
       "heading": "What's the present?"
     },
+    "link": {
+      "or": "or",
+      "label": "Shop link",
+      "placeholder": "Paste a link to the product",
+      "create": "🔗 Create from link",
+      "hint": "Paste a shop link and we'll fill in the rest.",
+      "unreadable": "We couldn't read this link — fill the present in yourself.",
+      "blocked": "{{shop}} links can't be imported — fill the present in yourself.",
+      "failed": "Couldn't import the link just now.",
+      "tryAgain": "Try again"
+    },
     "photo": {
       "heading": "Add a photo?",
       "noPhoto": "Nothing picked — we'll show one of our illustrations."
@@ -207,6 +219,12 @@
     "summary": {
       "heading": "Check it over",
       "forLabel": "For"
+    },
+    "review": {
+      "generic": "Filled in from the shop — check everything before adding.",
+      "title": "The shop didn't give a name. Add one.",
+      "description": "The shop didn't give a description.",
+      "image": "The shop didn't give a photo. Pick one, or leave it."
     },
     "errors": {
       "titleRequired": "Give the present a name.",

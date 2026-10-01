@@ -4,11 +4,11 @@ import type {
   UploadImageErrorCode,
   UploadImageResult,
 } from '@prezentowo/types'
-import { File } from 'expo-file-system'
+import { File, Paths } from 'expo-file-system'
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator'
 import { fetch } from 'expo/fetch'
 
-import type { LocalPhoto } from '@/api/draftImage'
+import type { Photo } from '@/api/draftImage'
 import { BACKEND_HTTP_URL } from '@/constants/backend'
 import { NetworkError, authToken } from '@/sync'
 
@@ -21,11 +21,13 @@ const UPLOAD_TIMEOUT_MS = 60_000
 const ROUTE = 'POST /api/images'
 
 // `unauthorized`: no session, or the server rejected its token. `failed`:
-// any other non-2xx. The rest are the route's own codes.
+// any other non-2xx. `downloadFailed`: an imported shop photo couldn't be
+// fetched to the device. The rest are the route's own codes.
 export type ImageUploadErrorKind =
   | UploadImageErrorCode
   | 'unauthorized'
   | 'failed'
+  | 'downloadFailed'
 
 // i18n keys `images.uploadErrors.<code>` exist for every code.
 export class ImageUploadError extends Error {
@@ -120,13 +122,31 @@ export async function uploadImage(
   return { kind: 'upload', id }
 }
 
-// Where a photo shows from: the device while it's still a wizard's pick,
-// else the upload's `size` derivative.
-export function photoUri(
-  image: LocalPhoto | Extract<ImageRef, { kind: 'upload' }>,
-  size: ImageSize,
-): string {
-  return image.kind === 'local' ? image.uri : uploadImageUrl(image.id, size)
+/**
+ * Downloads an imported shop photo into the cache, for `uploadImage` to
+ * upload like any picked photo (docs/spec.md §3.3). Resolves with the local
+ * file's URI. Rejects with `ImageUploadError('downloadFailed')` when the
+ * shop's server can't be reached or refuses it.
+ */
+export async function downloadImage(remoteUrl: string): Promise<string> {
+  // Unique per download, since the shop's file names can repeat.
+  const name = `import-${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`
+  try {
+    const file = await File.downloadFileAsync(
+      remoteUrl,
+      new File(Paths.cache, name),
+      { idempotent: true },
+    )
+    return file.uri
+  } catch {
+    throw new ImageUploadError('downloadFailed')
+  }
+}
+
+// Where a photo shows from: the device or the shop while it's still a
+// wizard's, else the upload's `size` derivative.
+export function photoUri(image: Photo, size: ImageSize): string {
+  return image.kind === 'upload' ? uploadImageUrl(image.id, size) : image.uri
 }
 
 // Where an upload's WebP derivative is served (docs/spec.md §3.1). The id is
