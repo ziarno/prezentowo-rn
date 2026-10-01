@@ -147,7 +147,12 @@ export function CheckEmailScreen() {
             <GarlandButtonText>{t('checkEmail.openMail')}</GarlandButtonText>
           </GarlandButton>
 
-          <GarlandButton variant="link" onPress={resend} className="mt-4">
+          <GarlandButton
+            variant="link"
+            onPress={resend}
+            disabled={countdown > 0 || !pendingEmail}
+            className="mt-4"
+          >
             <Text className="text-center text-[13px] text-garland-ink-60">
               {t('checkEmail.didntGetIt')}{' '}
               <Text className="font-bold text-garland-ink">

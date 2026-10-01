@@ -1,5 +1,6 @@
 import type { ImageRef } from '@prezentowo/types'
 import assert from 'assert'
+import { Meteor } from 'meteor/meteor'
 
 import { createFamilyEvent, createUser } from '../../../tests/fixtures'
 import {
@@ -56,6 +57,11 @@ describe('invite publications', function () {
             title: 'Wigilia',
             date: '2026-12-24',
             inviterName: 'Ola',
+            realParticipants: [
+              { id: family.participants.ola, name: 'Ola' },
+              { id: family.participants.bartek, name: 'Bartek' },
+              { id: family.participants.celina, name: 'Celina' },
+            ],
             unclaimedPlaceholders: [
               {
                 id: family.participants.dziadek,
@@ -102,6 +108,22 @@ describe('invite publications', function () {
               ?.unclaimedPlaceholders as unknown[]
           )?.length === 0,
       )
+    })
+
+    it('lists someone who joins among those taking part', async function () {
+      const sub = await subscribe(null, 'invites.byCode', code)
+      const newcomer = await createUser('Newcomer')
+      await Meteor.users.updateAsync(newcomer, {
+        $set: { 'profile.avatar': 'f2' },
+      })
+
+      await callAsUser(newcomer, 'events.join', { code })
+
+      await waitFor(() => {
+        const taking = sub.docs('invitePreviews').get(code)
+          ?.realParticipants as { name: string; avatar?: string }[]
+        return taking?.some(p => p.name === 'Newcomer' && p.avatar === 'f2')
+      })
     })
 
     it('follows a change to the event title', async function () {

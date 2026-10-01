@@ -169,7 +169,7 @@ export type InviteDoc = {
 }
 
 // What a signed-out or not-yet-member viewer may see of an event on `7a` and
-// the web landing page. Never carries a participant's userId or any gift.
+// the web landing page. Never carries a userId or any gift.
 export type InvitePreview = {
   code: string
   eventId: string
@@ -177,6 +177,8 @@ export type InvitePreview = {
   date: string
   background?: ImageRef
   inviterName: string
+  // Who's already taking part: the real participants, by name and avatar key.
+  realParticipants: { id: string; name: string; avatar?: string }[]
   unclaimedPlaceholders: {
     id: string
     name: string

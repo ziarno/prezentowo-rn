@@ -51,7 +51,13 @@ export function GarlandButton({
         onPress={onPress}
         disabled={disabled || loading}
         hitSlop={hitSlop}
-        className={twMerge(BUTTON_CLASS[variant], className)}
+        className={twMerge(
+          BUTTON_CLASS[variant],
+          // Dimmed only when it can't be pressed for a reason other than
+          // being busy: a loading button keeps its spinner at full strength.
+          disabled && !loading && 'opacity-40',
+          className,
+        )}
       >
         {loading ? (
           <ButtonSpinner

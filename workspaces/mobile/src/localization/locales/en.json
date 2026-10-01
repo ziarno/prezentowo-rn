@@ -329,6 +329,7 @@
     "notFound": "This invite link doesn't work anymore. Ask for a new one.",
     "invitedBy": "{{name}} invited you to",
     "invited": "You're invited to",
+    "takingPart": "Taking part",
     "areYouOneOf": "Are you one of these people?",
     "placeholderHint": "They were added by name. Pick yourself to take over your list.",
     "imNew": "No, I'm new",

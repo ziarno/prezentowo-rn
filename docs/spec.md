@@ -99,6 +99,7 @@ export type InvitePreview = {
   date: string
   background?: ImageRef
   inviterName: string
+  realParticipants: { id: string; name: string; avatar?: string }[] // who's already taking part; never a userId
   unclaimedPlaceholders: { id: string; name: string; color: string; avatar?: string }[]
 }
 ```
@@ -299,7 +300,7 @@ The Dev login is **not** a method. It is an `Accounts.registerLoginHandler` for 
 ### 3.4 Web invite landing — [#21](https://github.com/ziarno/prezentowo-rn/issues/21), [ADR 0005](adr/0005-web-is-an-invite-landing-page.md)
 
 - `GET /e/:code` is served by Meteor's own client bundle (Rspack, plain React; no react-native-web, no shared components).
-- It shows the event title, inviter name and App Store / Play Store buttons, using the same `InvitePreview` data minus the placeholders. It has no interactivity.
+- It shows the event title, inviter name and App Store / Play Store buttons, using the same `InvitePreview` data minus the participant lists. It has no interactivity.
 - Layout per [Design the web invite landing page](https://github.com/ziarno/prezentowo-rn/issues/29) (full copy table there): an invitation card with a garland, "{inviterName} invited you to", the title in the display face, a date chip, and store buttons (the visitor's own store filled and first, the other outlined). Below the card: "After installing, tap the invite link again", plus "Already have Prezentowo? Open the invite" → `prezentowo://e/<code>` for in-app browsers where Universal Links don't fire. `background` is not used.
 - Language: `Accept-Language` if `en`/`pl`, else `pl`; the `PL · EN` links set `?lang=`. Polish copy uses the gender-neutral present tense ("zaprasza").
 - OG tags are in the server-rendered HTML and always `pl`: `og:title` "{inviterName} zaprasza Cię do: {title}", and a per-event 1200×630 `og:image` rendered with `sharp`, cached by code + title. An invalid code gets a generic title and a static brand card.

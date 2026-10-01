@@ -107,11 +107,13 @@ function InviteBody({
 
   const { code, eventId, unclaimedPlaceholders: placeholders } = preview
   // The one they picked may have just been claimed by someone else.
-  const picked =
+  const pickTaken =
     typeof choice === 'string' && !placeholders.some(p => p.id === choice)
-      ? undefined
-      : choice
-  const answered = placeholders.length === 0 || picked !== undefined
+  const picked = pickTaken ? undefined : choice
+  // Once they've answered, the question stays even if the last placeholder
+  // goes, so losing their pick never quietly turns into joining as new.
+  const asking = placeholders.length > 0 || choice !== undefined
+  const answered = !asking || picked !== undefined
 
   const { date, countdown } = eventWhen(
     t,
@@ -172,7 +174,35 @@ function InviteBody({
         </Text>
         <Text className="mt-1 text-[13px] text-garland-ink-60">{when}</Text>
 
-        {!isMember && placeholders.length > 0 ? (
+        {preview.realParticipants.length > 0 ? (
+          <View className="mt-6">
+            <Text className="mb-2.5 text-[15px] font-bold text-garland-ink">
+              {t('invite.takingPart')}
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {preview.realParticipants.map(p => {
+                const name = p.name || t('person.someone')
+                return (
+                  <View
+                    key={p.id}
+                    className="flex-row items-center gap-2 rounded-full bg-garland-paper2 py-1 pl-1 pr-3"
+                  >
+                    <ParticipantAvatar
+                      name={name}
+                      avatarKey={p.avatar}
+                      size={24}
+                    />
+                    <Text className="text-[13px] font-semibold text-garland-ink">
+                      {name}
+                    </Text>
+                  </View>
+                )
+              })}
+            </View>
+          </View>
+        ) : null}
+
+        {!isMember && asking ? (
           <View className="mt-7">
             <Text className="mb-1 text-[15px] font-bold text-garland-ink">
               {t('invite.areYouOneOf')}
@@ -180,6 +210,11 @@ function InviteBody({
             <Text className="mb-3 text-[13px] text-garland-ink-60">
               {t('invite.placeholderHint')}
             </Text>
+            {pickTaken ? (
+              <Text className="mb-3 text-[13px] text-garland-berry">
+                {t('invite.placeholderTaken')}
+              </Text>
+            ) : null}
             <View className="gap-2">
               {placeholders.map(p => (
                 <ChoiceRow
@@ -225,8 +260,6 @@ function InviteBody({
               onPress={join}
               disabled={!answered}
               loading={joining}
-              // GarlandButton doesn't dim itself when disabled.
-              className={answered ? undefined : 'opacity-40'}
             >
               <GarlandButtonText>{t('invite.join')}</GarlandButtonText>
             </GarlandButton>
