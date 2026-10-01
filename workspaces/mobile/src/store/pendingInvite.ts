@@ -9,6 +9,14 @@ export async function savePendingInvite(invite: JoinEventArgs) {
   await SecureStore.setItemAsync(KEY, JSON.stringify(invite))
 }
 
+// The same, unless one is already waiting: an invite the user acted on wins
+// over one picked up on their behalf.
+export async function offerPendingInvite(invite: JoinEventArgs) {
+  if ((await SecureStore.getItemAsync(KEY)) === null) {
+    await savePendingInvite(invite)
+  }
+}
+
 // Reads the pending invite and forgets it, so it's joined at most once.
 export async function takePendingInvite(): Promise<JoinEventArgs | null> {
   const raw = await SecureStore.getItemAsync(KEY)

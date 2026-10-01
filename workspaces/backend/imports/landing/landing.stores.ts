@@ -1,7 +1,9 @@
-// Where the landing page's store buttons go. The ids match the mobile app's
+// Where the landing page's store buttons go, and the app the
+// `.well-known` files name. The ids match the mobile app's
 // app.json (`ios.bundleIdentifier`, `android.package`).
 
-const ANDROID_PACKAGE = 'com.prezentowo.app'
+export const IOS_BUNDLE_ID = 'com.prezentowo.app'
+export const ANDROID_PACKAGE = 'com.prezentowo.app'
 
 // The numeric App Store id comes with the first App Store Connect
 // submission; until then the button falls back to a store search.

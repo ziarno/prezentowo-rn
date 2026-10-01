@@ -12,7 +12,8 @@
       "bundleIdentifier": "com.prezentowo.app",
       "infoPlist": {
         "CFBundleAllowMixedLocalizations": true
-      }
+      },
+      "associatedDomains": ["applinks:prezentowo.pl"]
     },
     "android": {
       "package": "com.prezentowo.app",
@@ -22,7 +23,21 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "prezentowo.pl",
+              "pathPrefix": "/e/"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",

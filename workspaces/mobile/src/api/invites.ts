@@ -9,8 +9,11 @@ const InvitePreviews = collection<InvitePreview & { _id: string }>(
 // The creator's own invite, from `invites.forEvent`.
 const Invites = collection<InviteDoc>('invites')
 
-// The share link, in its current best form (docs/spec.md §4.3).
-export const inviteLink = (code: string) => `prezentowo://e/${code}`
+// The share link, in its current best form (docs/spec.md §4.3): a Universal
+// Link / App Link that opens the app when it's installed, and the web landing
+// page when it isn't. `prezentowo://e/<code>` still opens the app.
+export const inviteLink = (code: string) =>
+  `https://prezentowo.pl/e/${encodeURIComponent(code)}`
 
 export function findInvitePreview(code: string): InvitePreview | undefined {
   return InvitePreviews.findOne(code)

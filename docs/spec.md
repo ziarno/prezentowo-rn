@@ -353,8 +353,8 @@ src/app/
 
 ### 4.3 Deep links
 
-- v1 slice: `prezentowo://e/<code>`.
-- Once Universal Links and App Links land: `https://prezentowo.pl/e/<code>`, with the app's associated domains set in `app.json`.
+- `https://prezentowo.pl/e/<code>`: a Universal Link / App Link, with the app's associated domains and intent filter set in `app.json`. Without the app it opens the web landing page (§3.4).
+- `prezentowo://e/<code>` still opens the app (the landing page's "Open the invite" uses it).
 - Invite share text always uses the current best form.
 - Android deferred deep link: on first launch, a Play Install Referrer carrying `code=<code>` (§3.4) becomes the pending invite `{ code }`, the same hand-off as a signed-out `7a` Join. Needs `expo-application`, which means a dev-build rebuild.
 
