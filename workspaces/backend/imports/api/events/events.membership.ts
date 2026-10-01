@@ -1,5 +1,6 @@
 import type { EventDoc } from '@prezentowo/types'
 import { Meteor, type Subscription } from 'meteor/meteor'
+import type { Mongo } from 'meteor/mongo'
 
 import { Events } from './events.collection'
 
@@ -10,6 +11,23 @@ export const isMemberOf = (
 ): boolean =>
   event.ownerId === userId ||
   event.participants.some(p => p.kind === 'real' && p.userId === userId)
+
+// Events `userId` is a member of, as a selector.
+export const memberEventsSelector = (userId: string) =>
+  ({
+    $or: [
+      { ownerId: userId },
+      { participants: { $elemMatch: { kind: 'real', userId } } },
+    ],
+  }) as Mongo.Selector<EventDoc>
+
+// The EventParticipant.id `userId` takes part as, if they're a real
+// participant. The creator always is one.
+export const participantIdOf = (
+  event: Pick<EventDoc, 'participants'>,
+  userId: string,
+): string | undefined =>
+  event.participants.find(p => p.kind === 'real' && p.userId === userId)?.id
 
 // Meteor 3 exposes `observeAsync` on cursors, but the bundled type defs lag
 // behind — narrow the cursor to the shape we use.

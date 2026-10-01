@@ -1,4 +1,6 @@
 import '../imports/api/accounts/devLogin.tests'
+import '../imports/api/activity/activity.publications.tests'
+import '../imports/api/activity/activity.tests'
 import '../imports/api/events/events.join.tests'
 import '../imports/api/events/events.methods.tests'
 import '../imports/api/events/events.publications.tests'

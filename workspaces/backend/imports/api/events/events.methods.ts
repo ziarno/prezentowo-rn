@@ -15,6 +15,7 @@ import { Meteor } from 'meteor/meteor'
 import type { Mongo } from 'meteor/mongo'
 import { Random } from 'meteor/random'
 
+import { recordParticipantJoined } from '../activity/activity.records'
 import { Gifts } from '../gifts/gifts.collection'
 import { imageRefPattern } from '../images/images.patterns'
 import {
@@ -280,6 +281,7 @@ const joinEvent = async function (
       throw new Meteor.Error('alreadyJoined', 'alreadyAParticipant')
     }
 
+    let joinedAsParticipantId: string
     let nextParticipants: EventParticipant[]
     if (options.participantId) {
       const target = event.participants.find(
@@ -292,13 +294,15 @@ const joinEvent = async function (
         throw new Meteor.Error('invalidArgs', 'mustBeAPlaceholder')
       }
       // The placeholder's id is kept, so gifts already on their list stay.
+      joinedAsParticipantId = target.id
       nextParticipants = event.participants.map(p =>
         p.id === target.id ? { id: p.id, kind: 'real', userId } : p,
       )
     } else {
+      joinedAsParticipantId = Random.id()
       nextParticipants = [
         ...event.participants,
-        { id: Random.id(), kind: 'real', userId },
+        { id: joinedAsParticipantId, kind: 'real', userId },
       ]
     }
 
@@ -311,7 +315,10 @@ const joinEvent = async function (
     const updated = await Events.updateAsync(participantsAsRead, {
       $set: { participants: nextParticipants },
     })
-    if (updated) return { eventId: event._id }
+    if (updated) {
+      await recordParticipantJoined(event._id, joinedAsParticipantId)
+      return { eventId: event._id }
+    }
   }
   throw new Meteor.Error('serverError', 'concurrentJoin')
 }

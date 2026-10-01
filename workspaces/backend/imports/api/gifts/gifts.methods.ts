@@ -7,6 +7,11 @@ import {
 import { Match, check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 
+import { Activity } from '../activity/activity.collection'
+import {
+  recordGiftAdded,
+  recordGiftClaimed,
+} from '../activity/activity.records'
 import { Events } from '../events/events.collection'
 import { imageRefPattern } from '../images/images.patterns'
 import {
@@ -119,8 +124,9 @@ const addGift = async function (
   // replaced or cleared, and the replay must still answer with its gift.
   await assertOwnUpload(options.image, userId)
 
+  let _id: string
   try {
-    return { _id: await insertGift(userId, options, title) }
+    _id = await insertGift(userId, options, title)
   } catch (error) {
     // A concurrent replay won the race to the unique (createdBy, clientId)
     // index — return the gift it inserted.
@@ -128,6 +134,13 @@ const addGift = async function (
     if (winner) return { _id: winner._id }
     throw error
   }
+  await recordGiftAdded(event, {
+    _id,
+    title,
+    forParticipantId: options.forParticipantId,
+    createdBy: userId,
+  })
+  return { _id }
 }
 
 const updateGift = async function (
@@ -195,6 +208,7 @@ const removeGift = async function (
   }
 
   await Gifts.removeAsync(options.giftId)
+  await Activity.removeAsync({ eventId: gift.eventId, giftId: gift._id })
   await releaseImage(gift.image)
 }
 
@@ -218,9 +232,16 @@ const setClaim = async function (
     throw new Meteor.Error('invalidArgs', 'cannotClaimOwnGift')
   }
 
-  await Gifts.updateAsync(options.giftId, {
-    [claimed ? '$addToSet' : '$pull']: { claimedBy: userId },
-  })
+  if (!claimed) {
+    await Gifts.updateAsync(options.giftId, { $pull: { claimedBy: userId } })
+    return
+  }
+  // Only a claim that lands is reported: claiming twice writes one item.
+  const newlyClaimed = await Gifts.updateAsync(
+    { _id: options.giftId, claimedBy: { $ne: userId } },
+    { $addToSet: { claimedBy: userId } },
+  )
+  if (newlyClaimed) await recordGiftClaimed(event, gift, userId)
 }
 
 Meteor.methods({

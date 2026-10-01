@@ -242,6 +242,24 @@ export type UpdateGiftArgs = {
   image?: ImageRef | null
 }
 
+// One already-occurred thing in an event's history, shown on Home and the
+// event feed. Every field is a snapshot taken at write time.
+export type ActivityDoc = {
+  _id: string
+  eventId: string
+  kind: 'gift-added' | 'gift-claimed' | 'participant-joined'
+  // EventParticipant.id of who did it.
+  actorParticipantId: string
+  createdAt: Date
+  // gift-* only.
+  giftId?: string
+  giftTitle?: string
+  recipientParticipantId?: string
+  // The participant who must never see this item, decided once at insert
+  // and never re-evaluated. Server-only: no publication sends it.
+  hiddenFromParticipantId?: string
+}
+
 // What `gifts.importLink` read off a shop's product page.
 export type ImportedFields = {
   title?: string

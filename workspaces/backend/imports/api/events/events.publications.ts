@@ -2,18 +2,13 @@ import { check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 
 import { Events } from './events.collection'
-import { watchMembership } from './events.membership'
+import { memberEventsSelector, watchMembership } from './events.membership'
 
 // Events the current user owns or is a real participant of.
 Meteor.publish('events.mine', function () {
   if (!this.userId) return this.ready()
 
-  return Events.find({
-    $or: [
-      { ownerId: this.userId },
-      { participants: { $elemMatch: { kind: 'real', userId: this.userId } } },
-    ],
-  })
+  return Events.find(memberEventsSelector(this.userId))
 })
 
 // A single event, for its members only, and only while they stay one. It is
