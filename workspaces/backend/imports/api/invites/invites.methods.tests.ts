@@ -36,12 +36,17 @@ describe('invites.ignore', function () {
     code = (await Invites.findOneAsync({ eventId: family.eventId }))!.code
   })
 
-  it('accepts a valid code and writes nothing yet', async function () {
+  it("writes only the ignorer's notification, never touching the invite", async function () {
     const before = await snapshot()
 
     await callAsUser(family.users.outsider, 'invites.ignore', { code })
 
-    assert.deepStrictEqual(await snapshot(), before)
+    const after = await snapshot()
+    assert.strictEqual(after.notifications?.length, 1)
+    assert.deepStrictEqual(
+      { ...after, notifications: [] },
+      { ...before, notifications: [] },
+    )
   })
 
   it('rejects an unknown code', async function () {

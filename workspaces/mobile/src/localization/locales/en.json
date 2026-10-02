@@ -289,6 +289,7 @@
     }
   },
   "home": {
+    "notificationsUnread": "Notifications, unread",
     "loading": "Loading your events…",
     "emptyTitle": "No events yet",
     "emptyBody": "Create one for a birthday, Christmas or anything else, then invite the people taking part.",

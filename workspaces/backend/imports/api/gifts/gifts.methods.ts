@@ -19,6 +19,10 @@ import {
   assertStockArt,
   releaseImage,
 } from '../images/images.refs'
+import {
+  recordClaimedGiftRemoved,
+  recordSuggestionClaimed,
+} from '../notifications/notifications.records'
 import { Gifts } from './gifts.collection'
 import { isHiddenFrom, isRecipient } from './gifts.visibility'
 
@@ -209,6 +213,7 @@ const removeGift = async function (
 
   await Gifts.removeAsync(options.giftId)
   await Activity.removeAsync({ eventId: gift.eventId, giftId: gift._id })
+  await recordClaimedGiftRemoved(gift, this.userId)
   await releaseImage(gift.image)
 }
 
@@ -241,7 +246,10 @@ const setClaim = async function (
     { _id: options.giftId, claimedBy: { $ne: userId } },
     { $addToSet: { claimedBy: userId } },
   )
-  if (newlyClaimed) await recordGiftClaimed(event, gift, userId)
+  if (newlyClaimed) {
+    await recordGiftClaimed(event, gift, userId)
+    await recordSuggestionClaimed(event, gift, userId)
+  }
 }
 
 Meteor.methods({

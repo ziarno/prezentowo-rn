@@ -291,6 +291,7 @@
     }
   },
   "home": {
+    "notificationsUnread": "Powiadomienia, nieprzeczytane",
     "loading": "Wczytujemy Twoje wydarzenia…",
     "emptyTitle": "Nie masz jeszcze wydarzeń",
     "emptyBody": "Utwórz wydarzenie na urodziny, święta albo inną okazję, a potem zaproś osoby, które biorą w nim udział.",

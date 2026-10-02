@@ -5,6 +5,7 @@ import { Activity } from '../activity/activity.collection'
 import { type GiftRecord, Gifts } from '../gifts/gifts.collection'
 import { releaseImage } from '../images/images.refs'
 import { Invites } from '../invites/invites.collection'
+import { Notifications } from '../notifications/notifications.collection'
 
 // Hard-deletes the matching gifts, then their uploads.
 async function deleteGifts(selector: Mongo.Selector<GiftRecord>) {
@@ -46,11 +47,12 @@ export async function cascadeParticipantRemoval(
  * invite, its activity, and the uploads the event and its presents point at.
  * Call it once the `Events` doc is gone, so nothing new is added to it
  * meanwhile. Every collection keyed by `eventId` is deleted here; later
- * slices add theirs (notifications, chat threads).
+ * slices add theirs (chat threads).
  */
 export async function cascadeEventDeletion(event: EventDoc) {
   await Invites.removeAsync({ eventId: event._id })
   await Activity.removeAsync({ eventId: event._id })
+  await Notifications.removeAsync({ eventId: event._id })
   await deleteGifts({ eventId: event._id })
   await releaseImage(event.background)
 }

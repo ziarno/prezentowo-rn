@@ -26,6 +26,10 @@ import {
 import { insertInvite } from '../invites/invites.codes'
 import { eventForCode } from '../invites/invites.lookup'
 import {
+  clearInviteDeferred,
+  recordParticipantJoined as notifyParticipantJoined,
+} from '../notifications/notifications.records'
+import {
   cascadeEventDeletion,
   cascadeParticipantRemoval,
 } from './events.cascade'
@@ -317,6 +321,8 @@ const joinEvent = async function (
     })
     if (updated) {
       await recordParticipantJoined(event._id, joinedAsParticipantId)
+      await notifyParticipantJoined(event, joinedAsParticipantId)
+      await clearInviteDeferred(userId, event._id)
       return { eventId: event._id }
     }
   }

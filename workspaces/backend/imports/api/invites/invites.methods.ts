@@ -1,13 +1,18 @@
 import { check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 
-import { loadOwnEvent } from '../events/events.membership'
+import { Events } from '../events/events.collection'
+import { isMemberOf, loadOwnEvent } from '../events/events.membership'
+import {
+  clearInviteDeferred,
+  recordInviteDeferred,
+} from '../notifications/notifications.records'
 import { rotateInvite } from './invites.codes'
 import { eventForCode } from './invites.lookup'
 
-// `7a`'s Ignore. It will upsert the caller's `invite-deferred` notification
-// once notifications exist; until then it only checks the code. It never
-// touches `Invites`, so the code keeps working for a later join.
+// `7a`'s Ignore: upserts the caller's `invite-deferred` notification. It never
+// touches `Invites`, so the code keeps working for a later join. Someone
+// already in the event has nothing to defer.
 const ignoreInvite = async function (
   this: Meteor.MethodThisType,
   options: { code: string },
@@ -17,7 +22,15 @@ const ignoreInvite = async function (
   if (!this.userId) {
     throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
   }
-  await eventForCode(options.code)
+  const event = await eventForCode(options.code)
+  if (isMemberOf(event, this.userId)) return
+  await recordInviteDeferred(this.userId, event._id)
+  // A join may have landed between the check and the upsert; it would have
+  // cleared nothing, so clear what we just wrote.
+  const current = await Events.findOneAsync(event._id)
+  if (current && isMemberOf(current, this.userId)) {
+    await clearInviteDeferred(this.userId, event._id)
+  }
 }
 
 // `6a`'s Rotate link: the event keeps its one invite, under a new code.

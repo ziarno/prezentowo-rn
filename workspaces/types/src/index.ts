@@ -260,6 +260,32 @@ export type ActivityDoc = {
   hiddenFromParticipantId?: string
 }
 
+// Something that happened which one user should hear about, in their bell
+// inbox. Every field is a snapshot taken at write time.
+export type NotificationDoc = {
+  _id: string
+  // Always an account, never a participant.
+  userId: string
+  kind:
+    | 'invite-deferred'
+    | 'suggestion-claimed'
+    | 'participant-joined'
+    | 'claimed-gift-removed'
+  createdAt: Date
+  read: boolean
+  eventId: string
+  // suggestion-claimed only.
+  giftId?: string
+  // suggestion-claimed, claimed-gift-removed.
+  giftTitle?: string
+  // suggestion-claimed: kept for the fallback once the gift is gone.
+  recipientParticipantId?: string
+  // suggestion-claimed.
+  claimedByParticipantId?: string
+  // participant-joined.
+  joinedParticipantId?: string
+}
+
 // What `gifts.importLink` read off a shop's product page.
 export type ImportedFields = {
   title?: string

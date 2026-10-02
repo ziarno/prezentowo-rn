@@ -4,16 +4,42 @@ import { FlatList, Pressable, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { sortForHome } from '@/api/eventList'
-import { PlusIcon } from '@/components/ui/icon'
+import { BellIcon, PlusIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
 import { useMyEvents } from '@/hooks/useMyEvents'
 import { useRecentActivitySubscription } from '@/hooks/useRecentActivity'
+import { useHasUnreadNotifications } from '@/hooks/useUnreadNotifications'
 import { EventCard } from '@/ui/components/EventCard'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
 
 const openCreateEvent = () => router.push('/create-event')
+const openNotifications = () => router.push('/notifications')
+
+// The ScreenHeader's bell, with a dot while something is unread.
+function NotificationsBell() {
+  const { t } = useTranslation()
+  const unread = useHasUnreadNotifications()
+  return (
+    <Pressable
+      onPress={openNotifications}
+      hitSlop={12}
+      accessibilityRole="button"
+      accessibilityLabel={
+        unread ? t('home.notificationsUnread') : t('shell.notifications')
+      }
+    >
+      <BellIcon width={22} height={22} color={garland.ink} />
+      {unread ? (
+        <View
+          testID="notifications-unread-dot"
+          className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-garland-paper bg-garland-berry"
+        />
+      ) : null}
+    </Pressable>
+  )
+}
 
 // `3a`: the signed-in user's events, each with its recent activity and
 // opening its feed, and a ＋ FAB.
@@ -24,7 +50,7 @@ export function HomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
-      <ScreenHeader title={t('shell.home')} />
+      <ScreenHeader title={t('shell.home')} right={<NotificationsBell />} />
       {events.length === 0 ? (
         <View className="flex-1 items-center justify-center gap-2 px-7">
           {ready ? (
