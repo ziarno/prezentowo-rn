@@ -11019,9 +11019,9 @@ react-native-css-interop@0.2.3, react-native-css-interop@^0.2.3:
     semver "^7.6.3"
 
 react-native-drawer-layout@^4.2.2:
-  version "4.2.4"
-  resolved "https://registry.npmjs.org/react-native-drawer-layout/-/react-native-drawer-layout-4.2.4.tgz"
-  integrity sha512-l1Le5HcVidobnJm8xqFZo46Rs8FDHdxbTZhkjxpNSRgU+QMoQXilOfzTHAeNjEGiKVGgIs9cW3ctXeHqgp5jJg==
+  version "4.2.11"
+  resolved "https://registry.yarnpkg.com/react-native-drawer-layout/-/react-native-drawer-layout-4.2.11.tgz#54eca13c2502040ca89a58296c388000dedbbd24"
+  integrity sha512-Aua+LAZJ6L3v7ESHsNtxN2sO+hFQKsSz3EDKOLIpWni6PdQEJGFT0Mc2UnEsvFdfV743aHfODTAaHxsJ2D0uFw==
   dependencies:
     color "^4.2.3"
     use-latest-callback "^0.2.4"
