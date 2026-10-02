@@ -278,12 +278,23 @@ export type NotificationDoc = {
   giftId?: string
   // suggestion-claimed, claimed-gift-removed.
   giftTitle?: string
-  // suggestion-claimed: kept for the fallback once the gift is gone.
+  // suggestion-claimed, claimed-gift-removed: whose list to open once the
+  // gift is gone.
   recipientParticipantId?: string
   // suggestion-claimed.
   claimedByParticipantId?: string
   // participant-joined.
   joinedParticipantId?: string
+}
+
+// An invite the caller set aside with Ignore, as the notifications inbox shows
+// it: `invites.deferred` publishes one per `invite-deferred`, keyed by
+// `eventId`. `code` is the event's current one, so it survives a rotate.
+export type DeferredInvite = {
+  eventId: string
+  code: string
+  title: string
+  inviterName: string
 }
 
 // What `gifts.importLink` read off a shop's product page.

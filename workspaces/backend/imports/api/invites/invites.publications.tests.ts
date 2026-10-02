@@ -10,7 +10,9 @@ import {
   waitFor,
 } from '../../../tests/helpers'
 import { Events } from '../events/events.collection'
+import { createNotificationIndexes } from '../notifications/notifications.collection'
 import { Invites, createInviteIndexes } from './invites.collection'
+import './invites.methods'
 import './invites.publications'
 
 describe('invite publications', function () {
@@ -30,6 +32,7 @@ describe('invite publications', function () {
 
   before(async function () {
     await createInviteIndexes()
+    await createNotificationIndexes()
   })
 
   beforeEach(async function () {
@@ -164,6 +167,68 @@ describe('invite publications', function () {
         const sub = await subscribe(userId, 'invites.forEvent', family.eventId)
         assert.deepStrictEqual(sub.messages, [], String(userId))
       }
+    })
+  })
+  describe('invites.deferred', function () {
+    const ignore = (userId: string) =>
+      callAsUser(userId, 'invites.ignore', { code })
+
+    it('sends what the inbox shows of an invite the caller set aside', async function () {
+      await ignore(family.users.outsider)
+
+      const sub = await subscribe(family.users.outsider, 'invites.deferred')
+
+      assert.deepStrictEqual(sub.messages, [
+        {
+          msg: 'added',
+          collection: 'deferredInvites',
+          id: family.eventId,
+          fields: {
+            eventId: family.eventId,
+            code,
+            title: 'Wigilia',
+            inviterName: 'Ola',
+          },
+        },
+      ])
+    })
+
+    it('sends nothing for invites the caller never set aside', async function () {
+      await ignore(family.users.outsider)
+      const stranger = await createUser('Stranger')
+
+      for (const userId of [stranger, family.users.bartek, null]) {
+        const sub = await subscribe(userId, 'invites.deferred')
+        assert.deepStrictEqual(sub.messages, [], String(userId))
+      }
+    })
+
+    it('follows the code when the creator rotates it', async function () {
+      await ignore(family.users.outsider)
+      const sub = await subscribe(family.users.outsider, 'invites.deferred')
+
+      await Invites.updateAsync({ code }, { $set: { code: 'Rot8' } })
+
+      await waitFor(
+        () => sub.docs('deferredInvites').get(family.eventId)?.code === 'Rot8',
+      )
+    })
+
+    it('adds an invite set aside while subscribed', async function () {
+      const sub = await subscribe(family.users.outsider, 'invites.deferred')
+
+      await ignore(family.users.outsider)
+
+      await waitFor(() => sub.docs('deferredInvites').has(family.eventId))
+    })
+
+    it('drops the invite once the caller joins', async function () {
+      await ignore(family.users.outsider)
+      const sub = await subscribe(family.users.outsider, 'invites.deferred')
+
+      await callAsUser(family.users.outsider, 'events.join', { code })
+
+      await waitFor(() => !sub.docs('deferredInvites').has(family.eventId))
     })
   })
 })

@@ -274,6 +274,7 @@ describe('notifications', function () {
           read: false,
           eventId,
           giftTitle: 'Pipe',
+          recipientParticipantId: family.participants.dziadek,
         })
       }
       assert.strictEqual(await countAll(), 2)

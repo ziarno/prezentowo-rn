@@ -186,7 +186,7 @@ export type NotificationDoc = {
   eventId: string                 // every kind (#28: 1e's route needs it for suggestion-claimed)
   giftId?: string                 // suggestion-claimed
   giftTitle?: string              // snapshot; suggestion-claimed, claimed-gift-removed
-  recipientParticipantId?: string // suggestion-claimed; snapshot, for the 3f fallback once the gift is gone (#28)
+  recipientParticipantId?: string // suggestion-claimed, claimed-gift-removed; snapshot, for the 3f fallback once the gift is gone (#28)
   claimedByParticipantId?: string // suggestion-claimed
   joinedParticipantId?: string    // participant-joined
 }
@@ -237,7 +237,7 @@ All methods are `async`, check `this.userId`, and validate arguments. "Member" m
 | `invites.rotate({ eventId })` | creator | Replaces `code` in place. The old code is dead immediately. | — |
 | `gifts.add(AddGiftArgs)` | member | Inserts the gift. If `clientId` matches an existing (`createdBy`, `clientId`), returns that gift's id (replay-safe). | Activity `gift-added`; `hiddenFromParticipantId` = the recipient only when the gift is suggested. |
 | `gifts.update(UpdateGiftArgs)` | **gift creator** | Never touches `forParticipantId` or `createdBy`. | — |
-| `gifts.remove({ giftId })` | **gift creator or event creator** ([#30](https://github.com/ziarno/prezentowo-rn/issues/30)) | Hard delete, whether or not it has claims. Rejects the event creator on a gift hidden from them by the own-list visibility rule, with the same `notFound` as a missing gift, so the method never confirms a hidden gift exists. | Activity: deletes every doc for the gift. Notification `claimed-gift-removed` to each claimer except the caller, snapshotting `giftTitle`; the deleter is not named. Image cleanup per §3.1. `events.removeParticipant`'s gift deletions send no notification. |
+| `gifts.remove({ giftId })` | **gift creator or event creator** ([#30](https://github.com/ziarno/prezentowo-rn/issues/30)) | Hard delete, whether or not it has claims. Rejects the event creator on a gift hidden from them by the own-list visibility rule, with the same `notFound` as a missing gift, so the method never confirms a hidden gift exists. | Activity: deletes every doc for the gift. Notification `claimed-gift-removed` to each claimer except the caller, snapshotting `giftTitle` and `recipientParticipantId`; the deleter is not named. Image cleanup per §3.1. `events.removeParticipant`'s gift deletions send no notification. |
 | `gifts.claim({ giftId })` / `gifts.unclaim` | member, not the recipient | `$addToSet` / `$pull`. | Claim: Activity `gift-claimed` with `hiddenFromParticipantId` = the recipient, always. If the gift is suggested and the claimer ≠ the suggester, a Notification `suggestion-claimed` goes to the suggester, snapshotting `giftTitle` and `recipientParticipantId`. |
 | `gifts.importLink({ url })` | signed in | §3.2. Returns a `LinkImportOutcome`. Never throws for shop-side failures. | — |
 | `notifications.markAllRead()` | signed in | Marks every unread notification belonging to the caller as read. | — |
@@ -254,6 +254,7 @@ The Dev login is **not** a method. It is an `Accounts.registerLoginHandler` for 
 | `events.byId(eventId)` | members | Unchanged. It is no longer an invite path: `eventId` is retired as a join capability. |
 | `invites.byCode(code)` | anyone, including signed out | Publishes one `InvitePreview`-shaped doc into a client-only collection. Never publishes participants' userIds or any gift data. |
 | `invites.forEvent(eventId)` | creator | The `InviteDoc`, for `6a`'s link row. |
+| `invites.deferred()` | signed in | One `DeferredInvite` (`{ eventId, code, title, inviterName }`) per `invite-deferred` of the caller's, into a client-only collection keyed by `eventId`. `code` follows rotations, so the inbox's tap derives it live. |
 | `gifts.byEvent(eventId)` | members | **Own-list visibility rule**: a gift whose recipient is the viewer and whose creator isn't the viewer is never `added`, and its `changed`/`removed` are skipped too (a `hiddenIds` set). **Claim-quietly rule**: for the viewer's self-added gifts, `claimedBy` is stripped. No owner exemption ([#9](https://github.com/ziarno/prezentowo-rn/issues/9)). |
 | `users.inEvent(eventId)` | members | Unchanged. |
 | `activity.byEvent(eventId)` | members | Excludes docs where `hiddenFromParticipantId` is the viewer's participant id. Omits the `hiddenFromParticipantId` field. |
@@ -374,7 +375,7 @@ src/app/
 | `6a` edit | `invites.forEvent` | `events.update`, `events.removeParticipant`, `events.delete` (confirm dialog), `invites.rotate` | Type and beneficiary rows are disabled once gifts exist. |
 | `5a`–`5d` add | — | `gifts.importLink`, `POST /api/images`, `gifts.add` | See the link-import outcomes below. |
 | `7a` invite | `invites.byCode` | `events.join`, `invites.ignore` | Renders signed out. The placeholder list ends with "no, I'm new". Offline: a blocking error. |
-| Notifications | `notifications.mine`, `events.mine` (names, titles) | `notifications.markAllRead` on open | Layout per [#28](https://github.com/ziarno/prezentowo-rn/issues/28): flat inbox (New / Earlier this week / Older), same-event joins coalesced, unread styling from a snapshot taken at open. `invite-deferred` → `7a` (code derived live from the event's `InviteDoc`), `suggestion-claimed` → `1e` (deleted gift → `3f`, or `3c` if the recipient is gone), `participant-joined` → `3c`, `claimed-gift-removed` → `3f` ("{present} in {event} was removed"). |
+| Notifications | `notifications.mine`, `events.mine` (titles), `invites.deferred`, `users.inEvent` + `gifts.byEvent` per event its rows name | `notifications.markAllRead` on open | Layout per [#28](https://github.com/ziarno/prezentowo-rn/issues/28): flat inbox (New / Earlier this week / Older), same-event joins coalesced, unread styling from a snapshot taken at open. `invite-deferred` → `7a` (code derived live from the event's `InviteDoc`), `suggestion-claimed` → `1e` (deleted gift → `3f`, or `3c` if the recipient is gone), `participant-joined` → `3c`, `claimed-gift-removed` → `3f` ("{present} in {event} was removed"). |
 | `8a`/`8b` chat | `chatThreads.byEvent`, `stream.token` | Stream | Connect lazily, only when a chat screen opens. |
 | Profile | current user | `profile.name`, `profile.avatar` | Unchanged. |
 

@@ -1,8 +1,12 @@
-import { type DependencyList, useEffect } from 'react'
+import { type DependencyList, useEffect, useRef } from 'react'
 
 import { meteor } from './meteor'
 import { status } from './session'
-import { isSubscriptionReady, subscribe } from './subscriptions'
+import {
+  type SubscriptionHandle,
+  isSubscriptionReady,
+  subscribe,
+} from './subscriptions'
 
 // Re-runs `fn` whenever a reactive source it read changes. `fn` is captured
 // once per `deps` change, like `useMemo`.
@@ -29,6 +33,44 @@ export function useSubscription(name: string, params: unknown[] | null) {
 
   return useTracker(
     () => key !== null && isSubscriptionReady(name, JSON.parse(key)),
+    [name, key],
+  )
+}
+
+// `useSubscription` for a varying list of ids: `name` is subscribed once per
+// id, with that id as its only param. A changed list subscribes the new ids
+// before it stops the dropped ones, so ids kept across the change never lose
+// their data. Returns whether every id's data has arrived.
+export function useSubscriptionPerId(name: string, ids: string[]) {
+  const key = JSON.stringify([...new Set(ids)].sort())
+  const handles = useRef(new Map<string, SubscriptionHandle>())
+
+  useEffect(() => {
+    const current = handles.current
+    const wanted = new Set(JSON.parse(key) as string[])
+    for (const id of wanted) {
+      if (!current.has(id)) current.set(id, subscribe(name, id))
+    }
+    for (const [id, handle] of current) {
+      if (wanted.has(id)) continue
+      handle.stop()
+      current.delete(id)
+    }
+  }, [name, key])
+
+  useEffect(() => {
+    const current = handles.current
+    return () => {
+      for (const handle of current.values()) handle.stop()
+      current.clear()
+    }
+  }, [])
+
+  return useTracker(
+    () =>
+      (JSON.parse(key) as string[]).every(id =>
+        isSubscriptionReady(name, [id]),
+      ),
     [name, key],
   )
 }

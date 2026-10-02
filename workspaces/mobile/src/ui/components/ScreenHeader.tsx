@@ -12,9 +12,10 @@ import { useHasScreenBeneath } from '@/hooks/useHasScreenBeneath'
 type ScreenHeaderProps = {
   title: string
   // `drawer` screens open the app drawer from a ☰ button (with a back arrow
-  // beside it once something is underneath); `modal` screens render above the
-  // drawer, so they get a close button instead.
-  variant?: 'drawer' | 'modal'
+  // beside it once something is underneath); `back` screens get the back
+  // arrow alone; `modal` screens render above the drawer, so they get a close
+  // button instead.
+  variant?: 'drawer' | 'back' | 'modal'
   right?: ReactNode
   // Replaces the modal close button's default `router.back()`.
   onClose?: () => void
@@ -32,9 +33,9 @@ export function ScreenHeader({
 
   return (
     <View className="min-h-12 flex-row items-center gap-3 px-[22px] pb-2 pt-3.5">
-      {variant === 'drawer' ? (
+      {variant !== 'modal' ? (
         <>
-          {hasScreenBeneath ? (
+          {hasScreenBeneath || variant === 'back' ? (
             <Pressable
               onPress={() => router.back()}
               hitSlop={12}
@@ -44,14 +45,16 @@ export function ScreenHeader({
               <BackIcon width={22} height={22} color={garland.ink} />
             </Pressable>
           ) : null}
-          <Pressable
-            onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel={t('shell.openMenu')}
-          >
-            <HamburgerIcon width={22} height={22} color={garland.ink} />
-          </Pressable>
+          {variant === 'drawer' ? (
+            <Pressable
+              onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={t('shell.openMenu')}
+            >
+              <HamburgerIcon width={22} height={22} color={garland.ink} />
+            </Pressable>
+          ) : null}
         </>
       ) : null}
       <Text

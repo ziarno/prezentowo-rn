@@ -85,7 +85,7 @@ export async function recordParticipantJoined(
  * who deleted it. The deleter is deliberately not recorded.
  */
 export async function recordClaimedGiftRemoved(
-  gift: Pick<GiftDoc, 'eventId' | 'title' | 'claimedBy'>,
+  gift: Pick<GiftDoc, 'eventId' | 'title' | 'claimedBy' | 'forParticipantId'>,
   deleterId: string,
 ) {
   for (const userId of gift.claimedBy) {
@@ -95,6 +95,7 @@ export async function recordClaimedGiftRemoved(
       kind: 'claimed-gift-removed',
       eventId: gift.eventId,
       giftTitle: gift.title,
+      recipientParticipantId: gift.forParticipantId,
     })
   }
 }

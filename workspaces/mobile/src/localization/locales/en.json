@@ -436,5 +436,36 @@
       "hour": "{{count}}h",
       "day": "{{count}}d"
     }
+  },
+  "notifications": {
+    "loading": "Loading…",
+    "sections": {
+      "new": "New",
+      "week": "Earlier this week",
+      "older": "Older"
+    },
+    "inviteDeferred": "<0>{{inviter}}</0> invited you to <0>{{event}}</0>",
+    "notJoined": "Not joined yet",
+    "suggestionClaimed": "<0>{{actor}}</0> is buying <1>{{gift}}</1>",
+    "suggestedFor": "You suggested it for {{recipient}} · {{event}}",
+    "presentRemoved": "This present was removed",
+    "joined": "<0>{{actor}}</0> joined <0>{{event}}</0>",
+    "joinedTwo": "<0>{{first}} and {{second}}</0> joined <0>{{event}}</0>",
+    "joinedMany_one": "<0>{{first}}, {{second}} and {{count}} other</0> joined <0>{{event}}</0>",
+    "joinedMany_other": "<0>{{first}}, {{second}} and {{count}} others</0> joined <0>{{event}}</0>",
+    "noLongerInEvent": "No longer in this event",
+    "giftRemoved": "<1>{{gift}}</1> in <0>{{event}}</0> was removed",
+    "seeAll": "See all {{count}}",
+    "hideAll": "Hide",
+    "time": {
+      "now": "Just now",
+      "hour": "{{count}}h",
+      "yesterday": "Yesterday",
+      "day": "{{count}}d",
+      "week": "{{count}}w"
+    },
+    "emptyTitle": "Nothing yet",
+    "emptyBody": "You'll hear here when someone buys a present you suggested, or joins an event you made.",
+    "emptyIgnored": "Invites you set aside with Ignore wait here too."
   }
 }

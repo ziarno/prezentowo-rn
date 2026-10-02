@@ -18,7 +18,12 @@ export {
 } from './accounts'
 export { call, DEFAULT_CALL_TIMEOUT_MS, type CallOptions } from './calls'
 export { isNetworkError, NetworkError, type NetworkErrorKind } from './errors'
-export { useSubscription, useSyncStatus, useTracker } from './hooks'
+export {
+  useSubscription,
+  useSubscriptionPerId,
+  useSyncStatus,
+  useTracker,
+} from './hooks'
 export {
   connect,
   disconnect,

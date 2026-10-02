@@ -464,5 +464,38 @@
       "hour": "{{count}} godz.",
       "day": "{{count}} d."
     }
+  },
+  "notifications": {
+    "loading": "Ładowanie…",
+    "sections": {
+      "new": "Nowe",
+      "week": "Wcześniej w tym tygodniu",
+      "older": "Starsze"
+    },
+    "inviteDeferred": "<0>{{inviter}}</0> zaprasza Cię do: <0>{{event}}</0>",
+    "notJoined": "Jeszcze nie dołączono",
+    "suggestionClaimed": "<0>{{actor}}</0> kupuje <1>{{gift}}</1>",
+    "suggestedFor": "Twoja propozycja dla: {{recipient}} · {{event}}",
+    "presentRemoved": "Ten prezent został usunięty",
+    "joined": "<0>{{actor}}</0> dołącza do: <0>{{event}}</0>",
+    "joinedTwo": "<0>{{first}} i {{second}}</0> dołączają do: <0>{{event}}</0>",
+    "joinedMany_one": "<0>{{first}}, {{second}} i {{count}} inna osoba</0> dołączają do: <0>{{event}}</0>",
+    "joinedMany_few": "<0>{{first}}, {{second}} i {{count}} inne osoby</0> dołączają do: <0>{{event}}</0>",
+    "joinedMany_many": "<0>{{first}}, {{second}} i {{count}} innych osób</0> dołączają do: <0>{{event}}</0>",
+    "joinedMany_other": "<0>{{first}}, {{second}} i {{count}} innej osoby</0> dołączają do: <0>{{event}}</0>",
+    "noLongerInEvent": "Nie ma już tej osoby w wydarzeniu",
+    "giftRemoved": "Usunięto <1>{{gift}}</1> z: <0>{{event}}</0>",
+    "seeAll": "Pokaż wszystkie ({{count}})",
+    "hideAll": "Ukryj",
+    "time": {
+      "now": "Przed chwilą",
+      "hour": "{{count}} godz.",
+      "yesterday": "Wczoraj",
+      "day": "{{count}} d.",
+      "week": "{{count}} tydz."
+    },
+    "emptyTitle": "Na razie nic",
+    "emptyBody": "Tu dowiesz się, gdy ktoś kupi prezent, który proponujesz, albo dołączy do Twojego wydarzenia.",
+    "emptyIgnored": "Zaproszenia odłożone przyciskiem Zignoruj też tu czekają."
   }
 }
