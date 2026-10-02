@@ -2,7 +2,7 @@ import { router, useGlobalSearchParams, useSegments } from 'expo-router'
 import type { DrawerContentComponentProps } from 'expo-router/drawer'
 import type { ComponentType, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, Share, View } from 'react-native'
+import { Alert, Pressable, ScrollView, Share, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { beneficiaryIdOf } from '@/api/events'
@@ -25,6 +25,7 @@ import { useEventById } from '@/hooks/useEventById'
 import { useEventGifts } from '@/hooks/useEventGifts'
 import { useEventInvite } from '@/hooks/useEventInvite'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
+import { useOffline } from '@/hooks/useOffline'
 import { useLanguageModal } from '@/localization/LanguageModalProvider'
 import { LOCALES } from '@/localization/provider'
 import { Avatar } from '@/ui/components/Avatar'
@@ -143,6 +144,7 @@ function EventMenu({ eventId, go }: MenuProps & { eventId: string }) {
   const { gifts } = useEventGifts(eventId)
   const user = useCurrentUser()
   const invite = useEventInvite(eventId)
+  const offline = useOffline()
   // Everyone gets a count in `3d`. In `3d2` (many-to-one) the beneficiary
   // is listed first and is the only one with a count.
   const counts = event ? presentCounts(event, gifts, user?._id) : {}
@@ -176,6 +178,7 @@ function EventMenu({ eventId, go }: MenuProps & { eventId: string }) {
           <MenuRow
             Icon={PencilIcon}
             label={t('shell.editEvent')}
+            disabled={offline}
             onPress={() =>
               go(() =>
                 router.push({
@@ -233,14 +236,16 @@ function EventMenu({ eventId, go }: MenuProps & { eventId: string }) {
             Icon={PlusIcon}
             label={t('shell.invitePeople')}
             onPress={() =>
-              go(() =>
-                Share.share({
-                  message: t('invite.shareMessage', {
-                    title: event?.title ?? '',
-                    link: inviteLink(invite.code),
-                  }),
-                }),
-              )
+              offline
+                ? Alert.alert(t('offline.inviteTitle'), t('offline.inviteBody'))
+                : go(() =>
+                    Share.share({
+                      message: t('invite.shareMessage', {
+                        title: event?.title ?? '',
+                        link: inviteLink(invite.code),
+                      }),
+                    }),
+                  )
             }
           />
         </View>
@@ -258,17 +263,21 @@ function MenuRow({
   label,
   detail,
   onPress,
+  disabled = false,
 }: {
   Icon: IconComponent
   label: string
   detail?: string
   onPress?: () => void
+  disabled?: boolean
 }) {
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       accessibilityRole="button"
-      className="flex-row items-center gap-3 border-b border-garland-ink-08 px-[22px] py-3.5 active:opacity-70"
+      accessibilityState={{ disabled }}
+      className={`flex-row items-center gap-3 border-b border-garland-ink-08 px-[22px] py-3.5 active:opacity-70 ${disabled ? 'opacity-40' : ''}`}
     >
       <Icon width={20} height={20} color={garland.ink} />
       <Text className="flex-1 text-[15px] font-semibold text-garland-ink">

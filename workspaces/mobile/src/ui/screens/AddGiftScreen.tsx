@@ -29,6 +29,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useGiftById } from '@/hooks/useGiftById'
+import { useOffline } from '@/hooks/useOffline'
 import { usePersonName } from '@/hooks/usePersonName'
 import { errorMessage } from '@/localization/errorMessage'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
@@ -160,6 +161,7 @@ function GiftWizard({
 }) {
   const { t } = useTranslation()
   const navigation = useNavigation()
+  const offline = useOffline()
   const [draft, setDraft] = useState(initialDraft)
   const [step, setStep] = useState(giftWizardSteps(mode)[0]!)
   const [showError, setShowError] = useState(false)
@@ -354,7 +356,7 @@ function GiftWizard({
           onPrimary={next}
           onBack={index > 0 ? goBack : undefined}
           submitting={submitting}
-          disabled={linkImport.status === 'importing'}
+          disabled={linkImport.status === 'importing' || (isLast && offline)}
         />
       </SheetKeyboardAvoidingView>
     </SafeAreaView>
@@ -439,6 +441,7 @@ function LinkImport({
   onImport: () => void
 }) {
   const { t } = useTranslation()
+  const offline = useOffline()
   const importing = state.status === 'importing'
   return (
     <View className="mt-2">
@@ -465,7 +468,7 @@ function LinkImport({
       <GarlandButton
         variant="outline"
         onPress={onImport}
-        disabled={!url.trim()}
+        disabled={!url.trim() || offline}
         loading={importing}
       >
         <GarlandButtonText>{t('addPresent.link.create')}</GarlandButtonText>

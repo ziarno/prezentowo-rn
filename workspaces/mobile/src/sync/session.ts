@@ -8,8 +8,12 @@ export type SyncStatus = 'connected' | 'offline'
 type Phase = 'offline' | 'authenticating' | 'ready'
 
 type SessionListener = {
+  // A socket is up, and the library has already wiped its collections for it.
+  connected?: () => void
   ready?: () => void
   offline?: () => void
+  // `ready`, `nosub`, `added`, `changed` and `removed`, before the library's
+  // own handlers see them.
   message?: (msg: DdpMessage) => void
 }
 
@@ -27,6 +31,9 @@ export type ConnectOptions = {
 }
 
 let phase: Phase = 'offline'
+// When the session last stopped being ready — or the layer loaded, if it
+// never was.
+let offlineAt: number | null = Date.now()
 let current: Ddp | null = null
 let installed = false
 const statusDep = new meteor.Tracker.Dependency()
@@ -55,6 +62,13 @@ export function status(): SyncStatus {
   return phase === 'ready' ? 'connected' : 'offline'
 }
 
+// Reactive. Since when the session hasn't been ready (ms since the epoch),
+// or null while it is.
+export function offlineSince(): number | null {
+  statusDep.depend()
+  return offlineAt
+}
+
 // The connection, if a message handed to it now would really go out: logged
 // in (or known to be logged out) and the socket open, not closing. The library
 // silently drops messages sent while closing — defect (A).
@@ -68,7 +82,9 @@ export function writableDdp(): Ddp | null {
 function setPhase(next: Phase) {
   const wasReady = phase === 'ready'
   phase = next
-  if (wasReady !== (next === 'ready')) statusDep.changed()
+  if (wasReady === (next === 'ready')) return
+  offlineAt = next === 'ready' ? null : Date.now()
+  statusDep.changed()
 }
 
 // The library replaces `Data.ddp` with a fresh instance whenever it calls
@@ -115,6 +131,17 @@ function attach(ddp: Ddp) {
   })
   on('ready', emitMessage)
   on('nosub', emitMessage)
+  on('added', emitMessage)
+  on('changed', emitMessage)
+  on('removed', emitMessage)
+  // The library registers its handlers (the wipe among them) right after
+  // handing over the instance, so a listener added a tick later runs after
+  // them. No socket can open before then.
+  queueMicrotask(() =>
+    on('connected', () => {
+      for (const listener of listeners) listener.connected?.()
+    }),
+  )
 }
 
 function retire(ddp: Ddp) {

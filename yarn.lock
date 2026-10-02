@@ -5036,6 +5036,11 @@ available-typed-arrays@^1.0.7:
   dependencies:
     possible-typed-array-names "^1.0.0"
 
+await-lock@^2.2.2:
+  version "2.2.2"
+  resolved "https://registry.yarnpkg.com/await-lock/-/await-lock-2.2.2.tgz#a95a9b269bfd2f69d22b17a321686f551152bcef"
+  integrity sha512-aDczADvlvTGajTDjcjpJMqRkOF6Qdz3YbPZm/PyW6tKPkx2hlYBzxMhEywM/tU72HrVZjgl5VCdRuMlA7pZ8Gw==
+
 babel-jest@^29.7.0:
   version "29.7.0"
   resolved "https://registry.yarnpkg.com/babel-jest/-/babel-jest-29.7.0.tgz#f4369919225b684c56085998ac63dbd05be020d5"
@@ -6934,6 +6939,11 @@ expo-constants@~57.0.18:
   dependencies:
     "@expo/env" "~2.4.3"
 
+expo-crypto@~57.0.3:
+  version "57.0.3"
+  resolved "https://registry.yarnpkg.com/expo-crypto/-/expo-crypto-57.0.3.tgz#e232bf2775f268baa8c5afab30085dc850410bb2"
+  integrity sha512-SAWqEfF37nc8ot7bXsVmu9AFYwQdC2kGvH/eNAHiR3bmlcf1Vv8wu9AnGKT+a90r3T8YfwMpZP4QAYlo4vCn9w==
+
 expo-dev-client@~57.0.19:
   version "57.0.19"
   resolved "https://registry.yarnpkg.com/expo-dev-client/-/expo-dev-client-57.0.19.tgz#aefa665fcb736365ac161d4811723c8b4498b33e"
@@ -7116,6 +7126,13 @@ expo-splash-screen@~57.0.9:
     "@expo/config-plugins" "~57.0.9"
     "@expo/image-utils" "^0.11.5"
     xml2js "0.6.0"
+
+expo-sqlite@~57.0.3:
+  version "57.0.3"
+  resolved "https://registry.yarnpkg.com/expo-sqlite/-/expo-sqlite-57.0.3.tgz#6e9bce6d70dceb3890855de5f36c8d6765b6504e"
+  integrity sha512-gbu9Nwm76DNpSK+MEhCjjjF3/EMyFE96IEDSlfO9jPiF4q48a7bef5EXnWVrwW8rvqCZKYAfSGqSpYNhhhpgIg==
+  dependencies:
+    await-lock "^2.2.2"
 
 expo-status-bar@~57.0.1:
   version "57.0.1"

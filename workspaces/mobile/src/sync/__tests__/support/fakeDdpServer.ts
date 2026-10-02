@@ -2,6 +2,8 @@
 import type { AddressInfo } from 'net'
 import { WebSocket, WebSocketServer } from 'ws'
 
+import type { CacheRow, CacheStore } from '../../cache'
+
 // A minimal DDP server for driving the real @meteorrn/core client over real
 // sockets — the approach #22 used to confirm the reconnect defects.
 
@@ -21,6 +23,9 @@ type Options = {
   tokens?: Record<string, string>
   // Publication name → the docs it sends to a logged-in connection.
   publications?: Record<string, (params: unknown[]) => PublishedDoc[]>
+  // User id → the fields of their own `users` doc, sent on login as Meteor's
+  // universal publication does.
+  users?: Record<string, object>
 }
 
 export type FakeDdpServer = {
@@ -102,6 +107,10 @@ export async function startFakeDdpServer(
         return reply({ error: { error: 403, reason: 'Invalid token' } })
       }
       conn.userId = userId
+      const fields = options.users?.[userId]
+      if (fields) {
+        send(conn, { msg: 'added', collection: 'users', id: userId, fields })
+      }
       return reply({ result: { id: userId, token: resume } })
     }
     if (method === 'logout') {
@@ -187,6 +196,35 @@ export async function waitFor(
   while (!predicate()) {
     if (Date.now() > deadline) throw new Error(`Timed out waiting for ${label}`)
     await new Promise(resolve => setTimeout(resolve, 10))
+  }
+}
+
+// In-memory stand-in for the encrypted SQLite cache. Pass the same one to a
+// later `connect` to simulate a cold start.
+export function memoryCacheStore() {
+  const rows = new Map<string, CacheRow>()
+  const store: CacheStore = {
+    load: async () => [...rows.values()],
+    put: async row => {
+      rows.set(row.key, row)
+    },
+    remove: async (keys: string[]) => {
+      for (const key of keys) rows.delete(key)
+    },
+    clear: async () => {
+      rows.clear()
+    },
+  }
+  return {
+    ...store,
+    rows,
+    // The parsed snapshot stored under a subscription key, if any.
+    snapshot: (key: string) => {
+      const row = rows.get(key)
+      return row
+        ? (JSON.parse(row.data) as Record<string, { _id: string }[]>)
+        : undefined
+    },
   }
 }
 

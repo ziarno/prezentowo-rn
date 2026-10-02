@@ -1,7 +1,7 @@
 import { type DependencyList, useEffect, useRef } from 'react'
 
 import { meteor } from './meteor'
-import { status } from './session'
+import { offlineSince, status } from './session'
 import {
   type SubscriptionHandle,
   isSubscriptionReady,
@@ -16,6 +16,12 @@ export function useTracker<T>(fn: () => T, deps: DependencyList = []): T {
 
 export function useSyncStatus() {
   return useTracker(() => status())
+}
+
+// Since when the session hasn't been ready (ms since the epoch), or null
+// while it is.
+export function useOfflineSince(): number | null {
+  return useTracker(() => offlineSince())
 }
 
 // Subscribes while mounted and `name`/`params` stay the same; `params: null`

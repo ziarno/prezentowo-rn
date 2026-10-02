@@ -56,6 +56,19 @@ describe('status', () => {
     server.dropAll()
     await waitFor(() => sync.status() === 'offline', { label: 'offline' })
   })
+
+  it('records since when it has been offline', async () => {
+    await start()
+    expect(sync.offlineSince()).toEqual(expect.any(Number))
+    await waitFor(() => sync.status() === 'connected')
+    expect(sync.offlineSince()).toBeNull()
+
+    const before = Date.now()
+    server.refuseHandshakes(100)
+    server.dropAll()
+    await waitFor(() => sync.status() === 'offline')
+    expect(sync.offlineSince()).toBeGreaterThanOrEqual(before)
+  })
 })
 
 const withToken = { tokens: { 'token-1': 'user-1' }, token: 'token-1' }

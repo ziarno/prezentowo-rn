@@ -497,5 +497,10 @@
     "emptyTitle": "Na razie nic",
     "emptyBody": "Tu dowiesz się, gdy ktoś kupi prezent, który proponujesz, albo dołączy do Twojego wydarzenia.",
     "emptyIgnored": "Zaproszenia odłożone przyciskiem Zignoruj też tu czekają."
+  },
+  "offline": {
+    "banner": "Offline — pokazuję zapisane dane",
+    "inviteTitle": "Jesteś offline",
+    "inviteBody": "Zapraszanie wymaga połączenia z internetem. Spróbuj ponownie, gdy wrócisz do sieci."
   }
 }

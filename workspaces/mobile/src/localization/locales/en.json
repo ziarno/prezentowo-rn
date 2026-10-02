@@ -467,5 +467,10 @@
     "emptyTitle": "Nothing yet",
     "emptyBody": "You'll hear here when someone buys a present you suggested, or joins an event you made.",
     "emptyIgnored": "Invites you set aside with Ignore wait here too."
+  },
+  "offline": {
+    "banner": "Offline — showing saved data",
+    "inviteTitle": "You're offline",
+    "inviteBody": "Inviting people needs a connection. Try again once you’re back online."
   }
 }

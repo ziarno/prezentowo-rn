@@ -13,24 +13,29 @@ export {
   findUser,
   loggingIn,
   logout,
-  onLogin,
+  sessionToken,
   type LoginResult,
 } from './accounts'
+export {
+  cacheReady,
+  connect,
+  disconnect,
+  mirror,
+  type CacheRow,
+  type CacheStore,
+  type ConnectOptions,
+  type Mirror,
+} from './cache'
 export { call, DEFAULT_CALL_TIMEOUT_MS, type CallOptions } from './calls'
 export { isNetworkError, NetworkError, type NetworkErrorKind } from './errors'
 export {
   useSubscription,
+  useOfflineSince,
   useSubscriptionPerId,
   useSyncStatus,
   useTracker,
 } from './hooks'
-export {
-  connect,
-  disconnect,
-  status,
-  type ConnectOptions,
-  type SyncStatus,
-} from './session'
+export { offlineSince, status, type SyncStatus } from './session'
 export {
   isSubscriptionReady,
   subscribe,

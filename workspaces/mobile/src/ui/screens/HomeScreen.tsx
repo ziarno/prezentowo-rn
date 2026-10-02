@@ -8,6 +8,7 @@ import { BellIcon, PlusIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
 import { useMyEvents } from '@/hooks/useMyEvents'
+import { useOffline } from '@/hooks/useOffline'
 import { useRecentActivitySubscription } from '@/hooks/useRecentActivity'
 import { useHasUnreadNotifications } from '@/hooks/useUnreadNotifications'
 import { EventCard } from '@/ui/components/EventCard'
@@ -45,6 +46,7 @@ function NotificationsBell() {
 // opening its feed, and a ＋ FAB.
 export function HomeScreen() {
   const { t } = useTranslation()
+  const offline = useOffline()
   const { events, ready } = useMyEvents()
   useRecentActivitySubscription()
 
@@ -61,7 +63,7 @@ export function HomeScreen() {
               <Text className="mb-4 text-center text-sm text-garland-ink-60">
                 {t('home.emptyBody')}
               </Text>
-              <GarlandButton onPress={openCreateEvent}>
+              <GarlandButton onPress={openCreateEvent} disabled={offline}>
                 <GarlandButtonText>{t('home.emptyAction')}</GarlandButtonText>
               </GarlandButton>
             </>
@@ -90,12 +92,14 @@ export function HomeScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
-      {/* Also while loading, so an offline first launch can still create. */}
+      {/* Also while loading, so a slow first launch can still create. */}
       <Pressable
         onPress={openCreateEvent}
+        disabled={offline}
         accessibilityRole="button"
         accessibilityLabel={t('shell.createEvent')}
-        className="absolute bottom-10 right-[22px] h-14 w-14 items-center justify-center rounded-full bg-garland-ink shadow-md active:opacity-70"
+        accessibilityState={{ disabled: offline }}
+        className={`absolute bottom-10 right-[22px] h-14 w-14 items-center justify-center rounded-full bg-garland-ink shadow-md active:opacity-70 ${offline ? 'opacity-40' : ''}`}
       >
         <PlusIcon width={24} height={24} color={garland.paper} />
       </Pressable>

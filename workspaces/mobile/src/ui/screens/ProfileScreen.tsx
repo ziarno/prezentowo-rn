@@ -19,6 +19,7 @@ import { type AvatarKey, avatar } from '@/constants/avatars'
 import { garland } from '@/constants/colors'
 import { useAuth } from '@/hooks/useAuth'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
+import { useOffline } from '@/hooks/useOffline'
 import { useLanguageModal } from '@/localization/LanguageModalProvider'
 import { LOCALES } from '@/localization/provider'
 import { Avatar } from '@/ui/components/Avatar'
@@ -36,6 +37,7 @@ type IconComponent = ComponentType<{
 
 export function ProfileScreen() {
   const { t, i18n } = useTranslation()
+  const offline = useOffline()
   const { signOut } = useAuth()
   const { open: openLanguageModal } = useLanguageModal()
   const avatarPickerRef = useRef<AvatarPickerModalHandle>(null)
@@ -80,9 +82,11 @@ export function ProfileScreen() {
         <View className="mt-2">
           <Pressable
             onPress={() => avatarPickerRef.current?.present()}
+            disabled={offline}
+            accessibilityState={{ disabled: offline }}
             style={({ pressed }) => ({
               alignSelf: 'flex-start',
-              opacity: pressed ? 0.7 : 1,
+              opacity: offline ? 0.4 : pressed ? 0.7 : 1,
             })}
           >
             <Avatar source={avatar(avatarKey)} size={84} />

@@ -40,7 +40,7 @@ yarn workspace backend tsc --noEmit       # backend type check (not scripted)
 - **CocoaPods fails with `Unicode Normalization not appropriate for ASCII-8BIT`** when the shell has no UTF-8 locale (typical for shells spawned by GUI apps, which get no `LANG` from launchd). Fix once with `export LANG=en_US.UTF-8` in `~/.zshenv`, or prefix the command with `LANG=en_US.UTF-8`.
 - **Day to day**, once that build is installed: `yarn workspace mobile start` reuses it — Metro-only, no native rebuild.
 - No EAS project is configured; this is a **local** dev build (`expo run:ios` / `expo run:android` under the hood). Needs Xcode + a simulator (or Android Studio + an emulator/device) on the machine running it.
-- The app blocks on its splash screen until it has a live DDP connection to the backend (see `src/ui/SplashScreenController.tsx`) — start `yarn workspace backend start` (or root `yarn dev`) too, or the UI never appears past the splash.
+- The splash waits for fonts, onboarding state and the encrypted offline cache, not for the backend (`src/ui/SplashScreenController.tsx`). Without `yarn workspace backend start` (or root `yarn dev`) a signed-in app opens offline from its cache, under the offline banner; a first run stays signed out.
 - `expo-env.d.ts` (ambient types for `expo/types`, needed for the `global.css` side-effect import to typecheck) is gitignored and only written the first time the dev server or a native build runs in a given checkout/worktree — run `yarn workspace mobile start` (or `ios`/`android`) once before `tsc --noEmit` on a fresh checkout.
 
 ## Mobile wiring
@@ -54,6 +54,7 @@ yarn workspace backend tsc --noEmit       # backend type check (not scripted)
 - DDP connects at module load: `workspaces/mobile/src/hooks/useConnection.ts` using `workspaces/mobile/config.json`
 - Auth/onboarding stored in Expo SecureStore
 - `workspaces/mobile/src/sync/` is the **only** importer of `@meteorrn/core` (ESLint `no-restricted-imports` enforces it). Everything else — `src/api/*`, hooks, screens — imports `@/sync`: `call` (15 s timeout, rejects with `NetworkError`), `subscribe`/`useSubscription` (re-subscribed after every reconnect, with `ready`), `collection`, `useTracker`, `useSyncStatus`, and the account helpers. See `docs/spec.md` §6.1
+- Offline cache (`docs/spec.md` §6.2, ADR 0004): `src/sync/cache.ts` keeps one snapshot per subscription, replaced (never merged) when it's ready again; `src/sync/encryptedStore.ts` persists them in SQLCipher (`expo-sqlite`, keyed from SecureStore). A publication is cached only if `src/api/mirrors.ts` registers its scope — add one there with every new mirrored publication. Online-only actions dim themselves with `useOffline()` (`src/hooks/useOffline.ts`)
 
 ## Meteor / types quirks
 

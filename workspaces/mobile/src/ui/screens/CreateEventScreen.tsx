@@ -33,6 +33,7 @@ import { garland } from '@/constants/colors'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
+import { useOffline } from '@/hooks/useOffline'
 import { errorMessage } from '@/localization/errorMessage'
 import type { MeteorError } from '@/sync'
 import {
@@ -179,6 +180,7 @@ function EventWizard({
 }) {
   const { t } = useTranslation()
   const navigation = useNavigation()
+  const offline = useOffline()
   const [draft, setDraft] = useState(initialDraft)
   const [chosenStep, setStep] = useState(start)
   const [showError, setShowError] = useState(false)
@@ -329,6 +331,7 @@ function EventWizard({
           onPrimary={next}
           onBack={index > 0 ? goBack : undefined}
           submitting={submitting}
+          disabled={isLast && offline}
         />
       </SheetKeyboardAvoidingView>
     </SafeAreaView>

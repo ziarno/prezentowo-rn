@@ -11,17 +11,13 @@ import { CheckIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
 import { useMyEvents } from '@/hooks/useMyEvents'
+import { useOffline } from '@/hooks/useOffline'
 import { errorMessage } from '@/localization/errorMessage'
 import { eventWhen } from '@/localization/eventDates'
 import i18n from '@/localization/i18n'
 import { savePendingInvite } from '@/store/pendingInvite'
 import { useAuthStore } from '@/store/useAuthStore'
-import {
-  type MeteorError,
-  useSubscription,
-  useSyncStatus,
-  useTracker,
-} from '@/sync'
+import { type MeteorError, useSubscription, useTracker } from '@/sync'
 import { EventBackground } from '@/ui/components/EventBackground'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
@@ -38,7 +34,7 @@ const openEvent = (eventId: string) =>
 // opens after sign-in. Ignore goes back where the guards allow.
 export function InviteScreen({ code }: { code: string }) {
   const { t } = useTranslation()
-  const status = useSyncStatus()
+  const offline = useOffline()
   const ready = useSubscription('invites.byCode', [code])
   const preview = useTracker(() => findInvitePreview(code), [code])
 
@@ -59,7 +55,7 @@ export function InviteScreen({ code }: { code: string }) {
   const leave = () => router.dismissTo(home)
 
   const body = (() => {
-    if (status === 'offline') return <Message text={t('invite.offline')} />
+    if (offline) return <Message text={t('invite.offline')} />
     if (preview) {
       return (
         <InviteBody

@@ -17,6 +17,7 @@ import { useEventById } from '@/hooks/useEventById'
 import { useEventGifts } from '@/hooks/useEventGifts'
 import { useEventInvite } from '@/hooks/useEventInvite'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
+import { useOffline } from '@/hooks/useOffline'
 import { isNetworkError } from '@/sync'
 import { EventBackground } from '@/ui/components/EventBackground'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
@@ -30,6 +31,7 @@ const COVER_HEIGHT = 140
 // plus the people and the invite link. Creator only.
 export function EditEventScreen({ eventId }: { eventId: string }) {
   const { t } = useTranslation()
+  const offline = useOffline()
   const user = useCurrentUser()
   const { event, ready } = useEventById(eventId)
   const { participants, resolve } = useEventParticipants(eventId)
@@ -72,77 +74,84 @@ export function EditEventScreen({ eventId }: { eventId: string }) {
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
-        <Pressable
-          onPress={() => openStep('background')}
-          accessibilityRole="button"
-          accessibilityLabel={t('editEvent.background')}
-          className="mx-[22px] mt-2 overflow-hidden rounded-2xl active:opacity-70"
+        {/* Dimmed, not hidden, while offline: nothing here works without
+            the server. */}
+        <View
+          pointerEvents={offline ? 'none' : 'auto'}
+          className={offline ? 'opacity-40' : undefined}
         >
-          <EventBackground event={event} height={COVER_HEIGHT} />
-          <View className="absolute bottom-2.5 right-2.5 rounded-full bg-garland-paper px-3 py-1.5">
-            <Text className="text-xs font-bold text-garland-ink">
-              {t('editEvent.changeBackground')}
-            </Text>
-          </View>
-        </Pressable>
+          <Pressable
+            onPress={() => openStep('background')}
+            accessibilityRole="button"
+            accessibilityLabel={t('editEvent.background')}
+            className="mx-[22px] mt-2 overflow-hidden rounded-2xl active:opacity-70"
+          >
+            <EventBackground event={event} height={COVER_HEIGHT} />
+            <View className="absolute bottom-2.5 right-2.5 rounded-full bg-garland-paper px-3 py-1.5">
+              <Text className="text-xs font-bold text-garland-ink">
+                {t('editEvent.changeBackground')}
+              </Text>
+            </View>
+          </Pressable>
 
-        <Section>
-          <EditRow
-            label={t('createEvent.details.nameLabel')}
-            value={event.title}
-            onPress={() => openStep('details')}
-          />
-          <EditRow
-            label={t('createEvent.details.dateLabel')}
-            value={event.date}
-            onPress={() => openStep('details')}
-          />
-          <EditRow
-            label={t('editEvent.type')}
-            value={
-              event.type === 'many-to-one'
-                ? t('createEvent.kind.manyToOne')
-                : t('createEvent.kind.manyToMany')
-            }
-            onPress={() => openStep('kind')}
-            locked={kindLocked}
-          />
-          {event.type === 'many-to-one' ? (
+          <Section>
             <EditRow
-              label={t('editEvent.for')}
-              value={beneficiary?.name ?? ''}
-              onPress={() => openStep('beneficiary')}
+              label={t('createEvent.details.nameLabel')}
+              value={event.title}
+              onPress={() => openStep('details')}
+            />
+            <EditRow
+              label={t('createEvent.details.dateLabel')}
+              value={event.date}
+              onPress={() => openStep('details')}
+            />
+            <EditRow
+              label={t('editEvent.type')}
+              value={
+                event.type === 'many-to-one'
+                  ? t('createEvent.kind.manyToOne')
+                  : t('createEvent.kind.manyToMany')
+              }
+              onPress={() => openStep('kind')}
               locked={kindLocked}
             />
+            {event.type === 'many-to-one' ? (
+              <EditRow
+                label={t('editEvent.for')}
+                value={beneficiary?.name ?? ''}
+                onPress={() => openStep('beneficiary')}
+                locked={kindLocked}
+              />
+            ) : null}
+          </Section>
+          {hasGifts ? (
+            <LockNote className="mx-[22px] mt-3">
+              {t('editEvent.kindLocked')}
+            </LockNote>
           ) : null}
-        </Section>
-        {hasGifts ? (
-          <LockNote className="mx-[22px] mt-3">
-            {t('editEvent.kindLocked')}
-          </LockNote>
-        ) : null}
 
-        <SectionLabel>{t('shell.people')}</SectionLabel>
-        <PeopleList
-          eventId={eventId}
-          participants={participants}
-          beneficiaryId={beneficiaryId}
-        />
-
-        <SectionLabel>{t('editEvent.inviteLink')}</SectionLabel>
-        {invite ? (
-          <InviteLinkRow
+          <SectionLabel>{t('shell.people')}</SectionLabel>
+          <PeopleList
             eventId={eventId}
-            title={event.title}
-            code={invite.code}
+            participants={participants}
+            beneficiaryId={beneficiaryId}
           />
-        ) : (
-          <Text className="px-[22px] text-sm text-garland-ink-60">
-            {t('createEvent.loading')}
-          </Text>
-        )}
 
-        <DeleteEventButton eventId={eventId} title={event.title} />
+          <SectionLabel>{t('editEvent.inviteLink')}</SectionLabel>
+          {invite ? (
+            <InviteLinkRow
+              eventId={eventId}
+              title={event.title}
+              code={invite.code}
+            />
+          ) : (
+            <Text className="px-[22px] text-sm text-garland-ink-60">
+              {t('createEvent.loading')}
+            </Text>
+          )}
+
+          <DeleteEventButton eventId={eventId} title={event.title} />
+        </View>
       </ScrollView>
     </SafeAreaView>
   )

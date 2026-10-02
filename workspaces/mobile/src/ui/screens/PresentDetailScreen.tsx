@@ -20,6 +20,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useGiftById } from '@/hooks/useGiftById'
+import { useOffline } from '@/hooks/useOffline'
 import { usePersonName } from '@/hooks/usePersonName'
 import { errorMessage } from '@/localization/errorMessage'
 import { BuyerChips } from '@/ui/components/BuyerChips'
@@ -49,6 +50,7 @@ export function PresentDetailScreen({
   giftId: string
 }) {
   const { t } = useTranslation()
+  const offline = useOffline()
   const user = useCurrentUser()
   const { event } = useEventById(eventId)
   const { gift, ready } = useGiftById(giftId, eventId)
@@ -141,9 +143,11 @@ export function PresentDetailScreen({
           canEditGift(gift, user._id) ? (
             <Pressable
               onPress={edit}
+              disabled={offline}
               hitSlop={12}
               accessibilityRole="button"
-              className="flex-row items-center gap-1.5 active:opacity-60"
+              accessibilityState={{ disabled: offline }}
+              className={`flex-row items-center gap-1.5 active:opacity-60 ${offline ? 'opacity-40' : ''}`}
             >
               <PencilIcon width={16} height={16} color={garland.ink} />
               <Text className="text-sm font-bold text-garland-ink">
@@ -225,6 +229,7 @@ export function PresentDetailScreen({
                 variant={action === 'unclaim' ? 'outline' : 'solid'}
                 className="mt-6"
                 loading={submitting}
+                disabled={offline}
                 onPress={toggleClaim}
               >
                 <GarlandButtonText>{t(CTA_KEY[action])}</GarlandButtonText>
@@ -243,6 +248,7 @@ export function PresentDetailScreen({
                 variant="link"
                 onPress={confirmRemove}
                 loading={removing}
+                disabled={offline}
                 className="self-start"
                 hitSlop={12}
               >

@@ -14,6 +14,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
 import { useEventGifts } from '@/hooks/useEventGifts'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
+import { useOffline } from '@/hooks/useOffline'
 import { usePersonName } from '@/hooks/usePersonName'
 import { GiftRow } from '@/ui/components/GiftRow'
 import { LockNote } from '@/ui/components/LockNote'
@@ -29,6 +30,7 @@ export function PersonPresentsScreen({
   participantId: string
 }) {
   const { t } = useTranslation()
+  const offline = useOffline()
   const user = useCurrentUser()
   const { event, ready: eventReady } = useEventById(eventId)
   const { gifts, ready: giftsReady } = useEventGifts(eventId)
@@ -94,9 +96,12 @@ export function PersonPresentsScreen({
           params: { eventId, forParticipantId: participantId },
         })
       }
+      disabled={offline}
       hitSlop={12}
       accessibilityRole="button"
       accessibilityLabel={t('shell.addPresent')}
+      accessibilityState={{ disabled: offline }}
+      className={offline ? 'opacity-40' : undefined}
     >
       <PlusIcon width={22} height={22} color={garland.ink} />
     </Pressable>
