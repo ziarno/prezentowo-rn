@@ -6,6 +6,7 @@ import {
   parseEventDate,
   sortForHome,
   stablePick,
+  toEventDate,
 } from '../eventList'
 
 const noonOn = (y: number, m: number, d: number) =>
@@ -26,6 +27,21 @@ describe('parseEventDate', () => {
     expect(parseEventDate('2026-13-01')).toBeUndefined()
     expect(parseEventDate('2026-02-30')).toBeUndefined()
     expect(parseEventDate('24.12.2026')).toBeUndefined()
+  })
+})
+
+describe('toEventDate', () => {
+  it('writes the local calendar day, padded', () => {
+    expect(toEventDate(new Date(2026, 0, 5, 12))).toBe('2026-01-05')
+  })
+
+  it('keeps the local day at either end of it, whatever the time zone', () => {
+    expect(toEventDate(new Date(2026, 11, 24, 0, 0))).toBe('2026-12-24')
+    expect(toEventDate(new Date(2026, 11, 24, 23, 59))).toBe('2026-12-24')
+  })
+
+  it('round-trips through parseEventDate', () => {
+    expect(toEventDate(parseEventDate('2028-02-29')!)).toBe('2028-02-29')
   })
 })
 

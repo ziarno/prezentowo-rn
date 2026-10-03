@@ -77,7 +77,8 @@
           }
         }
       ],
-      ["expo-sqlite", { "useSQLCipher": true }]
+      ["expo-sqlite", { "useSQLCipher": true }],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

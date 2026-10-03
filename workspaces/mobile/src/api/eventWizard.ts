@@ -8,6 +8,7 @@ import type {
 import { garland } from '@/constants/colors'
 
 import { type DraftImage, imageChange, savedImage } from './draftImage'
+import { parseEventDate } from './eventList'
 import { beneficiaryIdOf } from './events'
 
 // The create-event wizard's steps: `4a` name & date, `4b` kind, `4c`
@@ -49,7 +50,6 @@ export type EventDraft = {
 export type StepError =
   | 'nameRequired'
   | 'dateRequired'
-  | 'dateInvalid'
   | 'kindRequired'
   | 'beneficiaryRequired'
 
@@ -97,13 +97,6 @@ export function wizardSteps(
   return CREATE_STEPS.filter(applies)
 }
 
-// A real calendar day as `YYYY-MM-DD`, the format the server takes.
-export function isCalendarDate(date: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false
-  const parsed = new Date(`${date}T00:00:00Z`)
-  return !isNaN(parsed.getTime()) && parsed.toISOString().startsWith(date)
-}
-
 // Why `step` can't be left yet, or null when it can.
 export function stepError(
   step: WizardStep,
@@ -112,9 +105,9 @@ export function stepError(
   switch (step) {
     case 'details': {
       if (!draft.title.trim()) return 'nameRequired'
-      const date = draft.date.trim()
-      if (!date) return 'dateRequired'
-      return isCalendarDate(date) ? null : 'dateInvalid'
+      // Only the picker writes the date, so one that doesn't parse was
+      // never picked.
+      return parseEventDate(draft.date) ? null : 'dateRequired'
     }
     case 'kind':
       return draft.type ? null : 'kindRequired'

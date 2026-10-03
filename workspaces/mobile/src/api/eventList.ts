@@ -21,6 +21,11 @@ export function parseEventDate(date: string): Date | undefined {
     : undefined
 }
 
+// A picked day as the `YYYY-MM-DD` the server takes, from its local
+// year/month/day: `toISOString()` would move it a day in some time zones.
+export const toEventDate = (date: Date): string =>
+  dayjs(date).format('YYYY-MM-DD')
+
 // Calendar days from `now` to the event: 0 on the day, negative once past.
 export function daysUntil(date: string, now: Date): number | undefined {
   const target = parseEventDate(date)

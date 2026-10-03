@@ -250,7 +250,8 @@
       "nameLabel": "Nazwa",
       "namePlaceholder": "Wigilia u babci",
       "dateLabel": "Data",
-      "datePlaceholder": "RRRR-MM-DD",
+      "datePlaceholder": "Wybierz datę",
+      "dateDone": "Gotowe",
       "dateHint": "Od daty zależy odliczanie na ekranie głównym."
     },
     "kind": {
@@ -280,7 +281,6 @@
     "errors": {
       "nameRequired": "Nadaj wydarzeniu nazwę.",
       "dateRequired": "Wybierz datę.",
-      "dateInvalid": "Wpisz datę w formacie 2026-12-24.",
       "kindRequired": "Wybierz jedną z opcji.",
       "beneficiaryRequired": "Wybierz, dla kogo jest wydarzenie."
     },

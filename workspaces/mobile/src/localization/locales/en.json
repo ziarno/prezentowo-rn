@@ -248,7 +248,8 @@
       "nameLabel": "Name",
       "namePlaceholder": "Christmas at Grandma's",
       "dateLabel": "Date",
-      "datePlaceholder": "YYYY-MM-DD",
+      "datePlaceholder": "Pick a date",
+      "dateDone": "Done",
       "dateHint": "The date drives the countdown on Home."
     },
     "kind": {
@@ -278,7 +279,6 @@
     "errors": {
       "nameRequired": "Give the event a name.",
       "dateRequired": "Pick the date.",
-      "dateInvalid": "Use a date like 2026-12-24.",
       "kindRequired": "Choose one to continue.",
       "beneficiaryRequired": "Choose who the event is for."
     },

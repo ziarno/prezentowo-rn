@@ -18,6 +18,7 @@ import { useEventGifts } from '@/hooks/useEventGifts'
 import { useEventInvite } from '@/hooks/useEventInvite'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useOffline } from '@/hooks/useOffline'
+import { formatEventDate } from '@/localization/eventDates'
 import { isNetworkError } from '@/sync'
 import { EventBackground } from '@/ui/components/EventBackground'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
@@ -30,7 +31,7 @@ const COVER_HEIGHT = 140
 // `6a`: everything creation set, each row reopening the wizard at its step,
 // plus the people and the invite link. Creator only.
 export function EditEventScreen({ eventId }: { eventId: string }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const offline = useOffline()
   const user = useCurrentUser()
   const { event, ready } = useEventById(eventId)
@@ -102,7 +103,7 @@ export function EditEventScreen({ eventId }: { eventId: string }) {
             />
             <EditRow
               label={t('createEvent.details.dateLabel')}
-              value={event.date}
+              value={formatEventDate(i18n.language, event.date)}
               onPress={() => openStep('details')}
             />
             <EditRow

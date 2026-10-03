@@ -40,6 +40,7 @@ import {
   AvatarPickerModal,
   type AvatarPickerModalHandle,
 } from '@/ui/components/AvatarPickerModal'
+import { DateField } from '@/ui/components/DateField'
 import { EventBackground } from '@/ui/components/EventBackground'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { GarlandField } from '@/ui/components/GarlandField'
@@ -357,14 +358,11 @@ function DetailsStep({
         placeholder={t('createEvent.details.namePlaceholder')}
         returnKeyType="next"
       />
-      <GarlandField
+      <DateField
         label={t('createEvent.details.dateLabel')}
         value={draft.date}
-        onChangeText={date => onChange({ ...draft, date })}
+        onChange={date => onChange({ ...draft, date })}
         placeholder={t('createEvent.details.datePlaceholder')}
-        keyboardType="numbers-and-punctuation"
-        autoCorrect={false}
-        maxLength={10}
       />
       <Text className="text-xs leading-[17px] text-garland-ink-60">
         {t('createEvent.details.dateHint')}

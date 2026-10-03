@@ -99,14 +99,17 @@ describe('parseStep', () => {
 })
 
 describe('stepError', () => {
-  it('needs a name and a calendar date', () => {
+  it('needs a name and a picked date', () => {
     expect(stepError('details', draft({ title: '  ' }))).toBe('nameRequired')
     expect(stepError('details', draft({ date: '' }))).toBe('dateRequired')
-    expect(stepError('details', draft({ date: '4 May' }))).toBe('dateInvalid')
-    expect(stepError('details', draft({ date: '2026-02-30' }))).toBe(
-      'dateInvalid',
-    )
     expect(stepError('details', draft())).toBeNull()
+  })
+
+  it('treats a date that is not a calendar day as not picked', () => {
+    expect(stepError('details', draft({ date: '4 May' }))).toBe('dateRequired')
+    expect(stepError('details', draft({ date: '2026-02-30' }))).toBe(
+      'dateRequired',
+    )
   })
 
   it('needs a kind', () => {
