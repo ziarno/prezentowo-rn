@@ -15,8 +15,8 @@ _Avoid_: single-beneficiary event, one-person event
 The one `EventParticipant` a many-to-one event's presents are for. Identified by `EventParticipant.id`, never a `userId` directly — a beneficiary can be a placeholder participant who has never created an account. The id is stable across a placeholder-to-real upgrade (`events.join`), so a beneficiary reference never needs updating when its placeholder is claimed.
 
 **Reserved placeholder**:
-A placeholder participant created from a **people search** result in `4d` (`invitedUserId` set): it stands in for one specific Prezentowo user — the **invitee** — until they accept by joining, at which point they claim it and keep its id, exactly like any placeholder claim. Only the invitee can claim it, and nobody else sees it as claimable. It exists so that being found by name never makes someone a member of an event they didn't choose: until they join, they're a placeholder, and the event isn't on their Home. `invitedUserId` never leaves the server.
-_Avoid_: pending participant, invited participant
+A placeholder participant created from a **people search** result in `4d` (`invitedUserId` set): it stands in for one specific Prezentowo user, the invitee, until they accept by joining, at which point they claim it and keep its id, exactly like any placeholder claim. Only the invitee can claim it, and nobody else sees it as claimable. It exists so that being found by name never makes someone a member of an event they didn't choose: until they join, they're a placeholder, and the event isn't on their Home. `invitedUserId` never leaves the server.
+_Avoid_: pending participant
 
 **People search**:
 Finding existing Prezentowo users by name in `4d` (`users.search`): a case- and diacritic-insensitive prefix match on any word of their name, returning only name and avatar. Everyone with a name is findable.

@@ -47,7 +47,7 @@ Four steps, progress bar, `Back` / `Next` at the bottom. Many-to-one events get
 | `4a` | Step 1 — name & date. "The date drives the countdown on Home." |
 | `4b` | Step 2 — event type: *Everyone gets presents* (Christmas, Secret Santa) vs *One person gets presents* (birthday, baby shower) |
 | `4c` | Step 3 — background: upload a photo, or pick one of ours. Sits behind the event header (`3c`) |
-| `4d` | Step 4 — participants: search Prezentowo **or type a name**. Existing users and **placeholder people "added by name"**. "Anyone can also join later with an invite link — no approval needed." A user found by search is *invited* (a reserved placeholder) and joins only once they accept ([#68](https://github.com/ziarno/prezentowo-rn/issues/68)) |
+| `4d` | Step 4 — participants: search Prezentowo **or type a name**. Existing users and **placeholder people "added by name"**. "Anyone can also join later with an invite link — no approval needed." A user found by search is *invited* (a reserved placeholder) and joins only once they accept ([#68](https://github.com/ziarno/prezentowo-rn/issues/68)). |
 | `4e` | Extra step, many-to-one only — who is the event for? Pick from the participants added |
 
 ## 3. Editing an event (`t6`)
@@ -60,7 +60,7 @@ Four steps, progress bar, `Back` / `Next` at the bottom. Many-to-one events get
 
 | Id | Screen |
 | --- | --- |
-| `7a` | Invite — who invited you, event date + countdown, who is already taking part. "Joining shows your name to everyone in the event." `Ignore` returns Home and **the invite stays in notifications**; `Join event` enters the event. |
+| `7a` | Invite — who invited you, event date + countdown, who is already taking part. "Joining shows your name to everyone in the event." `Ignore` returns Home and **the invite stays in notifications**; `Join event` enters the event. Someone invited from `4d` sees "{inviter} added you as {name}" instead of the claim list ([#68](https://github.com/ziarno/prezentowo-rn/issues/68)). |
 
 ## 5. Adding a present (`t5`)
 

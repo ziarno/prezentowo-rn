@@ -96,7 +96,7 @@ export type RemoveParticipantArgs = { eventId: string; participantId: string }
 export type JoinEventArgs = { code: string; participantId?: string } // participantId = the placeholder being claimed
 ```
 
-### 1.3 Invites — [#3](https://github.com/ziarno/prezentowo-rn/issues/3), [#13](https://github.com/ziarno/prezentowo-rn/issues/13), [#21](https://github.com/ziarno/prezentowo-rn/issues/21)
+### 1.3 Invites — [#3](https://github.com/ziarno/prezentowo-rn/issues/3), [#13](https://github.com/ziarno/prezentowo-rn/issues/13), [#21](https://github.com/ziarno/prezentowo-rn/issues/21), [#68](https://github.com/ziarno/prezentowo-rn/issues/68)
 
 ```ts
 export type InviteDoc = {
@@ -121,13 +121,6 @@ export type InvitePreview = {
 ```
 
 `unclaimedPlaceholders` leaves out every **reserved placeholder** except the viewer's own, which carries `reservedForYou` (so signed out, and on the web landing page, none are listed).
-
-### 1.3a People search — [#68](https://github.com/ziarno/prezentowo-rn/issues/68)
-
-```ts
-export type UserSearchArgs = { query: string }
-export type UserSearchResult = { userId: string; name: string; avatar?: string } // never an email
-```
 
 ### 1.4 Presents — [#12](https://github.com/ziarno/prezentowo-rn/issues/12)
 
@@ -199,7 +192,7 @@ export type ActivityDoc = {
 }
 ```
 
-### 1.7 Notifications — [#11](https://github.com/ziarno/prezentowo-rn/issues/11)
+### 1.7 Notifications — [#11](https://github.com/ziarno/prezentowo-rn/issues/11), [#68](https://github.com/ziarno/prezentowo-rn/issues/68)
 
 ```ts
 export type NotificationDoc = {
@@ -231,6 +224,13 @@ export type ChatThreadDoc = {
 }
 ```
 
+### 1.9 People search — [#68](https://github.com/ziarno/prezentowo-rn/issues/68)
+
+```ts
+export type UserSearchArgs = { query: string }
+export type UserSearchResult = { userId: string; name: string; avatar?: string } // never an email
+```
+
 ---
 
 ## 2. Backend — methods and publications
@@ -245,7 +245,7 @@ All methods are `async`, check `this.userId`, and validate arguments. "Member" m
 | `Gifts` | `GiftDoc` | changed | `eventId`; `createdBy + clientId` unique, partial on `clientId` existing (a sparse compound index would still index every gift) |
 | `Invites` | `InviteDoc` | new | `code` unique; `eventId` unique |
 | `Activity` | `ActivityDoc` | new | `eventId + createdAt` |
-| `Notifications` | `NotificationDoc` | new | `userId + createdAt`; `userId + eventId + kind` unique partial on `invite-deferred` |
+| `Notifications` | `NotificationDoc` | new | `userId + createdAt`; `userId + eventId + kind` unique partial on `invite-deferred` and `invited` |
 | `ChatThreads` | `ChatThreadDoc` | new | `eventId` |
 | `Images` | `{ _id, ownerId, createdAt }` | new | — (records who uploaded; used for cleanup) |
 | `Meteor.users` | + `nameTokens: string[]` | changed | `nameTokens` (multikey). Server-only: `profile.name` folded (lower case, diacritics stripped, `ł`→`l`) and split on whitespace and hyphens; rewritten by every write of `profile.name` (registration, `profile.name`, Dev login). Never published ([#68](https://github.com/ziarno/prezentowo-rn/issues/68)). |
@@ -258,7 +258,7 @@ All methods are `async`, check `this.userId`, and validate arguments. "Member" m
 | `events.update(UpdateEventArgs)` | creator | Title, date and background are always editable. `kind` is rejected if `Gifts.find({eventId}).countAsync() > 0`. | Chat: a beneficiary change retires and replaces the secret thread. |
 | `events.removeParticipant(RemoveParticipantArgs)` | creator | Rejects removing the current beneficiary. Removing a reserved placeholder deletes its invitee's `invited` notification. Hard-deletes gifts where they are the recipient. Keeps gifts they created. Pulls their `userId` from every `claimedBy`. | Activity: deletes docs whose `recipientParticipantId` is theirs and keeps docs where they are the actor. Chat: retires their secret thread and removes them from the others. |
 | `events.delete({ eventId })` | creator | Hard cascade: `Events`, `Gifts`, `Invites`, `Activity`, `Notifications` with that `eventId`, `ChatThreads` (and their Stream channels), and the images referenced by the event and its gifts. | — |
-| `events.join(JoinEventArgs)` | signed in | Resolves `code` to an event. If the caller holds a reserved placeholder in it, claims that one whatever `participantId` says. Otherwise, if `participantId` is given, claims that placeholder; one reserved for someone else gets the same `notFound` as a missing one. The id is preserved and `invitedUserId` dropped. Otherwise appends a new real participant. Rejects users who are already real participants. | Activity `participant-joined`. Notification `participant-joined` to the creator. Deletes the joiner's `invite-deferred` and `invited` for the event. Chat: joins every thread except their own secret thread. |
+| `events.join(JoinEventArgs)` | signed in | Resolves `code` to an event. If the caller holds a reserved placeholder in it, claims that one whatever `participantId` says. Otherwise, if `participantId` is given, claims that placeholder; one reserved for someone else gets the same `notFound` as a missing one, and a plain join never touches another user's reservation. The id is preserved and `invitedUserId` dropped. Otherwise appends a new real participant. Rejects users who are already real participants. | Activity `participant-joined`. Notification `participant-joined` to the creator. Deletes the joiner's `invite-deferred` and `invited` for the event. Chat: joins every thread except their own secret thread. |
 | `invites.ignore({ code })` | signed in | Upserts `invite-deferred` for (`userId`, `eventId`), unless the caller already has an `invited` for that event, which stays as it is. Never touches `Invites`. There is no decline: an ignored invitation stays in the inbox until the invitee joins, the creator removes the reservation, or the event is deleted. | Notification |
 | `invites.rotate({ eventId })` | creator | Replaces `code` in place. The old code is dead immediately. | — |
 | `gifts.add(AddGiftArgs)` | member | Inserts the gift. If `clientId` matches an existing (`createdBy`, `clientId`), returns that gift's id (replay-safe). | Activity `gift-added`; `hiddenFromParticipantId` = the recipient only when the gift is suggested. |
@@ -279,9 +279,7 @@ The Dev login is **not** a method. It is an `Accounts.registerLoginHandler` for 
 |---|---|---|
 | `events.mine` | signed in | Events where the caller is a member. |
 | `events.byId(eventId)` | members | Unchanged. It is no longer an invite path: `eventId` is retired as a join capability. |
-
-Both event publications omit `participants.invitedUserId`: a reserved placeholder looks like any other placeholder to members.
-| `invites.byCode(code)` | anyone, including signed out | Publishes one `InvitePreview`-shaped doc into a client-only collection. Never publishes participants' userIds or any gift data. |
+| `invites.byCode(code)` | anyone, including signed out | Publishes one `InvitePreview`-shaped doc into a client-only collection. Never publishes participants' userIds or any gift data. Reserved placeholders are filtered per viewer (§1.3). |
 | `invites.forEvent(eventId)` | creator | The `InviteDoc`, for `6a`'s link row. |
 | `invites.deferred()` | signed in | One `DeferredInvite` (`{ eventId, code, title, inviterName }`) per `invite-deferred` or `invited` of the caller's, into a client-only collection keyed by `eventId`. `code` follows rotations, so the inbox's tap derives it live. |
 | `gifts.byEvent(eventId)` | members | **Own-list visibility rule**: a gift whose recipient is the viewer and whose creator isn't the viewer is never `added`, and its `changed`/`removed` are skipped too (a `hiddenIds` set). **Claim-quietly rule**: for the viewer's self-added gifts, `claimedBy` is stripped. No owner exemption ([#9](https://github.com/ziarno/prezentowo-rn/issues/9)). |
@@ -290,6 +288,8 @@ Both event publications omit `participants.invitedUserId`: a reserved placeholde
 | `activity.recentForUser()` | signed in | The same filter helper, capped at **3 per event** across the caller's events (`3a`). |
 | `notifications.mine()` | signed in | The caller's `NotificationDoc`s, newest first, capped at 50. |
 | `chatThreads.byEvent(eventId)` | members | Live threads the viewer belongs to. The viewer's own secret thread is never published. |
+
+Both event publications omit `participants.invitedUserId`: a reserved placeholder looks like any other placeholder to members.
 
 **Invariant the rules lean on:** a gift's `forParticipantId` and `createdBy` are write-once. Any future method that reassigns either must also fire `added`/`removed` in `gifts.byEvent` and re-derive activity visibility.
 
@@ -403,7 +403,7 @@ src/app/
 | `4a`–`4e` create | `users.search` (`4d`) | `events.create`, `POST /api/images` | `4e` appears only for many-to-one. `4d` is one field ([#68](https://github.com/ziarno/prezentowo-rn/issues/68)): from 3 characters, debounced 300 ms, matching users list under it, and the last row is always "Add ‘X’ by name" (a placeholder). Tapping a user adds them as `invited`, captioned "Will be invited". No matches: "No one on Prezentowo matches" above the add-by-name row. A user already in the list shows a check and isn't tappable. Offline (`useOffline()`): "Search needs a connection" in place of the results; add-by-name still works. Rate-limited: "Try again in a moment". `4c` and `5b` share one picker grid: "Upload photo" first, then the stock tiles (§1.1), with a ring on the selected tile. No pick in `4c`, or Skip in `5b`, leaves the field empty. `6a` reuses the grid and adds "Remove". |
 | `6a` edit | `invites.forEvent` | `events.update`, `events.removeParticipant`, `events.delete` (confirm dialog), `invites.rotate` | Type and beneficiary rows are disabled once gifts exist. |
 | `5a`–`5d` add | — | `gifts.importLink`, `POST /api/images`, `gifts.add` | See the link-import outcomes below. |
-| `7a` invite | `invites.byCode` | `events.join`, `invites.ignore` | Renders signed out. The placeholder list ends with "no, I'm new". A `reservedForYou` placeholder replaces the list: "{inviter} added you as {name}", with Join and Ignore. Offline: a blocking error. |
+| `7a` invite | `invites.byCode` | `events.join`, `invites.ignore` | Renders signed out. The placeholder list ends with "no, I'm new". A `reservedForYou` placeholder replaces the list and "no, I'm new": "{inviter} added you as {name}", with Join and Ignore, since `events.join` claims the reservation either way. Offline: a blocking error. |
 | Notifications | `notifications.mine`, `events.mine` (titles), `invites.deferred`, `users.inEvent` + `gifts.byEvent` per event its rows name | `notifications.markAllRead` on open | Layout per [#28](https://github.com/ziarno/prezentowo-rn/issues/28): flat inbox (New / Earlier this week / Older), same-event joins coalesced, unread styling from a snapshot taken at open. `invite-deferred` and `invited` → `7a` (code derived live from the event's `InviteDoc`; `invited` reads "{inviter} invited you to {event}"), `suggestion-claimed` → `1e` (deleted gift → `3f`, or `3c` if the recipient is gone), `participant-joined` → `3c`, `claimed-gift-removed` → `3f` ("{present} in {event} was removed"). |
 | `8a`/`8b` chat | `chatThreads.byEvent`, `stream.token` | Stream | Connect lazily, only when a chat screen opens. |
 | Profile | current user | `profile.name`, `profile.avatar` | Unchanged. |
@@ -481,7 +481,6 @@ Link-import outcomes on `5a`–`5d`:
 - An imported image is downloaded by the client and uploaded through the normal route, not fetched and stored by the server (§3.3).
 - An `Images` record per upload, deleted along with the files whenever the referencing gift/event drops it.
 - `1e`'s `✎ Edit` reopens the `add-gift` wizard in edit mode at `5d` (mirroring how `6a` reuses `create-event`), saving via `gifts.update`.
-- `events.create` used to accept any `userId` as a `real` participant. Since #68 makes users findable by name, that would let anyone put an event on a stranger's Home, so `real` is now the caller only and everyone else comes in as a reserved placeholder.
 - Caps: `activity.recentForUser` 3 per event (per `3a`), `notifications.mine` 50.
 - If Stream's SDK can't `queryChannels` without `connectUser`, recap boxes hide until chat has been opened once that session.
 
