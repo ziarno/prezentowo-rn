@@ -60,6 +60,24 @@ export async function recordGiftClaimed(
   })
 }
 
+/**
+ * `gift-unclaimed`, by whoever stopped buying it. Hidden from the recipient
+ * like the claim it follows.
+ */
+export async function recordGiftUnclaimed(
+  event: EventDoc,
+  gift: GiftSnapshot,
+  claimerId: string,
+) {
+  await insert({
+    ...aboutGift(gift),
+    eventId: event._id,
+    kind: 'gift-unclaimed',
+    actorParticipantId: actorOf(event, claimerId),
+    hiddenFromParticipantId: gift.forParticipantId,
+  })
+}
+
 // `participant-joined`, by the participant who joined. Visible to everyone.
 export async function recordParticipantJoined(
   eventId: string,

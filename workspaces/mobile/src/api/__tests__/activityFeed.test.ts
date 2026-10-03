@@ -94,6 +94,24 @@ describe('activityLine', function () {
     })
   })
 
+  it('reports someone no longer buying a present', function () {
+    const unclaimed = item({
+      kind: 'gift-unclaimed',
+      actorParticipantId: 'pOla',
+      recipientParticipantId: 'pDziadek',
+      giftId: 'g1',
+      giftTitle: 'Slippers',
+    })
+
+    expect(activityLine(event, unclaimed, 'bartek')).toEqual({
+      kind: 'unclaimed',
+      actorId: 'pOla',
+      recipientId: 'pDziadek',
+      giftId: 'g1',
+      giftTitle: 'Slippers',
+    })
+  })
+
   // The publication never sends these; a stale local copy must not leak one.
   it('hides a suggestion and any claim from the recipient', function () {
     const suggested = item({

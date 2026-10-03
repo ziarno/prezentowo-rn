@@ -152,7 +152,7 @@ describe('activity writes', function () {
       assert.strictEqual(claims.length, 1)
     })
 
-    it('writes nothing for an unclaim', async function () {
+    it('writes gift-unclaimed, hidden from the recipient', async function () {
       const { users, participants, eventId } = family
       const giftId = await addGiftAs(
         users.bartek,
@@ -164,7 +164,35 @@ describe('activity writes', function () {
 
       await callAsUser(users.celina, 'gifts.unclaim', { giftId })
 
-      assert.strictEqual((await activityOf(eventId)).length, 2)
+      const item = (await activityOf(eventId)).at(-1)
+      assert.deepStrictEqual(
+        { ...item, _id: undefined, createdAt: undefined },
+        {
+          _id: undefined,
+          createdAt: undefined,
+          eventId,
+          kind: 'gift-unclaimed',
+          actorParticipantId: participants.celina,
+          giftId,
+          giftTitle: 'Book',
+          recipientParticipantId: participants.bartek,
+          hiddenFromParticipantId: participants.bartek,
+        },
+      )
+    })
+
+    it('writes nothing for an unclaim by someone not buying it', async function () {
+      const { users, participants, eventId } = family
+      const giftId = await addGiftAs(
+        users.bartek,
+        eventId,
+        participants.bartek,
+        'Book',
+      )
+
+      await callAsUser(users.celina, 'gifts.unclaim', { giftId })
+
+      assert.strictEqual((await activityOf(eventId)).length, 1)
     })
   })
 

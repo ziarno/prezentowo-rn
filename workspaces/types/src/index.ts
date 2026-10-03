@@ -247,7 +247,11 @@ export type UpdateGiftArgs = {
 export type ActivityDoc = {
   _id: string
   eventId: string
-  kind: 'gift-added' | 'gift-claimed' | 'participant-joined'
+  kind:
+    | 'gift-added'
+    | 'gift-claimed'
+    | 'gift-unclaimed'
+    | 'participant-joined'
   // EventParticipant.id of who did it.
   actorParticipantId: string
   createdAt: Date

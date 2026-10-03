@@ -164,7 +164,7 @@ export type LinkImportOutcome =
 export type ActivityDoc = {
   _id: string
   eventId: string
-  kind: 'gift-added' | 'gift-claimed' | 'participant-joined'
+  kind: 'gift-added' | 'gift-claimed' | 'gift-unclaimed' | 'participant-joined'
   actorParticipantId: string
   createdAt: Date
   giftId?: string                 // gift-* only
@@ -238,7 +238,7 @@ All methods are `async`, check `this.userId`, and validate arguments. "Member" m
 | `gifts.add(AddGiftArgs)` | member | Inserts the gift. If `clientId` matches an existing (`createdBy`, `clientId`), returns that gift's id (replay-safe). | Activity `gift-added`; `hiddenFromParticipantId` = the recipient only when the gift is suggested. |
 | `gifts.update(UpdateGiftArgs)` | **gift creator** | Never touches `forParticipantId` or `createdBy`. | — |
 | `gifts.remove({ giftId })` | **gift creator or event creator** ([#30](https://github.com/ziarno/prezentowo-rn/issues/30)) | Hard delete, whether or not it has claims. Rejects the event creator on a gift hidden from them by the own-list visibility rule, with the same `notFound` as a missing gift, so the method never confirms a hidden gift exists. | Activity: deletes every doc for the gift. Notification `claimed-gift-removed` to each claimer except the caller, snapshotting `giftTitle` and `recipientParticipantId`; the deleter is not named. Image cleanup per §3.1. `events.removeParticipant`'s gift deletions send no notification. |
-| `gifts.claim({ giftId })` / `gifts.unclaim` | member, not the recipient | `$addToSet` / `$pull`. | Claim: Activity `gift-claimed` with `hiddenFromParticipantId` = the recipient, always. If the gift is suggested and the claimer ≠ the suggester, a Notification `suggestion-claimed` goes to the suggester, snapshotting `giftTitle` and `recipientParticipantId`. |
+| `gifts.claim({ giftId })` / `gifts.unclaim` | member, not the recipient | `$addToSet` / `$pull`. | Claim: Activity `gift-claimed` with `hiddenFromParticipantId` = the recipient, always. If the gift is suggested and the claimer ≠ the suggester, a Notification `suggestion-claimed` goes to the suggester, snapshotting `giftTitle` and `recipientParticipantId`. Unclaim (only one that lands): Activity `gift-unclaimed`, hidden from the recipient the same way. |
 | `gifts.importLink({ url })` | signed in | §3.2. Returns a `LinkImportOutcome`. Never throws for shop-side failures. | — |
 | `notifications.markAllRead()` | signed in | Marks every unread notification belonging to the caller as read. | — |
 | `stream.token()` | signed in | `createToken(userId, now+1h, iat=now)`. | — |

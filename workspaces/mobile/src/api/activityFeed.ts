@@ -11,12 +11,18 @@ export type ActivityLine =
   | { kind: 'joined'; actorId: string }
   | ({ kind: 'self-added'; actorId: string } & GiftFields)
   | ({
-      kind: 'suggested' | 'claimed'
+      kind: 'suggested' | 'claimed' | 'unclaimed'
       actorId: string
       // Left out where it goes without saying: a many-to-one event's
       // beneficiary (`3c` vs `3c2`).
       recipientId?: string
     } & GiftFields)
+
+const LINE_KIND = {
+  'gift-added': 'suggested',
+  'gift-claimed': 'claimed',
+  'gift-unclaimed': 'unclaimed',
+} as const
 
 const participantIdOf = (event: EventDoc, userId: string | undefined) =>
   userId
@@ -46,7 +52,7 @@ export function activityLine(
   const viewerParticipantId = participantIdOf(event, viewerUserId)
   if (viewerParticipantId && recipient === viewerParticipantId) return null
 
-  const kind = item.kind === 'gift-added' ? 'suggested' : 'claimed'
+  const kind = LINE_KIND[item.kind]
   const isBeneficiary =
     event.type === 'many-to-one' && recipient === event.beneficiaryParticipantId
   return {

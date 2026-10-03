@@ -7,6 +7,7 @@ const KEY_BASE: Record<ActivityLine['kind'], string> = {
   'self-added': 'selfAdded',
   suggested: 'suggested',
   claimed: 'claimed',
+  unclaimed: 'unclaimed',
 }
 
 /**

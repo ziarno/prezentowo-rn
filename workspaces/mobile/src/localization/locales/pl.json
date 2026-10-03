@@ -426,7 +426,11 @@
       "claimed": "<0>{{actor}}</0> kupuje prezent",
       "claimedYou": "Kupujesz prezent",
       "claimedFor": "<0>{{actor}}</0> kupuje prezent dla: <0>{{recipient}}</0>",
-      "claimedForYou": "Kupujesz prezent dla: <0>{{recipient}}</0>"
+      "claimedForYou": "Kupujesz prezent dla: <0>{{recipient}}</0>",
+      "unclaimed": "<0>{{actor}}</0> jednak nie kupi prezentu",
+      "unclaimedYou": "Jednak nie kupisz prezentu",
+      "unclaimedFor": "<0>{{actor}}</0> jednak nie kupi prezentu dla: <0>{{recipient}}</0>",
+      "unclaimedForYou": "Jednak nie kupisz prezentu dla: <0>{{recipient}}</0>"
     },
     "home": {
       "joined": "{{actor}} dołącza do wydarzenia",
@@ -440,7 +444,11 @@
       "claimed": "{{actor}} kupuje <1>{{gift}}</1>",
       "claimedYou": "Kupujesz <1>{{gift}}</1>",
       "claimedFor": "{{actor}} kupuje <1>{{gift}}</1> dla: {{recipient}}",
-      "claimedForYou": "Kupujesz <1>{{gift}}</1> dla: {{recipient}}"
+      "claimedForYou": "Kupujesz <1>{{gift}}</1> dla: {{recipient}}",
+      "unclaimed": "{{actor}} jednak nie kupi <1>{{gift}}</1>",
+      "unclaimedYou": "Jednak nie kupisz <1>{{gift}}</1>",
+      "unclaimedFor": "{{actor}} jednak nie kupi <1>{{gift}}</1> dla: {{recipient}}",
+      "unclaimedForYou": "Jednak nie kupisz <1>{{gift}}</1> dla: {{recipient}}"
     },
     "ago": {
       "now": "przed chwilą",

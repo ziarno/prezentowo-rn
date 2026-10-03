@@ -11,6 +11,7 @@ import { Activity } from '../activity/activity.collection'
 import {
   recordGiftAdded,
   recordGiftClaimed,
+  recordGiftUnclaimed,
 } from '../activity/activity.records'
 import { Events } from '../events/events.collection'
 import { imageRefPattern } from '../images/images.patterns'
@@ -238,7 +239,12 @@ const setClaim = async function (
   }
 
   if (!claimed) {
-    await Gifts.updateAsync(options.giftId, { $pull: { claimedBy: userId } })
+    // Likewise, only an unclaim that lands is reported.
+    const unclaimed = await Gifts.updateAsync(
+      { _id: options.giftId, claimedBy: userId },
+      { $pull: { claimedBy: userId } },
+    )
+    if (unclaimed) await recordGiftUnclaimed(event, gift, userId)
     return
   }
   // Only a claim that lands is reported: claiming twice writes one item.

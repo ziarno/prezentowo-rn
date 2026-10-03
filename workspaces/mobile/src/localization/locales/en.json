@@ -404,7 +404,11 @@
       "claimed": "<0>{{actor}}</0> is buying a present",
       "claimedYou": "You're buying a present",
       "claimedFor": "<0>{{actor}}</0> is buying a present for <0>{{recipient}}</0>",
-      "claimedForYou": "You're buying a present for <0>{{recipient}}</0>"
+      "claimedForYou": "You're buying a present for <0>{{recipient}}</0>",
+      "unclaimed": "<0>{{actor}}</0> isn't buying a present anymore",
+      "unclaimedYou": "You're not buying a present anymore",
+      "unclaimedFor": "<0>{{actor}}</0> isn't buying a present for <0>{{recipient}}</0> anymore",
+      "unclaimedForYou": "You're not buying a present for <0>{{recipient}}</0> anymore"
     },
     "home": {
       "joined": "{{actor}} joined the event",
@@ -418,7 +422,11 @@
       "claimed": "{{actor}} is buying <1>{{gift}}</1>",
       "claimedYou": "You're buying <1>{{gift}}</1>",
       "claimedFor": "{{actor}} is buying <1>{{gift}}</1> for {{recipient}}",
-      "claimedForYou": "You're buying <1>{{gift}}</1> for {{recipient}}"
+      "claimedForYou": "You're buying <1>{{gift}}</1> for {{recipient}}",
+      "unclaimed": "{{actor}} isn't buying <1>{{gift}}</1> anymore",
+      "unclaimedYou": "You're not buying <1>{{gift}}</1> anymore",
+      "unclaimedFor": "{{actor}} isn't buying <1>{{gift}}</1> for {{recipient}} anymore",
+      "unclaimedForYou": "You're not buying <1>{{gift}}</1> for {{recipient}} anymore"
     },
     "ago": {
       "now": "just now",
