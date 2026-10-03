@@ -47,7 +47,7 @@ Four steps, progress bar, `Back` / `Next` at the bottom. Many-to-one events get
 | `4a` | Step 1 — name & date. "The date drives the countdown on Home." |
 | `4b` | Step 2 — event type: *Everyone gets presents* (Christmas, Secret Santa) vs *One person gets presents* (birthday, baby shower) |
 | `4c` | Step 3 — background: upload a photo, or pick one of ours. Sits behind the event header (`3c`) |
-| `4d` | Step 4 — participants: search Prezentowo **or type a name**. Existing users and **placeholder people "added by name"**. "Anyone can also join later with an invite link — no approval needed." |
+| `4d` | Step 4 — participants: search Prezentowo **or type a name**. Existing users and **placeholder people "added by name"**. "Anyone can also join later with an invite link — no approval needed." A user found by search is *invited* (a reserved placeholder) and joins only once they accept ([#68](https://github.com/ziarno/prezentowo-rn/issues/68)) |
 | `4e` | Extra step, many-to-one only — who is the event for? Pick from the participants added |
 
 ## 3. Editing an event (`t6`)
