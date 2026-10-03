@@ -11,6 +11,7 @@ import { useImagesSandbox } from '../../../tests/images'
 import { Events } from '../events/events.collection'
 import { Invites, createInviteIndexes } from '../invites/invites.collection'
 import { Activity } from './activity.collection'
+import { recordParticipantJoined } from './activity.records'
 
 const activityOf = (eventId: string) =>
   Activity.find({ eventId }, { sort: { createdAt: 1 } }).fetchAsync()
@@ -229,6 +230,20 @@ describe('activity writes', function () {
       assert.strictEqual(item?.kind, 'participant-joined')
       assert.strictEqual(item?.actorParticipantId, family.participants.dziadek)
     })
+  })
+
+  it('stamps items written in the same millisecond in the order written', async function () {
+    const { eventId } = family
+    await Promise.all(
+      ['a', 'b', 'c'].map(id => recordParticipantJoined(eventId, id)),
+    )
+
+    const items = await activityOf(eventId)
+    assert.deepStrictEqual(
+      items.map(a => a.actorParticipantId),
+      ['a', 'b', 'c'],
+    )
+    assert.strictEqual(new Set(items.map(a => a.createdAt.getTime())).size, 3)
   })
 })
 

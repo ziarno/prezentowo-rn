@@ -16,8 +16,17 @@ const actorOf = (event: EventDoc, userId: string) => {
   return actor
 }
 
+// Feeds sort on `createdAt` alone, here and on the client, and `_id` is random,
+// so two items stamped in the same millisecond (a claim and its undo) would
+// come back in either order. Stamps are kept strictly increasing instead.
+let lastStamp = 0
+const nextCreatedAt = () => {
+  lastStamp = Math.max(Date.now(), lastStamp + 1)
+  return new Date(lastStamp)
+}
+
 const insert = (item: Omit<ActivityDoc, '_id' | 'createdAt'>) =>
-  Activity.insertAsync({ ...item, createdAt: new Date() } as ActivityDoc)
+  Activity.insertAsync({ ...item, createdAt: nextCreatedAt() } as ActivityDoc)
 
 const aboutGift = (gift: GiftSnapshot) => ({
   giftId: gift._id,
