@@ -1,8 +1,13 @@
 import assert from 'assert'
 
 import { addGiftAs, createFamilyEvent } from '../../../tests/fixtures'
-import { callAsUser, resetDatabase } from '../../../tests/helpers'
-import { isStored, uploadAs, useImagesSandbox } from '../../../tests/images'
+import { callAsUser, resetDatabase, whileFailing } from '../../../tests/helpers'
+import {
+  isAttached,
+  isStored,
+  uploadAs,
+  useImagesSandbox,
+} from '../../../tests/images'
 import { Gifts, createGiftIndexes } from './gifts.collection'
 import './gifts.methods'
 
@@ -401,6 +406,84 @@ describe('gifts methods', function () {
         { error: 'notFound', reason: 'imageNotFound' },
       )
       assert.strictEqual('image' in (await Gifts.findOneAsync(gift))!, false)
+    })
+
+    it('attaches the upload on add and on update', async function () {
+      const added = await uploadAs(family.users.celina)
+      const updated = await uploadAs(family.users.celina)
+      const gift = await addGiftAs(
+        family.users.celina,
+        family.eventId,
+        family.participants.bartek,
+        'Scarf',
+      )
+      assert.strictEqual(await isAttached(added.id), false)
+
+      await giftWith(added)
+      await callAsUser(family.users.celina, 'gifts.update', {
+        giftId: gift,
+        image: updated,
+      })
+
+      assert.ok(await isAttached(added.id))
+      assert.ok(await isAttached(updated.id))
+    })
+
+    it("rejects an upload already on a gift, the caller's own included", async function () {
+      const { users, eventId } = family
+      const image = await uploadAs(users.celina)
+      const first = await giftWith(image)
+      const second = await addGiftAs(
+        users.celina,
+        family.eventId,
+        family.participants.bartek,
+        'Hat',
+      )
+
+      await assert.rejects(giftWith(image), {
+        error: 'invalidArgs',
+        reason: 'imageInUse',
+      })
+      await assert.rejects(
+        callAsUser(users.celina, 'gifts.update', { giftId: second, image }),
+        { error: 'invalidArgs', reason: 'imageInUse' },
+      )
+
+      assert.strictEqual(await Gifts.find({ eventId }).countAsync(), 2)
+      assert.strictEqual('image' in (await Gifts.findOneAsync(second))!, false)
+      // Deleting the first gift is still the only thing that deletes it.
+      await callAsUser(users.celina, 'gifts.remove', { giftId: first })
+      assert.strictEqual(await isStored(image.id), false)
+    })
+
+    it('leaves the upload unattached when the write fails', async function () {
+      const { users } = family
+      const added = await uploadAs(users.celina)
+      const updated = await uploadAs(users.celina)
+      const gift = await addGiftAs(
+        users.celina,
+        family.eventId,
+        family.participants.bartek,
+        'Hat',
+      )
+
+      await whileFailing(Gifts, 'insertAsync', () =>
+        assert.rejects(giftWith(added)),
+      )
+      await whileFailing(Gifts, 'updateAsync', () =>
+        assert.rejects(
+          callAsUser(users.celina, 'gifts.update', {
+            giftId: gift,
+            image: updated,
+          }),
+        ),
+      )
+
+      assert.strictEqual(await isAttached(added.id), false)
+      assert.strictEqual(await isAttached(updated.id), false)
+      // So a later save can still take it.
+      await giftWith(added)
+      assert.ok(await isAttached(added.id))
     })
 
     it('deletes the replaced upload when the image changes', async function () {

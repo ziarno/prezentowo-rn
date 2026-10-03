@@ -9,9 +9,13 @@ import sharp from 'sharp'
 
 import { createUser } from '../../../tests/fixtures'
 import { createLoginToken, resetDatabase } from '../../../tests/helpers'
+import { isStored, uploadAs } from '../../../tests/images'
+import { Events } from '../events/events.collection'
+import { Gifts } from '../gifts/gifts.collection'
 import { Images } from './images.collection'
 import './images.routes'
 import { MAX_UPLOAD_BYTES, deleteImage, imagesDir } from './images.storage'
+import { sweepUnattachedUploads } from './images.sweep'
 
 const uploadUrl = Meteor.absoluteUrl('api/images')
 
@@ -279,6 +283,57 @@ describe('images', function () {
 
       assert.ok(existsSync(sentinel()))
       assert.deepStrictEqual(await storedIds(), [id])
+    })
+  })
+
+  describe('sweepUnattachedUploads', function () {
+    const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3600_000)
+
+    const uploadedAt = async (createdAt: Date, attached: boolean) => {
+      const { id } = await uploadAs(userId)
+      await Images.updateAsync(id, {
+        $set: { createdAt, ...(attached ? { attachedAt: createdAt } : {}) },
+      })
+      return id
+    }
+
+    it('deletes unattached uploads older than 24 hours, files and record', async function () {
+      const stale = await uploadedAt(hoursAgo(25), false)
+
+      await sweepUnattachedUploads()
+
+      assert.strictEqual(await isStored(stale), false)
+    })
+
+    it('keeps attached uploads, however old, and fresh unattached ones', async function () {
+      const attached = await uploadedAt(hoursAgo(24 * 30), true)
+      const fresh = await uploadedAt(hoursAgo(23), false)
+
+      await sweepUnattachedUploads()
+
+      assert.ok(await isStored(attached))
+      assert.ok(await isStored(fresh))
+    })
+
+    it('attaches, instead of deleting, an old upload a gift or event points at', async function () {
+      // Uploads stored before attaching existed have no attachedAt.
+      const onGift = await uploadedAt(hoursAgo(24 * 30), false)
+      const onEvent = await uploadedAt(hoursAgo(24 * 30), false)
+      await Gifts.rawCollection().insertOne({
+        _id: 'gift',
+        image: { kind: 'upload', id: onGift },
+      } as never)
+      await Events.rawCollection().insertOne({
+        _id: 'event',
+        background: { kind: 'upload', id: onEvent },
+      } as never)
+
+      await sweepUnattachedUploads()
+
+      for (const id of [onGift, onEvent]) {
+        assert.ok(await isStored(id))
+        assert.ok((await Images.findOneAsync(id))?.attachedAt)
+      }
     })
   })
 })

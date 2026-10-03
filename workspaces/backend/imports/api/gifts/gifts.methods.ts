@@ -16,9 +16,9 @@ import {
 import { Events } from '../events/events.collection'
 import { imageRefPattern } from '../images/images.patterns'
 import {
-  assertOwnUpload,
   assertStockArt,
   releaseImage,
+  withUploadAttached,
 } from '../images/images.refs'
 import {
   recordClaimedGiftRemoved,
@@ -63,6 +63,9 @@ const loadGift = async function (userId: string, giftId: string) {
 
 const isDuplicateKeyError = (error: unknown) =>
   (error as { code?: unknown } | null)?.code === 11000
+
+const isImageInUse = (error: unknown) =>
+  (error as { reason?: unknown } | null)?.reason === 'imageInUse'
 
 const insertGift = (userId: string, options: AddGiftArgs, title: string) =>
   Gifts.insertAsync({
@@ -125,17 +128,21 @@ const addGift = async function (
   const replayed = await findReplayed()
   if (replayed) return { _id: replayed._id }
 
-  // After the replay check: a replayed add's upload may since have been
-  // replaced or cleared, and the replay must still answer with its gift.
-  await assertOwnUpload(options.image, userId)
-
   let _id: string
   try {
-    _id = await insertGift(userId, options, title)
+    // After the replay check: a replayed add's upload is attached already, or
+    // has since been replaced or cleared, and the replay must still answer
+    // with its gift.
+    _id = await withUploadAttached({ image: options.image, userId }, () =>
+      insertGift(userId, options, title),
+    )
   } catch (error) {
     // A concurrent replay won the race to the unique (createdBy, clientId)
-    // index — return the gift it inserted.
-    const winner = isDuplicateKeyError(error) && (await findReplayed())
+    // index, or to attaching the same upload — return the gift it inserted.
+    // One that attached but hasn't inserted yet still leaves us imageInUse.
+    const winner =
+      (isDuplicateKeyError(error) || isImageInUse(error)) &&
+      (await findReplayed())
     if (winner) return { _id: winner._id }
     throw error
   }
@@ -172,7 +179,6 @@ const updateGift = async function (
     throw new Meteor.Error('notAuthorized', 'notTheGiftCreator')
   }
   assertStockArt(options.image, PRESENT_ILLUSTRATION_IDS)
-  await assertOwnUpload(options.image, this.userId)
 
   const updates: Record<string, unknown> = {}
   if (options.title !== undefined) {
@@ -190,7 +196,10 @@ const updateGift = async function (
     ...(options.image === null ? { $unset: { image: '' } } : {}),
   }
   if (Object.keys(modifier).length > 0) {
-    await Gifts.updateAsync(options.giftId, modifier)
+    await withUploadAttached(
+      { image: options.image, userId: this.userId, current: gift.image },
+      () => Gifts.updateAsync(options.giftId, modifier),
+    )
   }
   if (options.image !== undefined) {
     await releaseImage(gift.image, options.image)

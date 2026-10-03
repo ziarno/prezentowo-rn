@@ -4,22 +4,53 @@ import { Meteor } from 'meteor/meteor'
 import { Images } from './images.collection'
 import { deleteImage } from './images.storage'
 
+type AttachOptions = {
+  /** The image the write stores. Only an upload is attached. */
+  image: ImageRef | null | undefined
+  userId: string
+  /** The image the document holds now: sending it again attaches nothing. */
+  current?: ImageRef
+}
+
 /**
- * Asserts an upload `image` is one `userId` uploaded. Deleting an image
- * deletes its upload (docs/spec.md §3.1), so a document must never point at
- * someone else's: its id is visible to every member who can see it. A
- * missing upload and someone else's are the same `notFound`.
+ * Runs `write`, the insert or update that stores `image` on a document, with
+ * the upload attached to it (docs/spec.md §3.1). An upload is attached once,
+ * to one document, by its uploader: deleting a document deletes its upload,
+ * so a document must never point at someone else's (its id is visible to
+ * every member) or at one another document holds. A missing upload and
+ * someone else's are the same `notFound`; one already attached is
+ * `imageInUse`. If `write` throws, the upload is detached again, so the
+ * sweep can still collect it.
  */
-export async function assertOwnUpload(
-  image: ImageRef | null | undefined,
-  userId: string,
-): Promise<void> {
-  if (image?.kind !== 'upload') return
-  const record = await Images.findOneAsync(
-    { _id: image.id, ownerId: userId },
-    { fields: { _id: 1 } },
+export async function withUploadAttached<T>(
+  { image, userId, current }: AttachOptions,
+  write: () => Promise<T>,
+): Promise<T> {
+  if (image?.kind !== 'upload') return write()
+  if (current?.kind === 'upload' && current.id === image.id) return write()
+
+  const attached = await Images.updateAsync(
+    { _id: image.id, ownerId: userId, attachedAt: { $exists: false } },
+    { $set: { attachedAt: new Date() } },
   )
-  if (!record) throw new Meteor.Error('notFound', 'imageNotFound')
+  if (!attached) {
+    const own = await Images.findOneAsync(
+      { _id: image.id, ownerId: userId },
+      { fields: { _id: 1 } },
+    )
+    throw own
+      ? new Meteor.Error('invalidArgs', 'imageInUse')
+      : new Meteor.Error('notFound', 'imageNotFound')
+  }
+
+  try {
+    return await write()
+  } catch (error) {
+    await Images.updateAsync(image.id, { $unset: { attachedAt: '' } }).catch(
+      detachError => console.error('Detaching an upload failed', detachError),
+    )
+    throw error
+  }
 }
 
 /**

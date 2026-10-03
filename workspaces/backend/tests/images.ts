@@ -51,3 +51,8 @@ export async function isStored(id: string) {
   }
   return onDisk
 }
+
+/** Whether a document has taken upload `id` (docs/spec.md §3.1). */
+export async function isAttached(id: string) {
+  return !!(await Images.findOneAsync(id))?.attachedAt
+}

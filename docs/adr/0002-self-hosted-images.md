@@ -2,7 +2,7 @@
 
 Photos (event backgrounds, present photos) are plain files on a dedicated filesystem on the home server. An authenticated Meteor Express route (`accounts-express`) receives each upload and writes three fixed WebP derivatives with `sharp` (400 / 1000 / 1600 px). Caddy serves them statically under unguessable ids, and restic backs the volume up off-site. `ImageRef` has no `provider` field.
 
-An authenticated upload over the session the app already holds is what makes a presigned-URL object store pointless. It is also what makes orphaned uploads structurally impossible instead of something a sweep job has to clean up.
+An authenticated upload over the session the app already holds is what makes a presigned-URL object store pointless.
 
 ## Considered Options
 
@@ -16,3 +16,4 @@ An authenticated upload over the session the app already holds is what makes a p
 - Image URLs are bearer capabilities: anyone holding one can load it. That is accepted.
 - Clients must downscale before upload. The household uplink also carries DDP.
 - Images must not share a volume with Mongo, whose disk-full behaviour is undocumented.
+- Uploading and saving are two steps, so an upload can land and never be saved onto a document: the save fails and the user gives up, or discards a rejected queued add. Each `Images` record notes when a document takes it (`attachedAt`), and a daily sweep deletes uploads nothing took within 24 h ([#70](https://github.com/ziarno/prezentowo-rn/issues/70)).

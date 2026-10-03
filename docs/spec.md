@@ -247,7 +247,7 @@ All methods are `async`, check `this.userId`, and validate arguments. "Member" m
 | `Activity` | `ActivityDoc` | new | `eventId + createdAt` |
 | `Notifications` | `NotificationDoc` | new | `userId + createdAt`; `userId + eventId + kind` unique partial on `invite-deferred` and `invited` |
 | `ChatThreads` | `ChatThreadDoc` | new | `eventId` |
-| `Images` | `{ _id, ownerId, createdAt }` | new | — (records who uploaded; used for cleanup) |
+| `Images` | `{ _id, ownerId, createdAt, attachedAt? }` | new | — (records who uploaded, and when a document took the upload; used for cleanup) |
 | `Meteor.users` | + `nameTokens: string[]` | changed | `nameTokens` (multikey). Server-only: `profile.name` folded (lower case, diacritics stripped, `ł`→`l`) and split on whitespace and hyphens; rewritten by every write of `profile.name` (registration, `profile.name`, Dev login). Never published ([#68](https://github.com/ziarno/prezentowo-rn/issues/68)). |
 
 ### 2.2 Methods
@@ -311,7 +311,9 @@ Both event publications omit `participants.invitedUserId`: a reserved placeholde
 - `POST /api/images`: an `accounts-express`-authenticated Express route on `WebApp.handlers`, single-file multipart. The client downscales before upload to at most 1600 px on the long edge (JPEG q≈0.7, `expo-image-manipulator`). The server generates **three WebP derivatives with `sharp`**: `400` (present tile), `1000` (present detail, `5d`), and `1600` (event cover). They are written to `IMAGES_DIR/<id>/<size>.webp`, where `<id>` is `Random.secret()` and acts as a bearer capability. The route inserts an `Images` record and returns `{ id }`. The original upload is not kept.
 - Serving: `GET /images/<id>/<size>.webp` as static files. **Caddy** serves them in production, and a Meteor static handler does so in development only. URLs are unguessable, not authenticated.
 - `IMAGES_DIR` comes from `settings.json` and must be a dedicated filesystem, not the Mongo volume (disk-full behaviour is undocumented). It is backed up off-site by **restic** (infra slice).
+- Attach ([#70](https://github.com/ziarno/prezentowo-rn/issues/70)): `gifts.add`, `events.create`, and `gifts.update` / `events.update` with a new image, set `attachedAt` on the upload in one conditional update on `{ _id, ownerId: caller, attachedAt: { $exists: false } }`. A missing upload or someone else's is `notFound` / `imageNotFound`; one already attached, even to the caller's own document, is `invalidArgs` / `imageInUse`, so one upload is never on two documents. Re-sending a document's current upload attaches nothing. `gifts.add` attaches after its `clientId` replay lookup, so a replay still answers with its gift. If the write after attaching throws, `attachedAt` is unset again.
 - Cleanup: `events.delete`, `gifts.remove`, `gifts.update` with a new or cleared image, and `events.update` with a new or cleared background delete the replaced upload's directory and its `Images` record.
+- Sweep: a server job, at startup and then daily, deletes every upload with no `attachedAt` whose `createdAt` is over 24 h old, directory and record. One a gift or event still points at (stored before `attachedAt` existed) is marked attached instead. That collects uploads whose save failed and was given up, e.g. a discarded queued add (§6.3). Clients upload at save time, seconds before the write, so 24 h is a wide margin.
 
 ### 3.2 Link import — [#7](https://github.com/ziarno/prezentowo-rn/issues/7), [#16](https://github.com/ziarno/prezentowo-rn/issues/16), [#17](https://github.com/ziarno/prezentowo-rn/issues/17)
 
@@ -479,7 +481,7 @@ Link-import outcomes on `5a`–`5d`:
 - `events.join` takes `code`, not `eventId`, since #3 retired `eventId` as a join capability.
 - `gifts.add` takes an optional `clientId` so an offline replay after a lost acknowledgement can't duplicate the present.
 - An imported image is downloaded by the client and uploaded through the normal route, not fetched and stored by the server (§3.3).
-- An `Images` record per upload, deleted along with the files whenever the referencing gift/event drops it.
+- An `Images` record per upload, deleted along with the files whenever the referencing gift/event drops it, or by the daily sweep when no gift/event ever took it (§3.1).
 - `1e`'s `✎ Edit` reopens the `add-gift` wizard in edit mode at `5d` (mirroring how `6a` reuses `create-event`), saving via `gifts.update`.
 - Caps: `activity.recentForUser` 3 per event (per `3a`), `notifications.mine` 50.
 - If Stream's SDK can't `queryChannels` without `connectUser`, recap boxes hide until chat has been opened once that session.

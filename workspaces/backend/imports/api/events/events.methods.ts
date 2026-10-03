@@ -19,9 +19,9 @@ import { recordParticipantJoined } from '../activity/activity.records'
 import { Gifts } from '../gifts/gifts.collection'
 import { imageRefPattern } from '../images/images.patterns'
 import {
-  assertOwnUpload,
   assertStockArt,
   releaseImage,
+  withUploadAttached,
 } from '../images/images.refs'
 import { insertInvite } from '../invites/invites.codes'
 import { eventForCode } from '../invites/invites.lookup'
@@ -123,7 +123,6 @@ const createEvent = async function (
     throw new Meteor.Error('invalidArgs', 'invalidDate')
   }
   assertStockArt(options.background, BACKGROUND_ILLUSTRATION_IDS)
-  await assertOwnUpload(options.background, userId)
 
   const host: EventParticipant = { id: Random.id(), kind: 'real', userId }
 
@@ -149,23 +148,29 @@ const createEvent = async function (
     minted.map(p => p.id),
   )
 
-  const _id = await Events.insertAsync({
-    title,
-    date,
-    ...(options.background ? { background: options.background } : {}),
-    ownerId: userId,
-    participants: [host, ...minted.filter(p => p !== host)],
-    createdAt: new Date(),
-    ...kind,
-  } as Parameters<typeof Events.insertAsync>[0])
+  const _id = await withUploadAttached(
+    { image: options.background, userId },
+    async () => {
+      const eventId = await Events.insertAsync({
+        title,
+        date,
+        ...(options.background ? { background: options.background } : {}),
+        ownerId: userId,
+        participants: [host, ...minted.filter(p => p !== host)],
+        createdAt: new Date(),
+        ...kind,
+      } as Parameters<typeof Events.insertAsync>[0])
 
-  // An event is never left without its invite.
-  try {
-    await insertInvite(_id, userId)
-  } catch (error) {
-    await Events.removeAsync(_id)
-    throw error
-  }
+      // An event is never left without its invite.
+      try {
+        await insertInvite(eventId, userId)
+      } catch (error) {
+        await Events.removeAsync(eventId)
+        throw error
+      }
+      return eventId
+    },
+  )
 
   return { _id }
 }
@@ -225,7 +230,6 @@ const updateEvent = async function (
     $set.date = date
   }
   assertStockArt(options.background, BACKGROUND_ILLUSTRATION_IDS)
-  await assertOwnUpload(options.background, userId)
   if (options.background) $set.background = options.background
   if (options.background === null) $unset.background = ''
 
@@ -247,7 +251,10 @@ const updateEvent = async function (
     ...(Object.keys($unset).length > 0 ? { $unset } : {}),
   }
   if (Object.keys(modifier).length > 0) {
-    await Events.updateAsync(event._id, modifier)
+    await withUploadAttached(
+      { image: options.background, userId, current: event.background },
+      () => Events.updateAsync(event._id, modifier),
+    )
   }
   if (options.background !== undefined) {
     await releaseImage(event.background, options.background)

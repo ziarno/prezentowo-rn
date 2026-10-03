@@ -10,8 +10,14 @@ import {
   callAsUser,
   rejectsWithReason,
   resetDatabase,
+  whileFailing,
 } from '../../../tests/helpers'
-import { isStored, uploadAs, useImagesSandbox } from '../../../tests/images'
+import {
+  isAttached,
+  isStored,
+  uploadAs,
+  useImagesSandbox,
+} from '../../../tests/images'
 import { INVITE_CODE_ALPHABET } from '../invites/invites.codes'
 import { Invites, createInviteIndexes } from '../invites/invites.collection'
 import { Events } from './events.collection'
@@ -199,6 +205,34 @@ describe('events.create', function () {
         await rejectsWith({ background }, 'imageNotFound')
       }
       assert.strictEqual(await Events.find().countAsync(), 0)
+    })
+
+    it('attaches the upload', async function () {
+      const background = await uploadAs(ola)
+
+      await create({ background })
+
+      assert.ok(await isAttached(background.id))
+    })
+
+    it("rejects an upload already on an event, the caller's own included", async function () {
+      const background = await uploadAs(ola)
+      await create({ background })
+
+      await rejectsWith({ background }, 'imageInUse')
+
+      assert.strictEqual(await Events.find().countAsync(), 1)
+    })
+
+    it('leaves the upload unattached when the event is not stored', async function () {
+      const background = await uploadAs(ola)
+
+      await whileFailing(Invites, 'insertAsync', () =>
+        assert.rejects(create({ background })),
+      )
+
+      assert.strictEqual(await Events.find().countAsync(), 0)
+      assert.strictEqual(await isAttached(background.id), false)
     })
   })
 
@@ -395,6 +429,40 @@ describe('events.update', function () {
       await update({ background: upload, title: 'Wigilia 2026' })
 
       assert.strictEqual(await isStored(upload.id), true)
+    })
+
+    it('attaches a new upload', async function () {
+      const upload = await uploadAs(family.users.ola)
+
+      await update({ background: upload })
+
+      assert.ok(await isAttached(upload.id))
+    })
+
+    it("rejects an upload already on a document, the caller's own included", async function () {
+      const upload = await uploadAs(family.users.ola)
+      await addGiftAs(
+        family.users.ola,
+        family.eventId,
+        family.participants.bartek,
+        'Scarf',
+        { image: upload },
+      )
+
+      await rejectsWith({ background: upload }, 'imageInUse')
+
+      const event = (await Events.findOneAsync(family.eventId)) as EventDoc
+      assert.ok(!('background' in event))
+    })
+
+    it('leaves the upload unattached when the update fails', async function () {
+      const upload = await uploadAs(family.users.ola)
+
+      await whileFailing(Events, 'updateAsync', () =>
+        assert.rejects(update({ background: upload })),
+      )
+
+      assert.strictEqual(await isAttached(upload.id), false)
     })
   })
 

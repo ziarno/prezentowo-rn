@@ -241,3 +241,26 @@ export async function createLoginToken(userId: string) {
   )._insertLoginToken(userId, stamped)
   return stamped.token
 }
+
+/**
+ * Runs `run` while `target[method]` rejects every call, then puts the real
+ * method back. Stands in for a write that fails, e.g. a Mongo error.
+ */
+export async function whileFailing<T>(
+  target: object,
+  method: string,
+  run: () => Promise<T>,
+): Promise<T> {
+  const own = Object.getOwnPropertyDescriptor(target, method)
+  Object.defineProperty(target, method, {
+    configurable: true,
+    writable: true,
+    value: () => Promise.reject(new Error(`${method} failed`)),
+  })
+  try {
+    return await run()
+  } finally {
+    if (own) Object.defineProperty(target, method, own)
+    else delete (target as Record<string, unknown>)[method]
+  }
+}
