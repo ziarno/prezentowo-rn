@@ -7,8 +7,9 @@ import {
 } from 'expo-sqlite'
 
 import type { CacheRow, CacheStore } from './cache'
+import type { QueueRow, QueueStore } from './queue'
 
-// The offline cache on disk: SQLite built with SQLCipher (the `expo-sqlite`
+// The offline cache and write queue on disk: SQLite built with SQLCipher (the `expo-sqlite`
 // plugin's `useSQLCipher` in app.json), keyed before the first statement so
 // nothing is ever written in the clear — `PRAGMA rekey` can't retrofit
 // encryption (ADR 0004). The key is random and lives in SecureStore.
@@ -42,6 +43,11 @@ async function openKeyed(key: string): Promise<SQLiteDatabase> {
       key TEXT PRIMARY KEY NOT NULL,
       eventId TEXT,
       data TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS queue (
+      id TEXT PRIMARY KEY NOT NULL,
+      seq INTEGER NOT NULL,
+      data TEXT NOT NULL
     );`,
   )
   return db
@@ -60,10 +66,11 @@ async function open(): Promise<SQLiteDatabase> {
   }
 }
 
-export function encryptedCacheStore(): CacheStore {
-  let db: Promise<SQLiteDatabase> | null = null
-  const database = () => (db ??= open())
+// One connection, shared by the cache and the queue.
+let db: Promise<SQLiteDatabase> | null = null
+const database = () => (db ??= open())
 
+export function encryptedCacheStore(): CacheStore {
   return {
     load: async () =>
       (await database()).getAllAsync<CacheRow>(
@@ -87,6 +94,31 @@ export function encryptedCacheStore(): CacheStore {
     },
     clear: async () => {
       await (await database()).runAsync('DELETE FROM snapshots')
+    },
+  }
+}
+
+export function encryptedQueueStore(): QueueStore {
+  return {
+    load: async () =>
+      (await database()).getAllAsync<QueueRow>(
+        'SELECT id, seq, data FROM queue ORDER BY seq',
+      ),
+    put: async ({ id, seq, data }) => {
+      await (
+        await database()
+      ).runAsync(
+        'INSERT OR REPLACE INTO queue (id, seq, data) VALUES (?, ?, ?)',
+        id,
+        seq,
+        data,
+      )
+    },
+    remove: async id => {
+      await (await database()).runAsync('DELETE FROM queue WHERE id = ?', id)
+    },
+    clear: async () => {
+      await (await database()).runAsync('DELETE FROM queue')
     },
   }
 }

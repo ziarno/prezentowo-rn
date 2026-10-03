@@ -1,9 +1,10 @@
 import * as SecureStore from 'expo-secure-store'
 
 import '@/api/mirrors'
+import '@/api/queuedWrites'
 import { BACKEND_WS_URL } from '@/constants/backend'
 import { connect, useSyncStatus } from '@/sync'
-import { encryptedCacheStore } from '@/sync/encryptedStore'
+import { encryptedCacheStore, encryptedQueueStore } from '@/sync/encryptedStore'
 
 connect(BACKEND_WS_URL, {
   storage: {
@@ -12,6 +13,7 @@ connect(BACKEND_WS_URL, {
     removeItem: SecureStore.deleteItemAsync,
   },
   cache: encryptedCacheStore(),
+  queue: encryptedQueueStore(),
 })
 
 // `connected` once the session can talk to the server: the socket is up and

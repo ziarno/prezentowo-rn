@@ -221,6 +221,13 @@ describe('toAddGiftArgs', () => {
   })
 })
 
+describe('toAddGiftArgs with a photo', () => {
+  it('keeps one still on the device, for the queue to upload', () => {
+    const photo = { kind: 'local', uri: 'file:///bell.jpg' } as const
+    expect(toAddGiftArgs('e1', draft({ image: photo })).image).toEqual(photo)
+  })
+})
+
 describe('toUpdateGiftArgs', () => {
   it('sends nothing but the gift id when nothing changed', () => {
     const g = gift()

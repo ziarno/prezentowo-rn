@@ -509,6 +509,29 @@
   "offline": {
     "banner": "Offline — pokazuję zapisane dane",
     "inviteTitle": "Jesteś offline",
-    "inviteBody": "Zapraszanie wymaga połączenia z internetem. Spróbuj ponownie, gdy wrócisz do sieci."
+    "inviteBody": "Zapraszanie wymaga połączenia z internetem. Spróbuj ponownie, gdy wrócisz do sieci.",
+    "bannerWaiting_one": "Offline — pokazuję zapisane dane · {{count}} czeka na wysłanie",
+    "bannerWaiting_few": "Offline — pokazuję zapisane dane · {{count}} czekają na wysłanie",
+    "bannerWaiting_many": "Offline — pokazuję zapisane dane · {{count}} czeka na wysłanie",
+    "bannerWaiting_other": "Offline — pokazuję zapisane dane · {{count}} czeka na wysłanie",
+    "willAdd": "⏱ Dodamy, gdy wrócisz do sieci",
+    "claimWaiting": "⏱ „Kupię to” czeka na wysłanie",
+    "unclaimWaiting": "⏱ „Jednak nie kupię” czeka na wysłanie",
+    "youWaiting": "🛍 Ty · ⏱",
+    "you": "🛍 Ty",
+    "addFailed": "Nie udało się dodać tego prezentu",
+    "claimFailed": "Nie udało się zapisać, że to kupujesz",
+    "unclaimFailed": "Nie udało się zapisać, że jednak tego nie kupujesz",
+    "discard": "Odrzuć",
+    "addWaitingNote": "Ten prezent nie został jeszcze wysłany — kupowanie otworzy się, gdy zostanie dodany.",
+    "claimWaitingCta": "⏱ Oznaczymy, że to kupujesz, gdy wrócisz do sieci",
+    "unclaimWaitingCta": "⏱ Zdejmiemy cię z kupujących, gdy wrócisz do sieci",
+    "reasons": {
+      "giftNotFound": "Ten prezent usunięto, gdy nie było cię w sieci.",
+      "eventNotFound": "To wydarzenie usunięto, gdy nie było cię w sieci.",
+      "participantNotFound": "Ta osoba opuściła wydarzenie, gdy nie było cię w sieci.",
+      "notAParticipant": "Nie bierzesz już udziału w tym wydarzeniu.",
+      "other": "Nie udało się tego wysłać."
+    }
   }
 }

@@ -18,6 +18,8 @@ type PresentTileProps = {
   radius?: number
   // Which derivative of an upload to load: the 400 px tile by default.
   derivative?: ImageSize
+  // A present still waiting in the offline queue: a dashed outline.
+  pending?: boolean
 }
 
 // A present's image: an upload's WebP derivative (or a picked photo still on
@@ -29,6 +31,7 @@ export function PresentTile({
   imageSize,
   radius = 12,
   derivative = 400,
+  pending = false,
 }: PresentTileProps) {
   const inner = imageSize ?? Math.round(size * 0.88)
   const { image } = gift
@@ -51,6 +54,13 @@ export function PresentTile({
           contentFit="contain"
         />
       )}
+      {pending ? (
+        <View
+          pointerEvents="none"
+          className="absolute inset-0 border-[1.5px] border-dashed border-garland-ink-40"
+          style={{ borderRadius: radius }}
+        />
+      ) : null}
     </View>
   )
 }

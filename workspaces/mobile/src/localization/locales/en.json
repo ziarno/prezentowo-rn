@@ -479,6 +479,27 @@
   "offline": {
     "banner": "Offline — showing saved data",
     "inviteTitle": "You're offline",
-    "inviteBody": "Inviting people needs a connection. Try again once you’re back online."
+    "inviteBody": "Inviting people needs a connection. Try again once you’re back online.",
+    "bannerWaiting_one": "Offline — showing saved data · {{count}} waiting to send",
+    "bannerWaiting_other": "Offline — showing saved data · {{count}} waiting to send",
+    "willAdd": "⏱ Will add when back online",
+    "claimWaiting": "⏱ Claim waiting to send",
+    "unclaimWaiting": "⏱ Unclaim waiting to send",
+    "youWaiting": "🛍 You · ⏱",
+    "you": "🛍 You",
+    "addFailed": "Couldn't add this present",
+    "claimFailed": "Couldn't save your claim",
+    "unclaimFailed": "Couldn't take you off this present",
+    "discard": "Discard",
+    "addWaitingNote": "This present hasn't been sent yet — buying opens once it's added.",
+    "claimWaitingCta": "⏱ You'll be marked as buying when back online",
+    "unclaimWaitingCta": "⏱ You'll be taken off this when back online",
+    "reasons": {
+      "giftNotFound": "This present was removed while you were offline.",
+      "eventNotFound": "This event was deleted while you were offline.",
+      "participantNotFound": "This person left the event while you were offline.",
+      "notAParticipant": "You're no longer in this event.",
+      "other": "It couldn't be sent."
+    }
   }
 }

@@ -5,9 +5,13 @@ const userIdOf = (event: EventDoc, participantId: string) => {
   return participant?.kind === 'real' ? participant.userId : undefined
 }
 
+// The fields the rules below read: a present from the server or from the
+// offline queue.
+type GiftOwnership = Pick<GiftDoc, 'forParticipantId' | 'createdBy'>
+
 const isRecipient = (
   event: EventDoc,
-  gift: GiftDoc,
+  gift: GiftOwnership,
   viewerUserId: string | undefined,
 ) => !!viewerUserId && userIdOf(event, gift.forParticipantId) === viewerUserId
 
@@ -16,7 +20,7 @@ const isRecipient = (
 // copy from ever surfacing one.
 export const isHiddenFrom = (
   event: EventDoc,
-  gift: GiftDoc,
+  gift: GiftOwnership,
   viewerUserId: string | undefined,
 ): boolean =>
   isRecipient(event, gift, viewerUserId) && gift.createdBy !== viewerUserId
@@ -26,16 +30,16 @@ export const isHiddenFrom = (
 //   themselves, shown without claim state.
 // - `theirs` (`3f`): anyone else's list, split into the recipient's
 //   self-added gifts and the gifts others suggested.
-export type PersonPresents =
-  | { kind: 'mine'; gifts: GiftDoc[] }
-  | { kind: 'theirs'; ownWishes: GiftDoc[]; suggested: GiftDoc[] }
+export type PersonPresents<G extends GiftOwnership = GiftDoc> =
+  | { kind: 'mine'; gifts: G[] }
+  | { kind: 'theirs'; ownWishes: G[]; suggested: G[] }
 
-export function personPresents(
+export function personPresents<G extends GiftOwnership>(
   event: EventDoc,
   participantId: string,
-  gifts: GiftDoc[],
+  gifts: G[],
   viewerUserId: string | undefined,
-): PersonPresents {
+): PersonPresents<G> {
   const recipientUserId = userIdOf(event, participantId)
   const theirGifts = gifts.filter(
     g =>
@@ -60,7 +64,7 @@ export type ClaimAction = 'claim' | 'claimToo' | 'unclaim'
 
 export function claimAction(
   event: EventDoc,
-  gift: GiftDoc,
+  gift: GiftOwnership & Pick<GiftDoc, 'claimedBy'>,
   viewerUserId: string | undefined,
 ): ClaimAction | null {
   if (!viewerUserId || isRecipient(event, gift, viewerUserId)) return null
@@ -87,7 +91,7 @@ export function presentCounts(
 
 // `1e` ✎ Edit: only the person who added the present (`gifts.update`).
 export const canEditGift = (
-  gift: GiftDoc,
+  gift: Pick<GiftDoc, 'createdBy'>,
   viewerUserId: string | undefined,
 ): boolean => !!viewerUserId && gift.createdBy === viewerUserId
 
@@ -95,7 +99,7 @@ export const canEditGift = (
 // (`gifts.remove`), never for a present hidden from the viewer.
 export const canRemoveGift = (
   event: EventDoc,
-  gift: GiftDoc,
+  gift: GiftOwnership,
   viewerUserId: string | undefined,
 ): boolean =>
   !!viewerUserId &&
@@ -105,7 +109,9 @@ export const canRemoveGift = (
 // The "N people claimed this" warning on the delete dialog, or null when
 // there is nothing to warn about. A copy without `claimedBy` (the claim-
 // quietly rule stripped it) never gets one.
-export function claimCountForRemoval(gift: GiftDoc): number | null {
+export function claimCountForRemoval(
+  gift: Pick<GiftDoc, 'claimedBy'>,
+): number | null {
   const count = gift.claimedBy?.length ?? 0
   return count > 0 ? count : null
 }

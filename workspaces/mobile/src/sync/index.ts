@@ -35,6 +35,18 @@ export {
   useSyncStatus,
   useTracker,
 } from './hooks'
+export {
+  discardWrite,
+  queueable,
+  queuedWrites,
+  submit,
+  type Queueable,
+  type QueueRow,
+  type QueueStore,
+  type QueuedWrite,
+  type QueuedWriteState,
+  type SubmitOptions,
+} from './queue'
 export { offlineSince, status, type SyncStatus } from './session'
 export {
   isSubscriptionReady,

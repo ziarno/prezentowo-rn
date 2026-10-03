@@ -3,6 +3,7 @@ import type { AddressInfo } from 'net'
 import { WebSocket, WebSocketServer } from 'ws'
 
 import type { CacheRow, CacheStore } from '../../cache'
+import type { QueueRow, QueueStore } from '../../queue'
 
 // A minimal DDP server for driving the real @meteorrn/core client over real
 // sockets — the approach #22 used to confirm the reconnect defects.
@@ -26,7 +27,12 @@ type Options = {
   // User id → the fields of their own `users` doc, sent on login as Meteor's
   // universal publication does.
   users?: Record<string, object>
+  // Method name → how a logged-in connection's call is answered. Unlisted
+  // methods resolve with `{ ok: name }`.
+  methods?: Record<string, (params: unknown[]) => MethodReply>
 }
+
+export type MethodReply = { result?: unknown; error?: object }
 
 export type FakeDdpServer = {
   url: string
@@ -122,7 +128,8 @@ export async function startFakeDdpServer(
         error: { error: 'notAuthorized', reason: 'mustBeLoggedIn' },
       })
     }
-    reply({ result: { ok: method } })
+    const answer = options.methods?.[method]
+    reply(answer ? answer(params) : { result: { ok: method } })
   }
 
   const handleSub = (conn: Connection, msg: DdpMessage) => {
@@ -242,4 +249,23 @@ export function memoryStorage(token?: string) {
       items.delete(key)
     },
   }
+}
+
+// In-memory stand-in for the encrypted queue table. Pass the same one to a
+// later `connect` to simulate a cold start.
+export function memoryQueueStore() {
+  const rows = new Map<string, QueueRow>()
+  const store: QueueStore = {
+    load: async () => [...rows.values()],
+    put: async row => {
+      rows.set(row.id, row)
+    },
+    remove: async (id: string) => {
+      rows.delete(id)
+    },
+    clear: async () => {
+      rows.clear()
+    },
+  }
+  return { ...store, rows }
 }

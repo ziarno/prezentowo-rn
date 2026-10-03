@@ -55,6 +55,7 @@ yarn workspace backend tsc --noEmit       # backend type check (not scripted)
 - Auth/onboarding stored in Expo SecureStore
 - `workspaces/mobile/src/sync/` is the **only** importer of `@meteorrn/core` (ESLint `no-restricted-imports` enforces it). Everything else — `src/api/*`, hooks, screens — imports `@/sync`: `call` (15 s timeout, rejects with `NetworkError`), `subscribe`/`useSubscription` (re-subscribed after every reconnect, with `ready`), `collection`, `useTracker`, `useSyncStatus`, and the account helpers. See `docs/spec.md` §6.1
 - Offline cache (`docs/spec.md` §6.2, ADR 0004): `src/sync/cache.ts` keeps one snapshot per subscription, replaced (never merged) when it's ready again; `src/sync/encryptedStore.ts` persists them in SQLCipher (`expo-sqlite`, keyed from SecureStore). A publication is cached only if `src/api/mirrors.ts` registers its scope — add one there with every new mirrored publication. Online-only actions dim themselves with `useOffline()` (`src/hooks/useOffline.ts`)
+- Offline queue (`docs/spec.md` §6.3): `src/sync/queue.ts` — `submit` sends now or persists the write (same SQLCipher DB) and replays it in order after the resume login; a rejected replay stays `failed` until discarded. Only methods registered in `src/api/queuedWrites.ts` (`gifts.add`/`claim`/`unclaim`) can be submitted; every other write stays `call` and online-only
 
 ## Meteor / types quirks
 

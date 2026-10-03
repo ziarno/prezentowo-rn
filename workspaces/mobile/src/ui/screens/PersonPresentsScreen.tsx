@@ -1,4 +1,3 @@
-import type { GiftDoc } from '@prezentowo/types'
 import { router } from 'expo-router'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -6,6 +5,12 @@ import { Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { recipientOptions } from '@/api/giftWizard'
+import {
+  type ShownGift,
+  giftWrite,
+  shownBuyers,
+  withQueuedGifts,
+} from '@/api/pendingWrites'
 import { personPresents } from '@/api/presentLists'
 import { PlusIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
@@ -14,14 +19,17 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
 import { useEventGifts } from '@/hooks/useEventGifts'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
-import { useOffline } from '@/hooks/useOffline'
 import { usePersonName } from '@/hooks/usePersonName'
+import { useQueuedWrites } from '@/hooks/useQueuedWrites'
+import { discardWrite } from '@/sync'
 import { GiftRow } from '@/ui/components/GiftRow'
 import { LockNote } from '@/ui/components/LockNote'
 import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
 
 // A person's presents: `3e` for the viewer's own list, `3f` for anyone else's.
+// Writes still in the offline queue show in place (docs/spec.md §6.4): a
+// queued present in its group, a queued claim on its present.
 export function PersonPresentsScreen({
   eventId,
   participantId,
@@ -30,10 +38,10 @@ export function PersonPresentsScreen({
   participantId: string
 }) {
   const { t } = useTranslation()
-  const offline = useOffline()
   const user = useCurrentUser()
   const { event, ready: eventReady } = useEventById(eventId)
-  const { gifts, ready: giftsReady } = useEventGifts(eventId)
+  const { gifts: serverGifts, ready: giftsReady } = useEventGifts(eventId)
+  const writes = useQueuedWrites()
   const { resolve, resolveUser } = useEventParticipants(eventId)
   const nameOf = usePersonName()
 
@@ -53,28 +61,37 @@ export function PersonPresentsScreen({
     )
   }
 
+  const gifts = withQueuedGifts(serverGifts, writes, eventId, user?._id)
   const list = personPresents(event, participantId, gifts, user?._id)
 
-  const buyersOf = (gift: GiftDoc) =>
-    (gift.claimedBy ?? []).map(userId => nameOf(resolveUser(userId)))
-
-  const openGift = (gift: GiftDoc) =>
+  const openGift = (gift: ShownGift) =>
     router.push({
       pathname: '/event/[eventId]/gift/[giftId]',
       params: { eventId, giftId: gift._id },
     })
 
-  const rows = (items: GiftDoc[], withBuyers: boolean) =>
-    items.map(gift => (
-      <GiftRow
-        key={gift._id}
-        gift={gift}
-        showDescription
-        buyers={withBuyers ? buyersOf(gift) : undefined}
-        topBorder
-        onPress={() => openGift(gift)}
-      />
-    ))
+  const rows = (items: ShownGift[], withBuyers: boolean) =>
+    items.map(gift => {
+      const write = giftWrite(writes, gift._id)
+      return (
+        <GiftRow
+          key={gift._id}
+          gift={gift}
+          showDescription
+          buyers={
+            withBuyers
+              ? shownBuyers(gift, write, user?._id).map(userId =>
+                  nameOf(resolveUser(userId)),
+                )
+              : undefined
+          }
+          topBorder
+          write={write}
+          onDiscard={write ? () => discardWrite(write.id) : undefined}
+          onPress={() => openGift(gift)}
+        />
+      )
+    })
 
   const giftCount =
     list.kind === 'mine'
@@ -88,6 +105,7 @@ export function PersonPresentsScreen({
         ).length
 
   // Only someone who gets presents in this event has a list to add to.
+  // Adding works offline too: it's queued.
   const addPresent = recipientOptions(event).includes(participantId) ? (
     <Pressable
       onPress={() =>
@@ -96,12 +114,9 @@ export function PersonPresentsScreen({
           params: { eventId, forParticipantId: participantId },
         })
       }
-      disabled={offline}
       hitSlop={12}
       accessibilityRole="button"
       accessibilityLabel={t('shell.addPresent')}
-      accessibilityState={{ disabled: offline }}
-      className={offline ? 'opacity-40' : undefined}
     >
       <PlusIcon width={22} height={22} color={garland.ink} />
     </Pressable>

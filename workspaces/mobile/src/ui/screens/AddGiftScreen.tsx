@@ -90,7 +90,16 @@ function AddGift({
         startingRecipient(event, forParticipantId, user._id),
       )}
       onSubmit={async draft => {
-        await addGift(toAddGiftArgs(event._id, draft))
+        // A link import's photo is fetched to the device now, so a queued
+        // add carries a local file, not the shop's URL (docs/spec.md §6.3).
+        const image =
+          draft.image?.kind === 'remote'
+            ? {
+                kind: 'local' as const,
+                uri: await downloadImage(draft.image.uri),
+              }
+            : draft.image
+        await addGift(toAddGiftArgs(event._id, { ...draft, image }))
         router.back()
       }}
     />
@@ -156,7 +165,8 @@ function GiftWizard({
   mode: GiftWizardMode
   event: EventDoc
   initialDraft: GiftDraft
-  // Navigates away on success; a rejection is shown on the summary.
+  // Navigates away on success (or once an add is queued); a rejection is
+  // shown on the summary.
   onSubmit: (draft: GiftDraft) => Promise<void>
 }) {
   const { t } = useTranslation()
@@ -208,16 +218,21 @@ function GiftWizard({
     setSubmitError(null)
     leaving.current = true
     try {
-      // Kept in the draft, so a retry after a failed save doesn't upload
-      // the photo again.
-      const image = await uploadDraftImage(
-        draft.image,
-        uploadImage,
-        downloadImage,
-      )
-      const uploaded = { ...draft, image }
-      setDraft(uploaded)
-      await onSubmit(uploaded)
+      if (mode === 'add') {
+        // The add uploads its own photo — later, if it's queued offline.
+        await onSubmit(draft)
+      } else {
+        // Kept in the draft, so a retry after a failed save doesn't upload
+        // the photo again.
+        const image = await uploadDraftImage(
+          draft.image,
+          uploadImage,
+          downloadImage,
+        )
+        const uploaded = { ...draft, image }
+        setDraft(uploaded)
+        await onSubmit(uploaded)
+      }
     } catch (e) {
       leaving.current = false
       setSubmitError(
@@ -356,7 +371,11 @@ function GiftWizard({
           onPrimary={next}
           onBack={index > 0 ? goBack : undefined}
           submitting={submitting}
-          disabled={linkImport.status === 'importing' || (isLast && offline)}
+          // An add queues offline (docs/spec.md §6.3); an edit can't.
+          disabled={
+            linkImport.status === 'importing' ||
+            (isLast && offline && mode === 'edit')
+          }
         />
       </SheetKeyboardAvoidingView>
     </SafeAreaView>

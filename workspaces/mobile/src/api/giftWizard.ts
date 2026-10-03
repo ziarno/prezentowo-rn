@@ -1,5 +1,4 @@
 import type {
-  AddGiftArgs,
   EventDoc,
   GiftDoc,
   ImportedFields,
@@ -8,6 +7,7 @@ import type {
 
 import { type DraftImage, imageChange, savedImage } from './draftImage'
 import { beneficiaryIdOf } from './events'
+import type { QueuedAddGiftArgs } from './pendingWrites'
 
 // The add-present wizard's steps: `5a` name (or a link to import), `5b`
 // photo, `5c` description and link, `5d` summary.
@@ -135,11 +135,18 @@ export function draftFromImport(
   }
 }
 
-/** The `gifts.add` payload; an empty description or link is left out. */
-export function toAddGiftArgs(eventId: string, draft: GiftDraft): AddGiftArgs {
+/**
+ * The `gifts.add` payload; an empty description or link is left out. A
+ * photo not yet uploaded stays as it is: the add uploads it before it's sent,
+ * at once or when replayed from the offline queue.
+ */
+export function toAddGiftArgs(
+  eventId: string,
+  draft: GiftDraft,
+): QueuedAddGiftArgs {
   const description = draft.description.trim()
   const url = draft.url.trim()
-  const image = savedImage(draft.image)
+  const image = draft.image
   return {
     eventId,
     forParticipantId: draft.forParticipantId!,

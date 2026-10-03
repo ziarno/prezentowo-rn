@@ -5,6 +5,7 @@ import {
   sessionUserId,
 } from './accounts'
 import { Data, type Doc, TOKEN_KEY, meteor } from './meteor'
+import { type QueueStore, loadQueue } from './queue'
 import {
   type ConnectOptions as SessionOptions,
   disconnect as closeSession,
@@ -31,7 +32,11 @@ export type CacheStore = {
   clear(): Promise<void>
 }
 
-export type ConnectOptions = SessionOptions & { cache?: CacheStore }
+export type ConnectOptions = SessionOptions & {
+  cache?: CacheStore
+  // The offline write queue's store (docs/spec.md §6.3).
+  queue?: QueueStore
+}
 
 type Selector = Record<string, unknown>
 
@@ -83,18 +88,23 @@ export function mirror(name: string, config: Mirror) {
   mirrors.set(name, config)
 }
 
-// Loads the cache, if one is given, before opening the connection, so cached
-// docs can never land on top of fresh ones.
+// Loads the cache and the queue, if given, before opening the connection, so
+// cached docs can never land on top of fresh ones and every queued write is
+// there to replay.
 export function connect(endpoint: string, options: ConnectOptions) {
-  const { cache, ...sessionOptions } = options
+  const { cache, queue, ...sessionOptions } = options
   cancelled = false
-  if (!cache) {
+  if (!cache && !queue) {
     setLoaded()
     openSession(endpoint, sessionOptions)
     return
   }
-  store = cache
-  load(cache, sessionOptions.storage).finally(() => {
+  store = cache ?? null
+  const loading = async () => {
+    const signedIn = cache ? await load(cache, sessionOptions.storage) : true
+    if (queue) await loadQueue(queue, { keep: signedIn })
+  }
+  loading().finally(() => {
     setLoaded()
     if (!cancelled) openSession(endpoint, sessionOptions)
   })
@@ -139,7 +149,11 @@ export function subscriptionStopped(name: string, params: unknown[]) {
   live.delete(key)
 }
 
-async function load(cache: CacheStore, storage: SessionOptions['storage']) {
+// Whether a signed-in session was restored.
+async function load(
+  cache: CacheStore,
+  storage: SessionOptions['storage'],
+): Promise<boolean> {
   try {
     const rows = await cache.load()
     for (const row of rows) {
@@ -153,16 +167,21 @@ async function load(cache: CacheStore, storage: SessionOptions['storage']) {
     if (userId && token) {
       restoreSession({ userId, token })
       hydrate()
-    } else if (rows.length > 0) {
+      return true
+    }
+    if (rows.length > 0) {
       // Signed out without the wipe completing: nothing here is the
       // signed-in user's.
       snapshots.clear()
       await cache.clear()
     }
+    return false
   } catch (error) {
     console.warn('Offline cache unreadable, starting empty', error)
     snapshots.clear()
     await cache.clear().catch(() => {})
+    // The token alone may still resume a session; its queue is kept for it.
+    return !!(await storage.getItem(TOKEN_KEY).catch(() => null))
   }
 }
 
