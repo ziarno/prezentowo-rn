@@ -321,3 +321,23 @@ export type LinkImportOutcome =
   // blockedShop is set when the URL matched the blocked shop list.
   | { outcome: 'unreadable'; blockedShop?: string }
   | { outcome: 'infra-failure' }
+
+// Which Stream channel backs which chat thread (docs/spec.md §1.8, backend ADR
+// 0001). `8b` is the event's one `event` thread; `8a` is a recipient's
+// `secret` thread, which that recipient is never a member of.
+export type ChatThreadDoc = {
+  _id: string
+  eventId: string
+  kind: 'event' | 'secret'
+  // secret only: the EventParticipant.id the thread is about.
+  recipientParticipantId?: string
+  streamChannelType: 'event_thread' | 'secret_thread'
+  // Random, never derived from the event or the recipient.
+  streamChannelId: string
+  // Set once the thread is replaced; a retired thread is never published.
+  retiredAt?: Date
+}
+
+// What `stream.token` resolves to: the app's public API key and a user token
+// for the caller, valid for an hour.
+export type StreamToken = { apiKey: string; token: string }

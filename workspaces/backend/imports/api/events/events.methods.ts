@@ -16,6 +16,7 @@ import type { Mongo } from 'meteor/mongo'
 import { Random } from 'meteor/random'
 
 import { recordParticipantJoined } from '../activity/activity.records'
+import { syncChatThreads } from '../chat/chat.sync'
 import { Gifts } from '../gifts/gifts.collection'
 import { imageRefPattern } from '../images/images.patterns'
 import {
@@ -171,6 +172,7 @@ const createEvent = async function (
       return eventId
     },
   )
+  await syncChatThreads(_id)
 
   return { _id }
 }
@@ -259,6 +261,8 @@ const updateEvent = async function (
   if (options.background !== undefined) {
     await releaseImage(event.background, options.background)
   }
+  // A beneficiary change retires and replaces secret threads.
+  if (options.kind !== undefined) await syncChatThreads(event._id)
 }
 
 // Another join may rewrite the participant list between our read and write,
@@ -330,6 +334,7 @@ const joinEvent = async function (
       await recordParticipantJoined(event._id, joinedAsParticipantId)
       await notifyParticipantJoined(event, joinedAsParticipantId)
       await clearInviteDeferred(userId, event._id)
+      await syncChatThreads(event._id)
       return { eventId: event._id }
     }
   }
@@ -390,6 +395,7 @@ const removeParticipant = async function (
   }
 
   await cascadeParticipantRemoval(event, participant)
+  await syncChatThreads(event._id)
 }
 
 const deleteEvent = async function (

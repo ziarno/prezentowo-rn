@@ -31,6 +31,10 @@ Whether a gift's recipient is also the one who added it (`GiftDoc.createdBy === 
 A record of a single, already-occurred event in an event's history — a gift added, a gift claimed, or a participant joining — surfaced to participants on Home, the event feed, and the event drawer. Chat messages and the live "how many presents have a buyer" count are not activity: chat lives entirely on GetStream, and the count is computed from gift data on read, never stored. Distinct from a **notification**: an activity item is shared and impersonal — everyone allowed to see one sees the same document — where a notification is personal to one account and carries its own read state.
 _Avoid_: event log (ambiguous with `EventDoc`)
 
+**Chat thread** / **Secret thread** / **Retired thread**:
+A conversation on GetStream, recorded as a `ChatThreadDoc`. Each event has one event thread (`8b`) that every real participant is in, and one secret thread (`8a`) per real **recipient**, which every real participant except that recipient is in. When someone must lose access to a thread — a beneficiary change, or its recipient's removal — the thread is retired: it keeps its history on Stream but is never shown again, and a fresh thread replaces it where one is still needed.
+_Avoid_: channel (that's the Stream object behind a thread)
+
 **Own-list visibility rule**:
 The rule that a suggested gift is invisible to its recipient entirely, not merely stripped of fields — the recipient's own list only ever shows what they added themselves. Governs both a gift's own visibility and the visibility of any activity item reporting that a gift was added.
 
