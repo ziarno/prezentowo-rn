@@ -209,6 +209,9 @@ describe('users.search', function () {
       for (let i = 0; i < 10; i++) await searchOver(first)
       await assert.rejects(searchOver(first), (e: Meteor.Error) => {
         assert.strictEqual(e.error, 'too-many-requests')
+        // The client waits this long before asking again.
+        const { timeToReset } = e.details as unknown as { timeToReset: number }
+        assert.ok(timeToReset > 0 && timeToReset <= 10_000)
         return true
       })
 

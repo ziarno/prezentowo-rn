@@ -676,8 +676,6 @@ function SearchResults({
       return note(t('createEvent.people.searchOffline'))
     case 'loading':
       return note(t('createEvent.people.searching'))
-    case 'rateLimited':
-      return note(t('createEvent.people.rateLimited'))
     case 'failed':
       return note(t('createEvent.people.searchFailed'))
     case 'done':

@@ -1,9 +1,8 @@
 import { type UserSearchResult, isSearchableQuery } from '@prezentowo/types'
 import { useEffect, useState } from 'react'
 
-import { searchUsers } from '@/api/peopleSearch'
+import { rateLimitRetryMs, searchUsers } from '@/api/peopleSearch'
 import { useOffline } from '@/hooks/useOffline'
-import type { MeteorError } from '@/sync'
 
 // How long typing has to pause before `4d` searches.
 const DEBOUNCE_MS = 300
@@ -14,19 +13,16 @@ export type UserSearch =
   | { status: 'offline' }
   | { status: 'loading' }
   | { status: 'done'; results: UserSearchResult[] }
-  // `users.search`'s rate limit (docs/spec.md §2.2).
-  | { status: 'rateLimited' }
   | { status: 'failed' }
 
 type Settled = Exclude<UserSearch, { status: 'idle' | 'offline' | 'loading' }>
 
-const isRateLimited = (error: unknown) =>
-  (error as Partial<MeteorError> | undefined)?.error === 'too-many-requests'
-
 /**
  * `4d`'s people search for `query`, once typing pauses. While a longer or
  * edited query is on its way the last answer stays up, so the list doesn't
- * blink on every keystroke. Offline it doesn't search at all.
+ * blink on every keystroke. Hitting `users.search`'s rate limit isn't the
+ * user's problem: it shows as loading and asks again once the limit resets.
+ * Offline it doesn't search at all.
  */
 export function useUserSearch(query: string): UserSearch {
   const offline = useOffline()
@@ -40,16 +36,20 @@ export function useUserSearch(query: string): UserSearch {
   useEffect(() => {
     if (!searchable || offline) return
     let current = true
-    const timer = setTimeout(() => {
+    let timer: ReturnType<typeof setTimeout>
+    const ask = () => {
       searchUsers(query).then(
         results => current && setSettled({ status: 'done', results }),
-        error =>
-          current &&
-          setSettled({
-            status: isRateLimited(error) ? 'rateLimited' : 'failed',
-          }),
+        error => {
+          if (!current) return
+          const retryMs = rateLimitRetryMs(error)
+          if (retryMs === null) return setSettled({ status: 'failed' })
+          setSettled(null)
+          timer = setTimeout(ask, retryMs)
+        },
       )
-    }, DEBOUNCE_MS)
+    }
+    timer = setTimeout(ask, DEBOUNCE_MS)
     return () => {
       current = false
       clearTimeout(timer)

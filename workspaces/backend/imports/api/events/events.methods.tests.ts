@@ -204,7 +204,7 @@ describe('events.create', function () {
         { fields: { _id: 0, createdAt: 0 } },
       ).fetchAsync()
       assert.deepStrictEqual(
-        sent.sort((a, b) => a.userId.localeCompare(b.userId)),
+        sent.sort((a, b) => (a.userId < b.userId ? -1 : 1)),
         [bartek, celina].sort().map(userId => ({
           userId,
           kind: 'invited',
