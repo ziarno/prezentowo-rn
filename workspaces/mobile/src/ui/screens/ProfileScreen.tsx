@@ -1,9 +1,16 @@
 import type { ComponentType, ReactNode } from 'react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, View } from 'react-native'
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  View,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { uploadImage, uploadImageUrl } from '@/api/images'
 import { updateUser } from '@/api/users'
 import {
   BellIcon,
@@ -20,7 +27,9 @@ import { garland } from '@/constants/colors'
 import { useAuth } from '@/hooks/useAuth'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useOffline } from '@/hooks/useOffline'
+import { usePhotoPrompt } from '@/hooks/usePhotoPrompt'
 import { useLanguageModal } from '@/localization/LanguageModalProvider'
+import { errorMessage } from '@/localization/errorMessage'
 import { LOCALES } from '@/localization/provider'
 import { Avatar } from '@/ui/components/Avatar'
 import {
@@ -28,6 +37,11 @@ import {
   type AvatarPickerModalHandle,
 } from '@/ui/components/AvatarPickerModal'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
+
+type PictureOverride =
+  | { kind: 'stock'; key: AvatarKey }
+  // A photo's local uri, shown while it uploads and saves.
+  | { kind: 'photo'; uri: string }
 
 type IconComponent = ComponentType<{
   width?: number
@@ -41,19 +55,51 @@ export function ProfileScreen() {
   const { signOut } = useAuth()
   const { open: openLanguageModal } = useLanguageModal()
   const avatarPickerRef = useRef<AvatarPickerModalHandle>(null)
-  // Show the saved avatar, but optimistically override it the instant the user
-  // picks a new one (revert if the persist fails).
-  const [avatarOverride, setAvatarOverride] = useState<AvatarKey | null>(null)
+  // Show the saved picture, but optimistically override it from the instant
+  // the user picks a new one until the save settles.
+  const [override, setOverride] = useState<PictureOverride | null>(null)
+  const [savingPhoto, setSavingPhoto] = useState(false)
 
   const user = useCurrentUser()
 
   const avatarKey =
-    avatarOverride ?? (user?.profile?.avatar as AvatarKey | undefined) ?? 'm1'
+    (override?.kind === 'stock' ? override.key : undefined) ??
+    (user?.profile?.avatar as AvatarKey | undefined) ??
+    'm1'
+  const savedPhoto = user?.profile?.photo
+  const pictureUri = override
+    ? override.kind === 'photo'
+      ? override.uri
+      : undefined
+    : savedPhoto && uploadImageUrl(savedPhoto, 400)
 
+  // A stock avatar replaces the photo, which the server then deletes
+  // (docs/spec.md §1.10).
   const pickAvatar = (key: AvatarKey) => {
-    setAvatarOverride(key)
-    updateUser({ avatar: key }).catch(() => setAvatarOverride(null))
+    setOverride({ kind: 'stock', key })
+    // Either way the override goes: the user document carries a saved pick.
+    updateUser({ avatar: key, photo: null }).finally(() => setOverride(null))
   }
+
+  const savePhoto = async (uri: string) => {
+    setOverride({ kind: 'photo', uri })
+    setSavingPhoto(true)
+    try {
+      const { id } = await uploadImage(uri)
+      await updateUser({ photo: id })
+    } catch (err) {
+      Alert.alert(
+        t('profile.photoFailed'),
+        errorMessage(err, t('common.somethingWentWrong')),
+      )
+    } finally {
+      setOverride(null)
+      setSavingPhoto(false)
+    }
+  }
+  const photoPrompt = usePhotoPrompt(uri => void savePhoto(uri), {
+    square: true,
+  })
 
   const displayName = user?.profile?.name ?? t('profile.friend')
   const email = user?.emails?.[0]?.address
@@ -81,16 +127,34 @@ export function ProfileScreen() {
       >
         <View className="mt-2">
           <Pressable
-            onPress={() => avatarPickerRef.current?.present()}
-            disabled={offline}
-            accessibilityState={{ disabled: offline }}
+            onPress={() => {
+              photoPrompt.clearError()
+              avatarPickerRef.current?.present()
+            }}
+            disabled={offline || savingPhoto}
+            accessibilityRole="button"
+            accessibilityLabel={t('profile.changePicture')}
+            accessibilityState={{ disabled: offline, busy: savingPhoto }}
             style={({ pressed }) => ({
               alignSelf: 'flex-start',
               opacity: offline ? 0.4 : pressed ? 0.7 : 1,
             })}
           >
-            <Avatar source={avatar(avatarKey)} size={84} />
+            <Avatar
+              source={pictureUri ? { uri: pictureUri } : avatar(avatarKey)}
+              size={84}
+            />
+            {savingPhoto ? (
+              <View className="absolute inset-0 items-center justify-center rounded-full bg-[rgba(255,250,242,0.5)]">
+                <ActivityIndicator color={garland.ink} />
+              </View>
+            ) : null}
           </Pressable>
+          {photoPrompt.error ? (
+            <Text className="mt-2 text-xs text-garland-berry">
+              {t(`photoPicker.errors.${photoPrompt.error}`)}
+            </Text>
+          ) : null}
           <Text className="mt-4 font-garland-display text-[36px] leading-[38px] text-garland-ink">
             {displayName}.
           </Text>
@@ -163,8 +227,11 @@ export function ProfileScreen() {
 
       <AvatarPickerModal
         ref={avatarPickerRef}
-        value={avatarKey}
+        // With a photo up, no stock avatar is preselected: Accept would
+        // replace the photo.
+        value={pictureUri ? null : avatarKey}
         onConfirm={pickAvatar}
+        onPhoto={photoPrompt.prompt}
       />
     </SafeAreaView>
   )

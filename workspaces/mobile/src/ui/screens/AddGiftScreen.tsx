@@ -623,6 +623,7 @@ function SummaryStep({
                 <ParticipantAvatar
                   name={person?.name ?? ''}
                   avatarKey={person?.avatarKey}
+                  photo={person?.photo}
                   color={person?.color}
                   size={28}
                 />

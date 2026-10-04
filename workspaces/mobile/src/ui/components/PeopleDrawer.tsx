@@ -7,6 +7,7 @@ export type PersonItem = {
   id: string
   name: string
   avatarKey?: string
+  photo?: string
   color?: string
   isYou: boolean
   subtitle?: string
@@ -29,6 +30,7 @@ export function PeopleDrawer({ people, onSelectPerson }: PeopleDrawerProps) {
           key={p.id}
           name={p.name}
           avatarKey={p.avatarKey}
+          photo={p.photo}
           color={p.color}
           subtitle={p.subtitle}
           presentCount={p.presentCount}

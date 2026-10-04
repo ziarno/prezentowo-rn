@@ -94,6 +94,8 @@
   "profile": {
     "friend": "Friend",
     "edit": "Edit",
+    "changePicture": "Change profile picture",
+    "photoFailed": "Couldn't save your photo",
     "joined": "Joined {{joinedLabel}}",
     "statEvents": "Events",
     "statWished": "Wished",

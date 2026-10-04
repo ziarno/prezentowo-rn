@@ -194,6 +194,7 @@ function PeopleList({
             <ParticipantAvatar
               name={p.name}
               avatarKey={p.avatarKey}
+              photo={p.photo}
               color={p.color}
               size={34}
             />

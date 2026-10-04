@@ -93,6 +93,7 @@ function PersonAvatar({
       <ParticipantAvatar
         name={person?.name ?? t('person.someone')}
         avatarKey={person?.avatarKey}
+        photo={person?.photo}
         color={person ? person.color : GONE_GREY}
         size={size}
       />

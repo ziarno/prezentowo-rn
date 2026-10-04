@@ -3,7 +3,7 @@ import { Meteor } from 'meteor/meteor'
 
 import { findEventForCode } from './invites.lookup'
 
-type Profile = { name?: string; avatar?: string }
+type Profile = { name?: string; avatar?: string; photo?: string }
 
 // Everything `7a` shows before joining. UserIds and gifts never leave the
 // server: real participants go out by name and avatar, and placeholders are
@@ -29,6 +29,7 @@ export const invitePreview = (
         id: p.id,
         name: profile?.name ?? '',
         ...(profile?.avatar ? { avatar: profile.avatar } : {}),
+        ...(profile?.photo ? { photo: profile.photo } : {}),
       },
     ]
   }),
@@ -57,7 +58,9 @@ export async function profilesFor(event: EventDoc) {
   const users = await Meteor.users
     .find(
       { _id: { $in: userIds } },
-      { fields: { 'profile.name': 1, 'profile.avatar': 1 } },
+      {
+        fields: { 'profile.name': 1, 'profile.avatar': 1, 'profile.photo': 1 },
+      },
     )
     .fetchAsync()
   const byId = new Map(users.map(u => [u._id, u.profile as Profile]))

@@ -4,10 +4,15 @@ export type RegisterNewUserArgs = {
   name: string
 }
 
+// A user's picture is `profile.photo` when set, else the stock
+// `profile.avatar` (docs/spec.md §1.10).
 export type UpdateUserArgs = {
   name?: string
   email?: string
+  // A stock avatar key, e.g. "f3".
   avatar?: string
+  // An upload id. null clears it; undefined leaves it unchanged.
+  photo?: string | null
 }
 
 export type LoginCredentials = {
@@ -188,8 +193,14 @@ export type InvitePreview = {
   date: string
   background?: ImageRef
   inviterName: string
-  // Who's already taking part: the real participants, by name and avatar key.
-  realParticipants: { id: string; name: string; avatar?: string }[]
+  // Who's already taking part: the real participants, by name, avatar key
+  // and photo.
+  realParticipants: {
+    id: string
+    name: string
+    avatar?: string
+    photo?: string
+  }[]
   // Reserved placeholders are left out, except the viewer's own, which
   // carries `reservedForYou` (so none are listed signed out).
   unclaimedPlaceholders: {
@@ -202,8 +213,8 @@ export type InvitePreview = {
 }
 
 // The WebP derivatives of an upload, by long edge in px, served at
-// `/images/<id>/<size>.webp`: 400 present tile, 1000 present detail, 1600
-// event cover.
+// `/images/<id>/<size>.webp`: 400 present tile and profile photo, 1000
+// present detail, 1600 event cover.
 export type ImageSize = 400 | 1000 | 1600
 
 // `POST /api/images` (single-file multipart) responds 200 with this.
@@ -352,7 +363,12 @@ export type ChatThreadDoc = {
 
 // `4d`'s people search (`users.search`). Never carries an email.
 export type UserSearchArgs = { query: string }
-export type UserSearchResult = { userId: string; name: string; avatar?: string }
+export type UserSearchResult = {
+  userId: string
+  name: string
+  avatar?: string
+  photo?: string
+}
 
 // The searchable words of a name, or of a search query: lower case,
 // diacritics stripped (`ł` too, which has no decomposition), split on

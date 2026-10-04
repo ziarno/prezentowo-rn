@@ -8,6 +8,9 @@ export type ResolvedParticipant = {
   // Avatar key (e.g. "f1") when one is known — real user's chosen avatar or a
   // placeholder's avatar. Falls back to a colored initial when absent.
   avatarKey?: string
+  // A real user's photo, an upload id, shown instead of `avatarKey`.
+  // Placeholders never have one (docs/spec.md §1.10).
+  photo?: string
   // Placeholder accent color, used for the initial-circle fallback.
   color?: string
   isYou: boolean
@@ -26,6 +29,7 @@ export function resolveParticipant(
       id: participant.id,
       name: user?.profile?.name?.trim() || 'Member',
       avatarKey: user?.profile?.avatar,
+      photo: user?.profile?.photo,
       isYou: participant.userId === currentUserId,
       isPlaceholder: false,
       userId: participant.userId,

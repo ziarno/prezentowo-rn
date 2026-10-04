@@ -163,9 +163,10 @@ describe('events.create', function () {
       assert.strictEqual(await Events.find().countAsync(), 0)
     })
 
-    it('adds an invited user as a reserved placeholder, snapshotting their profile', async function () {
+    it('adds an invited user as a reserved placeholder, snapshotting their name and stock avatar', async function () {
+      // Never the photo: an upload sits on one document only (§1.10).
       await Meteor.users.updateAsync(bartek, {
-        $set: { 'profile.avatar': 'f2' },
+        $set: { 'profile.avatar': 'f2', 'profile.photo': 'photo-id' },
       })
 
       const event = await create({

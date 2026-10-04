@@ -1,6 +1,6 @@
 {
   "ios": {
-    "NSCameraUsageDescription": "Prezentowo używa aparatu do robienia zdjęć tła wydarzeń i prezentów oraz zdjęć wysyłanych na czacie.",
-    "NSPhotoLibraryUsageDescription": "Prezentowo używa Twoich zdjęć jako tła wydarzeń, zdjęć prezentów i zdjęć wysyłanych na czacie."
+    "NSCameraUsageDescription": "Prezentowo używa aparatu do robienia zdjęcia profilowego, zdjęć tła wydarzeń i prezentów oraz zdjęć wysyłanych na czacie.",
+    "NSPhotoLibraryUsageDescription": "Prezentowo używa Twoich zdjęć jako zdjęcia profilowego, tła wydarzeń, zdjęć prezentów i zdjęć wysyłanych na czacie."
   }
 }

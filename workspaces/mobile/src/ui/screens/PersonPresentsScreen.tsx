@@ -135,6 +135,7 @@ export function PersonPresentsScreen({
           <ParticipantAvatar
             name={person.name}
             avatarKey={person.avatarKey}
+            photo={person.photo}
             color={person.color}
             size={64}
           />

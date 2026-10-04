@@ -45,7 +45,7 @@ const searchUsers = async function (
   } as Mongo.Selector<Meteor.User>
   const users = await Meteor.users
     .find(selector, {
-      fields: { 'profile.name': 1, 'profile.avatar': 1 },
+      fields: { 'profile.name': 1, 'profile.avatar': 1, 'profile.photo': 1 },
       sort: { 'profile.name': 1 },
       limit: MAX_RESULTS,
     })
@@ -55,6 +55,7 @@ const searchUsers = async function (
     userId: user._id,
     name: user.profile?.name ?? '',
     ...(user.profile?.avatar ? { avatar: user.profile.avatar } : {}),
+    ...(user.profile?.photo ? { photo: user.profile.photo } : {}),
   }))
 }
 

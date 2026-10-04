@@ -19,7 +19,11 @@ A placeholder participant created from a **people search** result in `4d` (`invi
 _Avoid_: pending participant
 
 **People search**:
-Finding existing Prezentowo users by name in `4d` (`users.search`): a case- and diacritic-insensitive prefix match on any word of their name, returning only name and avatar. Everyone with a name is findable.
+Finding existing Prezentowo users by name in `4d` (`users.search`): a case- and diacritic-insensitive prefix match on any word of their name, returning only name, avatar and photo. Everyone with a name is findable.
+
+**Avatar** / **Photo**:
+How a user is pictured. Their **avatar** is a stock key (`f1`…`f12`, `m1`…`m12`) into avatars bundled with the app; their **photo** is an upload of their own (`profile.photo`, an upload id). The photo wins when set, else the avatar, else their initial. A user always keeps an avatar beside a photo, as its fallback and as what a **reserved placeholder** snapshots: an upload sits on one document only, so a placeholder never carries a photo.
+_Avoid_: profile picture (the UI's word for whichever is shown)
 
 **Recipient**:
 The `EventParticipant` a single gift is for — `GiftDoc.forParticipantId`. Applies to every event kind: a many-to-many event gives each gift its own recipient (typically different per gift), while a many-to-one event's beneficiary is the recipient of every gift on that event.

@@ -141,14 +141,14 @@ describe('users.search', function () {
     assert.deepStrictEqual(await namesFor('cal'), ['Callum'])
   })
 
-  it('returns at most 10, ordered by name, and only name and avatar', async function () {
+  it('returns at most 10, ordered by name, and only name, avatar and photo', async function () {
     const ids: Record<string, string> = {}
     for (const n of [12, 3, 7, 1, 10, 5, 11, 2, 9, 4, 8, 6]) {
       const name = `Zosia ${String(n).padStart(2, '0')}`
       ids[name] = await createUser(name)
     }
     await Meteor.users.updateAsync(ids['Zosia 01']!, {
-      $set: { 'profile.avatar': 'f2' },
+      $set: { 'profile.avatar': 'f2', 'profile.photo': 'photo-id' },
     })
 
     const results = await search('zosia')
@@ -164,6 +164,7 @@ describe('users.search', function () {
       userId: ids['Zosia 01'],
       name: 'Zosia 01',
       avatar: 'f2',
+      photo: 'photo-id',
     })
     assert.deepStrictEqual(results[1], {
       userId: ids['Zosia 02'],

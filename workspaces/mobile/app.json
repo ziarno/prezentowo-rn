@@ -62,8 +62,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Prezentowo uses your photos for event backgrounds, present photos and photos you send in chat.",
-          "cameraPermission": "Prezentowo uses the camera to take event backgrounds, present photos and photos you send in chat.",
+          "photosPermission": "Prezentowo uses your photos for your profile picture, event backgrounds, present photos and photos you send in chat.",
+          "cameraPermission": "Prezentowo uses the camera to take your profile picture, event backgrounds, present photos and photos you send in chat.",
           "microphonePermission": false
         }
       ],

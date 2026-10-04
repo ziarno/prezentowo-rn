@@ -67,9 +67,15 @@ const SAVE_ERRORS: Record<string, string> = {
 }
 
 // How a person in the draft is shown.
-type PersonView = { name: string; avatarKey?: string; color?: string }
+type PersonView = {
+  name: string
+  avatarKey?: string
+  photo?: string
+  color?: string
+}
 
-// Someone the draft itself names: added by name, or found by search.
+// Someone the draft itself names: added by name, or found by search. No
+// photo: an invitee is shown as their reserved placeholder will be (§1.10).
 const namedView = (
   person: Extract<DraftPerson, { kind: 'placeholder' | 'invited' }>,
 ): PersonView => ({
@@ -106,6 +112,7 @@ function CreateEvent({ start }: { start: WizardStep }) {
   const you: PersonView = {
     name: user?.profile?.name ?? t('createEvent.people.you'),
     avatarKey: user?.profile?.avatar,
+    photo: user?.profile?.photo,
   }
 
   return (
@@ -162,6 +169,7 @@ function EditEvent({ eventId, start }: { eventId: string; start: WizardStep }) {
         return {
           name: resolved?.name ?? '',
           avatarKey: resolved?.avatarKey,
+          photo: resolved?.photo,
           color: resolved?.color,
         }
       }}
@@ -544,6 +552,7 @@ function PeopleStep({
                 <ParticipantAvatar
                   name={view.name}
                   avatarKey={view.avatarKey}
+                  photo={view.photo}
                   color={view.color}
                   size={36}
                 />
@@ -703,6 +712,7 @@ function SearchResults({
                 <ParticipantAvatar
                   name={user.name}
                   avatarKey={user.avatar}
+                  photo={user.photo}
                   size={32}
                 />
                 <Text
@@ -754,6 +764,7 @@ function BeneficiaryStep({
               <ParticipantAvatar
                 name={view.name}
                 avatarKey={view.avatarKey}
+                photo={view.photo}
                 color={view.color}
                 size={36}
               />

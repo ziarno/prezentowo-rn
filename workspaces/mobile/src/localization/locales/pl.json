@@ -94,6 +94,8 @@
   "profile": {
     "friend": "Znajomy",
     "edit": "Edytuj",
+    "changePicture": "Zmień zdjęcie profilowe",
+    "photoFailed": "Nie udało się zapisać zdjęcia",
     "joined": "Dołączył {{joinedLabel}}",
     "statEvents": "Wydarzenia",
     "statWished": "Zapragnięte",

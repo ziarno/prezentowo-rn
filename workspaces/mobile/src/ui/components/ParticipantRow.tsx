@@ -8,6 +8,7 @@ import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
 type ParticipantRowProps = {
   name: string
   avatarKey?: string
+  photo?: string
   color?: string
   subtitle?: string
   // How many presents are listed for this person; omitted where the count
@@ -21,6 +22,7 @@ type ParticipantRowProps = {
 export function ParticipantRow({
   name,
   avatarKey,
+  photo,
   color,
   subtitle,
   presentCount,
@@ -36,6 +38,7 @@ export function ParticipantRow({
       <ParticipantAvatar
         name={name}
         avatarKey={avatarKey}
+        photo={photo}
         color={color}
         size={38}
       />

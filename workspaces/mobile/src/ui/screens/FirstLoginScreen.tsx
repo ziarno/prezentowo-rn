@@ -3,13 +3,13 @@ import { useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { KeyboardAvoidingView, Platform, Pressable, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { LocalSvg } from 'react-native-svg/css'
 import * as Yup from 'yup'
 
+import { uploadImage } from '@/api/images'
 import { updateUser } from '@/api/users'
-import plusIconAsset from '@/assets/svg/plus-icon.svg'
 import { Text } from '@/components/ui/text'
 import { type AvatarKey, avatar } from '@/constants/avatars'
+import { usePhotoPrompt } from '@/hooks/usePhotoPrompt'
 import { errorMessage } from '@/localization/errorMessage'
 import { AuthField } from '@/ui/components/AuthField'
 import { Avatar } from '@/ui/components/Avatar'
@@ -19,10 +19,14 @@ import {
 } from '@/ui/components/AvatarPickerModal'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LanguageChangeButton } from '@/ui/components/LanguageChangeButton'
+import { PhotoUploadTile } from '@/ui/components/PhotoUploadTile'
 
 export function FirstLoginScreen() {
   const [selected, setSelected] = useState<AvatarKey>('f1')
+  // A photo's local uri: it previews here and uploads on Continue.
+  const [localPhoto, setLocalPhoto] = useState<string>()
   const avatarPickerRef = useRef<AvatarPickerModalHandle>(null)
+  const photoPrompt = usePhotoPrompt(setLocalPhoto, { square: true })
   const { t } = useTranslation()
 
   const validationSchema = Yup.object({
@@ -42,16 +46,23 @@ export function FirstLoginScreen() {
     validationSchema,
     // Once the name is saved, the user document carries it and the root
     // guards open the app; there's no skipping it.
-    onSubmit: (formValues, { setSubmitting, setFieldError }) => {
-      updateUser({ name: formValues.name.trim(), avatar: selected })
-        .then(() => setSubmitting(false))
-        .catch((err: unknown) => {
-          setSubmitting(false)
-          setFieldError(
-            'name',
-            errorMessage(err, t('common.somethingWentWrong')),
-          )
+    // The stock avatar is saved with a photo too, as its fallback
+    // (docs/spec.md §1.10).
+    onSubmit: async (formValues, { setSubmitting, setFieldError }) => {
+      try {
+        const photo = localPhoto
+          ? (await uploadImage(localPhoto)).id
+          : undefined
+        await updateUser({
+          name: formValues.name.trim(),
+          avatar: selected,
+          ...(photo ? { photo } : {}),
         })
+      } catch (err) {
+        setFieldError('name', errorMessage(err, t('common.somethingWentWrong')))
+      } finally {
+        setSubmitting(false)
+      }
     },
   })
 
@@ -105,11 +116,16 @@ export function FirstLoginScreen() {
             <View className="flex-row items-center gap-3.5">
               <Pressable
                 onPress={() => avatarPickerRef.current?.present()}
+                accessibilityRole="button"
+                accessibilityLabel={t('avatarPicker.title')}
                 style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
               >
-                <Avatar source={avatar(selected)} size={72} />
+                <Avatar
+                  source={localPhoto ? { uri: localPhoto } : avatar(selected)}
+                  size={72}
+                />
               </Pressable>
-              <UploadTile />
+              <PhotoUploadTile onPress={photoPrompt.prompt} size={72} />
               <Text className="flex-1 text-xs leading-[18px] text-garland-ink-40">
                 <Trans
                   i18nKey="firstLogin.uploadHint"
@@ -119,6 +135,11 @@ export function FirstLoginScreen() {
                 />
               </Text>
             </View>
+            {photoPrompt.error ? (
+              <Text className="mt-2 text-xs text-garland-berry">
+                {t(`photoPicker.errors.${photoPrompt.error}`)}
+              </Text>
+            ) : null}
           </View>
 
           <View className="flex-1" />
@@ -138,19 +159,12 @@ export function FirstLoginScreen() {
       <AvatarPickerModal
         ref={avatarPickerRef}
         value={selected}
-        onConfirm={setSelected}
+        // Picking one of ours drops the photo.
+        onConfirm={key => {
+          setSelected(key)
+          setLocalPhoto(undefined)
+        }}
       />
     </SafeAreaView>
-  )
-}
-
-function UploadTile() {
-  return (
-    <Pressable
-      className="size-[72px] items-center justify-center rounded-full border-[1.5px] border-dashed border-[rgba(0,0,0,0.2)] bg-[rgba(0,0,0,0.02)]"
-      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-    >
-      <LocalSvg asset={plusIconAsset} width={20} height={20} />
-    </Pressable>
   )
 }

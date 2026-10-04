@@ -1,4 +1,5 @@
 import assert from 'assert'
+import { Meteor } from 'meteor/meteor'
 
 import { addGiftAs, createFamilyEvent } from '../../../tests/fixtures'
 import {
@@ -298,6 +299,19 @@ describe('users.inEvent', function () {
       [...sub.docs('users').keys()].sort(),
       [users.ola, users.bartek, users.celina].sort(),
     )
+  })
+
+  it('sends name, stock avatar and photo, and nothing else of the profile', async function () {
+    const { users } = family
+    await Meteor.users.updateAsync(users.bartek, {
+      $set: { 'profile.avatar': 'm2', 'profile.photo': 'photo-id' },
+    })
+
+    const sub = await subscribe(users.celina)
+
+    assert.deepStrictEqual(sub.docs('users').get(users.bartek), {
+      profile: { name: 'Bartek', avatar: 'm2', photo: 'photo-id' },
+    })
   })
 
   it('takes the profiles back from a participant once they are removed', async function () {

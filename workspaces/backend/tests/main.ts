@@ -1,3 +1,4 @@
+import '../imports/api/accounts/accounts.methods.tests'
 import '../imports/api/accounts/devLogin.tests'
 import '../imports/api/activity/activity.publications.tests'
 import '../imports/api/activity/activity.tests'

@@ -1,4 +1,5 @@
 import type {
+  ImageRef,
   RegisterNewUserArgs,
   RequestMagicLinkArgs,
   UpdateUserArgs,
@@ -8,6 +9,7 @@ import { Accounts } from 'meteor/accounts-base'
 import { Match, check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 
+import { releaseImage, withUploadAttached } from '../images/images.refs'
 import { nameFields } from '../users/users.nameTokens'
 
 const registerNewUser = async function (options: RegisterNewUserArgs) {
@@ -38,6 +40,13 @@ const registerNewUser = async function (options: RegisterNewUserArgs) {
   return { id: userId, token: stampedToken.token }
 }
 
+const nonEmptyString = Match.Where(
+  (value: unknown) => typeof value === 'string' && value !== '',
+)
+
+const asUpload = (id: string | null | undefined): ImageRef | undefined =>
+  id ? { kind: 'upload', id } : undefined
+
 const updateUser = async function (
   this: Meteor.MethodThisType,
   options: UpdateUserArgs,
@@ -48,6 +57,7 @@ const updateUser = async function (
       name: Match.Maybe(String),
       email: Match.Maybe(String),
       avatar: Match.Maybe(String),
+      photo: Match.Optional(Match.OneOf(nonEmptyString, null)),
     }),
   )
 
@@ -55,7 +65,7 @@ const updateUser = async function (
     throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
   }
 
-  const { name, email, avatar } = options
+  const { name, email, avatar, photo } = options
   const userId = this.userId
 
   const user = await Meteor.users.findOneAsync(userId)
@@ -75,13 +85,26 @@ const updateUser = async function (
     updates['profile.avatar'] = avatar
   }
 
+  // null clears the photo, back to the stock avatar (docs/spec.md §1.10).
+  const unset = photo === null ? { 'profile.photo': '' } : {}
+  if (photo) {
+    updates['profile.photo'] = photo
+  }
+
   if (email && currentEmail !== email) {
     updates['emails'] = [{ address: email, verified: false }]
   }
 
-  if (!isEmpty(updates)) {
-    await Meteor.users.updateAsync(userId, { $set: updates })
-  }
+  if (isEmpty(updates) && isEmpty(unset)) return
+
+  const current = asUpload(user.profile?.photo)
+  await withUploadAttached({ image: asUpload(photo), userId, current }, () =>
+    Meteor.users.updateAsync(userId, {
+      ...(isEmpty(updates) ? {} : { $set: updates }),
+      ...(isEmpty(unset) ? {} : { $unset: unset }),
+    }),
+  )
+  if (photo !== undefined) await releaseImage(current, asUpload(photo))
 }
 
 const requestMagicLink = async function (options: RequestMagicLinkArgs) {

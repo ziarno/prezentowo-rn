@@ -1,4 +1,8 @@
-import type { ImageRef, NotificationDoc } from '@prezentowo/types'
+import type {
+  ImageRef,
+  InvitePreview,
+  NotificationDoc,
+} from '@prezentowo/types'
 import assert from 'assert'
 import { Meteor } from 'meteor/meteor'
 
@@ -121,15 +125,20 @@ describe('invite publications', function () {
       const sub = await subscribe(null, 'invites.byCode', code)
       const newcomer = await createUser('Newcomer')
       await Meteor.users.updateAsync(newcomer, {
-        $set: { 'profile.avatar': 'f2' },
+        $set: { 'profile.avatar': 'f2', 'profile.photo': 'photo-id' },
       })
 
       await callAsUser(newcomer, 'events.join', { code })
 
       await waitFor(() => {
         const taking = sub.docs('invitePreviews').get(code)
-          ?.realParticipants as { name: string; avatar?: string }[]
-        return taking?.some(p => p.name === 'Newcomer' && p.avatar === 'f2')
+          ?.realParticipants as InvitePreview['realParticipants']
+        return taking?.some(
+          p =>
+            p.name === 'Newcomer' &&
+            p.avatar === 'f2' &&
+            p.photo === 'photo-id',
+        )
       })
     })
 

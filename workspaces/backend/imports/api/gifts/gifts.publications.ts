@@ -74,8 +74,9 @@ Meteor.publish('gifts.byEvent', async function (eventId: string) {
   this.onStop(() => handle.stop())
 })
 
-// Minimal profiles (name + avatar) for the real participants of an event, so
-// the client can render their names and avatars in the event/people screens.
+// Minimal profiles (name, avatar, photo) for the real participants of an
+// event, so the client can render their names and pictures in the
+// event/people screens.
 // Only while the viewer stays a member: their removal ends it.
 Meteor.publish('users.inEvent', async function (eventId: string) {
   check(eventId, String)
@@ -90,6 +91,8 @@ Meteor.publish('users.inEvent', async function (eventId: string) {
 
   return Meteor.users.find(
     { _id: { $in: userIds } },
-    { fields: { 'profile.name': 1, 'profile.avatar': 1 } },
+    {
+      fields: { 'profile.name': 1, 'profile.avatar': 1, 'profile.photo': 1 },
+    },
   )
 })

@@ -17,7 +17,6 @@ import {
   PlusIcon,
 } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
-import { type AvatarKey, avatar } from '@/constants/avatars'
 import { garland } from '@/constants/colors'
 import { useAuth } from '@/hooks/useAuth'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
@@ -28,7 +27,7 @@ import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useOffline } from '@/hooks/useOffline'
 import { useLanguageModal } from '@/localization/LanguageModalProvider'
 import { LOCALES } from '@/localization/provider'
-import { Avatar } from '@/ui/components/Avatar'
+import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
 import { PeopleDrawer } from '@/ui/components/PeopleDrawer'
 
 type IconComponent = ComponentType<{
@@ -77,7 +76,6 @@ function HomeMenu({ go }: MenuProps) {
   const { open: openLanguageModal } = useLanguageModal()
   const user = useCurrentUser()
 
-  const avatarKey = (user?.profile?.avatar as AvatarKey | undefined) ?? 'm1'
   const email = user?.emails?.[0]?.address
   const localeLabel =
     LOCALES.find(l => l.code === i18n.language)?.label ?? 'English'
@@ -90,7 +88,12 @@ function HomeMenu({ go }: MenuProps) {
         accessibilityLabel={t('shell.profile')}
         className="flex-row items-center gap-3.5 px-[22px] pb-5 pt-4 active:opacity-70"
       >
-        <Avatar source={avatar(avatarKey)} size={48} />
+        <ParticipantAvatar
+          name={user?.profile?.name ?? ''}
+          avatarKey={user?.profile?.avatar ?? 'm1'}
+          photo={user?.profile?.photo}
+          size={48}
+        />
         <View className="min-w-0 flex-1">
           <Text
             className="text-[17px] font-bold text-garland-ink"

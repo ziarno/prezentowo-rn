@@ -6,6 +6,8 @@ declare module 'meteor/meteor' {
     interface UserProfile {
       name?: string
       avatar?: string
+      // An upload id, shown instead of `avatar` (docs/spec.md §1.10).
+      photo?: string
     }
 
     interface User {

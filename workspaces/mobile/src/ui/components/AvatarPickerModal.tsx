@@ -22,22 +22,32 @@ import { garland } from '@/constants/colors'
 import { AvatarTile } from '@/ui/components/AvatarTile'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { GenderToggle } from '@/ui/components/GenderToggle'
+import { PhotoUploadTile } from '@/ui/components/PhotoUploadTile'
 
 export type AvatarPickerModalHandle = { present: () => void }
 
 type Props = {
   value: AvatarKey | null
   onConfirm: (key: AvatarKey) => void
+  // Set: the grid starts with an upload tile, which closes the sheet and
+  // calls this to take or pick a photo instead.
+  onPhoto?: () => void
 }
 
 export const AvatarPickerModal = forwardRef<AvatarPickerModalHandle, Props>(
-  function AvatarPickerModal({ value, onConfirm }, ref) {
+  function AvatarPickerModal({ value, onConfirm, onPhoto }, ref) {
     const { t } = useTranslation()
     const insets = useSafeAreaInsets()
     const sheetRef = useRef<BottomSheetModal>(null)
 
+    // Opens on the current `value`, which may have changed since it last
+    // closed (e.g. a photo replaced it).
     useImperativeHandle(ref, () => ({
-      present: () => sheetRef.current?.present(),
+      present: () => {
+        setDraft(value)
+        setGender(value ? avatarGender(value) : 'female')
+        sheetRef.current?.present()
+      },
     }))
 
     const [draft, setDraft] = useState<AvatarKey | null>(value)
@@ -88,6 +98,16 @@ export const AvatarPickerModal = forwardRef<AvatarPickerModalHandle, Props>(
           <GenderToggle gender={gender} onChange={setGender} />
 
           <View className="-mx-1.5 mt-4 flex-row flex-wrap">
+            {onPhoto ? (
+              <View style={{ width: '20%' }} className="p-1.5">
+                <PhotoUploadTile
+                  onPress={() => {
+                    dismiss()
+                    onPhoto()
+                  }}
+                />
+              </View>
+            ) : null}
             {avatarKeysForGender(gender).map(key => (
               <View key={key} style={{ width: '20%' }} className="p-1.5">
                 <AvatarTile

@@ -190,6 +190,7 @@ function InviteBody({
                     <ParticipantAvatar
                       name={name}
                       avatarKey={p.avatar}
+                      photo={p.photo}
                       size={24}
                     />
                     <Text className="text-[13px] font-semibold text-garland-ink">

@@ -3,10 +3,9 @@ import {
   PRESENT_ILLUSTRATION_IDS,
 } from '@prezentowo/types'
 import { Image } from 'expo-image'
-import * as ImagePicker from 'expo-image-picker'
 import { type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Pressable, ScrollView, View } from 'react-native'
+import { Pressable, ScrollView, View } from 'react-native'
 
 import { type DraftImage, isPhoto } from '@/api/draftImage'
 import { photoUri } from '@/api/images'
@@ -14,10 +13,9 @@ import { CloseIcon, PhotoIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
 import { PRESENT_SOURCES } from '@/constants/presents'
+import { usePhotoPrompt } from '@/hooks/usePhotoPrompt'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { StockBackground } from '@/ui/components/StockBackground'
-
-type PickerError = 'cameraDenied' | 'cameraUnavailable' | 'libraryFailed'
 
 type Art = 'present' | 'background'
 
@@ -50,50 +48,16 @@ export function ImagePickerGrid({
   layout?: 'grid' | 'row'
 }) {
   const { t } = useTranslation()
-  const [error, setError] = useState<PickerError | null>(null)
   const [width, setWidth] = useState(0)
 
-  const choose = (result: ImagePicker.ImagePickerResult) => {
-    const asset = result.canceled ? undefined : result.assets[0]
-    if (asset) onChange({ kind: 'local', uri: asset.uri })
-  }
-
-  const takePhoto = async () => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync()
-    if (!permission.granted) {
-      setError('cameraDenied')
-      return
-    }
-    try {
-      choose(await ImagePicker.launchCameraAsync({ mediaTypes: ['images'] }))
-    } catch {
-      // The iOS Simulator, for one, has no camera.
-      setError('cameraUnavailable')
-    }
-  }
-
-  const pickFromLibrary = async () => {
-    try {
-      // The system picker needs no library permission.
-      choose(
-        await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] }),
-      )
-    } catch {
-      setError('libraryFailed')
-    }
-  }
-
-  const upload = () => {
-    setError(null)
-    Alert.alert(t('photoPicker.upload'), undefined, [
-      { text: t('photoPicker.takePhoto'), onPress: takePhoto },
-      { text: t('photoPicker.choosePhoto'), onPress: pickFromLibrary },
-      { text: t('photoPicker.cancel'), style: 'cancel' },
-    ])
-  }
+  const {
+    prompt: upload,
+    error,
+    clearError,
+  } = usePhotoPrompt(uri => onChange({ kind: 'local', uri }))
 
   const pickStock = (id: string) => {
-    setError(null)
+    clearError()
     const picked = value?.kind === 'illustration' && value.id === id
     onChange(picked ? undefined : { kind: 'illustration', id })
   }
@@ -189,7 +153,7 @@ export function ImagePickerGrid({
         <GarlandButton
           variant="link"
           onPress={() => {
-            setError(null)
+            clearError()
             onChange(undefined)
           }}
           className="mt-3 flex-row gap-1.5 self-center"

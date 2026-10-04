@@ -12,7 +12,7 @@ Nothing in this document is open. If building reveals a missing decision, raise 
 
 ## 1. Shared contract — `@prezentowo/types`
 
-Change `workspaces/types/src/index.ts` **before** either side ships code that depends on the change, and verify **both** workspaces (`AGENTS.md`). Unchanged types (`RegisterNewUserArgs`, `UpdateUserArgs`, `LoginCredentials`, `RequestMagicLinkArgs`) are omitted.
+Change `workspaces/types/src/index.ts` **before** either side ships code that depends on the change, and verify **both** workspaces (`AGENTS.md`). Unchanged types (`RegisterNewUserArgs`, `LoginCredentials`, `RequestMagicLinkArgs`) are omitted.
 
 ### 1.1 Images — [#5](https://github.com/ziarno/prezentowo-rn/issues/5), [#12](https://github.com/ziarno/prezentowo-rn/issues/12)
 
@@ -115,7 +115,7 @@ export type InvitePreview = {
   date: string
   background?: ImageRef
   inviterName: string
-  realParticipants: { id: string; name: string; avatar?: string }[] // who's already taking part; never a userId
+  realParticipants: { id: string; name: string; avatar?: string; photo?: string }[] // who's already taking part; never a userId
   unclaimedPlaceholders: { id: string; name: string; color: string; avatar?: string; reservedForYou?: true }[]
 }
 ```
@@ -228,8 +228,21 @@ export type ChatThreadDoc = {
 
 ```ts
 export type UserSearchArgs = { query: string }
-export type UserSearchResult = { userId: string; name: string; avatar?: string } // never an email
+export type UserSearchResult = { userId: string; name: string; avatar?: string; photo?: string } // never an email
 ```
+
+### 1.10 Profile photo — [#75](https://github.com/ziarno/prezentowo-rn/issues/75)
+
+```ts
+export type UpdateUserArgs = {
+  name?: string
+  email?: string
+  avatar?: string        // a stock avatar key (`f1`…`f12`, `m1`…`m12`)
+  photo?: string | null  // an upload id; null clears it, undefined leaves it
+}
+```
+
+A user's picture is `profile.photo` when set, else the stock `profile.avatar`, else their initial. `profile.avatar` keeps its plain string key, so nothing migrates. A photo is an upload (§3.1) rendered with its `400` derivative; it never replaces `avatar`, which stays the fallback. Picking a stock avatar on Profile sends `{ avatar, photo: null }`. Every payload that carries a user's `avatar` from their profile carries `photo` beside it: `users.inEvent`, `UserSearchResult`, `InvitePreview.realParticipants`. Placeholders carry only `avatar`: a reserved placeholder snapshots the stock `avatar` and never the photo, since an upload sits on one document only and the user may replace or delete it. `InvitePreview` reaches signed-out viewers, so anyone with an invite code can see the photos of those taking part; like every upload URL (§3.1), a photo id is unguessable, not authenticated.
 
 ---
 
@@ -269,7 +282,7 @@ All methods are `async`, check `this.userId`, and validate arguments. "Member" m
 | `users.search(UserSearchArgs)` | signed in | Online-only `call`; never queued, never mirrored. Folds `query` like `nameTokens` and returns `[]` under 3 folded characters. Every query token must be a prefix of some `nameTokens` entry (anchored regex, so the index is used). Excludes the caller and users without a name. At most 10 `UserSearchResult`s, ordered by name. Rate-limited with `DDPRateLimiter` to 10 calls per 10 s per `userId` + `connectionId`. Everyone with a name is findable: no opt-out in v1 (Settings is out of scope, §8). | — |
 | `notifications.markAllRead()` | signed in | Marks every unread notification belonging to the caller as read. | — |
 | `stream.token()` | signed in | `createToken(userId, now+1h, iat=now)`. | — |
-| `profile.name`, `profile.avatar` | unchanged | | |
+| `updateUser(UpdateUserArgs)` | signed in | Sets `profile.name`, `email`, the stock `profile.avatar` and `profile.photo` (§1.10). A new `photo` attaches the upload per §3.1 (`imageNotFound` / `imageInUse`); re-sending the current one attaches nothing. A new or `null` photo deletes the replaced upload. There is no account deletion in v1. | — |
 
 The Dev login is **not** a method. It is an `Accounts.registerLoginHandler` for `{ devLogin: true }`, registered only when `Meteor.isDevelopment`. It logs in as `dev@prezentowo.local` (created on first use with a first name already set) ([#4](https://github.com/ziarno/prezentowo-rn/issues/4)).
 
@@ -311,8 +324,8 @@ Both event publications omit `participants.invitedUserId`: a reserved placeholde
 - `POST /api/images`: an `accounts-express`-authenticated Express route on `WebApp.handlers`, single-file multipart. The client downscales before upload to at most 1600 px on the long edge (JPEG q≈0.7, `expo-image-manipulator`). The server generates **three WebP derivatives with `sharp`**: `400` (present tile), `1000` (present detail, `5d`), and `1600` (event cover). They are written to `IMAGES_DIR/<id>/<size>.webp`, where `<id>` is `Random.secret()` and acts as a bearer capability. The route inserts an `Images` record and returns `{ id }`. The original upload is not kept.
 - Serving: `GET /images/<id>/<size>.webp` as static files. **Caddy** serves them in production, and a Meteor static handler does so in development only. URLs are unguessable, not authenticated.
 - `IMAGES_DIR` comes from `settings.json` and must be a dedicated filesystem, not the Mongo volume (disk-full behaviour is undocumented). It is backed up off-site by **restic** (infra slice).
-- Attach ([#70](https://github.com/ziarno/prezentowo-rn/issues/70)): `gifts.add`, `events.create`, and `gifts.update` / `events.update` with a new image, set `attachedAt` on the upload in one conditional update on `{ _id, ownerId: caller, attachedAt: { $exists: false } }`. A missing upload or someone else's is `notFound` / `imageNotFound`; one already attached, even to the caller's own document, is `invalidArgs` / `imageInUse`, so one upload is never on two documents. Re-sending a document's current upload attaches nothing. `gifts.add` attaches after its `clientId` replay lookup, so a replay still answers with its gift. If the write after attaching throws, `attachedAt` is unset again.
-- Cleanup: `events.delete`, `gifts.remove`, `gifts.update` with a new or cleared image, and `events.update` with a new or cleared background delete the replaced upload's directory and its `Images` record.
+- Attach ([#70](https://github.com/ziarno/prezentowo-rn/issues/70)): `gifts.add`, `events.create`, `gifts.update` / `events.update` with a new image, and `updateUser` with a new `photo` (§1.10), set `attachedAt` on the upload in one conditional update on `{ _id, ownerId: caller, attachedAt: { $exists: false } }`. A missing upload or someone else's is `notFound` / `imageNotFound`; one already attached, even to the caller's own document, is `invalidArgs` / `imageInUse`, so one upload is never on two documents. Re-sending a document's current upload attaches nothing. `gifts.add` attaches after its `clientId` replay lookup, so a replay still answers with its gift. If the write after attaching throws, `attachedAt` is unset again.
+- Cleanup: `events.delete`, `gifts.remove`, `gifts.update` with a new or cleared image, `events.update` with a new or cleared background, and `updateUser` with a new or cleared `photo` delete the replaced upload's directory and its `Images` record.
 - Sweep: a server job, at startup and then daily, deletes every upload with no `attachedAt` whose `createdAt` is over 24 h old, directory and record. One a gift or event still points at (stored before `attachedAt` existed) is marked attached instead. That collects uploads whose save failed and was given up, e.g. a discarded queued add (§6.3). Clients upload at save time, seconds before the write, so 24 h is a wide margin.
 
 ### 3.2 Link import — [#7](https://github.com/ziarno/prezentowo-rn/issues/7), [#16](https://github.com/ziarno/prezentowo-rn/issues/16), [#17](https://github.com/ziarno/prezentowo-rn/issues/17)
@@ -408,7 +421,7 @@ src/app/
 | `7a` invite | `invites.byCode` | `events.join`, `invites.ignore` | Renders signed out. The placeholder list ends with "no, I'm new". A `reservedForYou` placeholder replaces the list and "no, I'm new": "{inviter} added you as {name}", with Join and Ignore, since `events.join` claims the reservation either way. Offline: a blocking error. |
 | Notifications | `notifications.mine`, `events.mine` (titles), `invites.deferred`, `users.inEvent` + `gifts.byEvent` per event its rows name | `notifications.markAllRead` on open | Layout per [#28](https://github.com/ziarno/prezentowo-rn/issues/28): flat inbox (New / Earlier this week / Older), same-event joins coalesced, unread styling from a snapshot taken at open. `invite-deferred` and `invited` → `7a` (code derived live from the event's `InviteDoc`; `invited` reads "{inviter} invited you to {event}"), `suggestion-claimed` → `1e` (deleted gift → `3f`, or `3c` if the recipient is gone), `participant-joined` → `3c`, `claimed-gift-removed` → `3f` ("{present} in {event} was removed"). |
 | `8a`/`8b` chat | `chatThreads.byEvent`, `stream.token` | Stream | Connect lazily, only when a chat screen opens. |
-| Profile | current user | `profile.name`, `profile.avatar` | Unchanged. |
+| Profile | current user | `updateUser`, `POST /api/images` | The avatar opens a sheet: take a photo, choose one, or pick a stock avatar (§1.10). A photo is square-cropped in the system picker, downscaled and uploaded at once, then saved. Online-only: dimmed with `useOffline()`, like the rest of the profile edits. First-login's "+" tile does the same take/choose, previews the photo, and uploads it on Continue, saving it with the name. |
 
 Link-import outcomes on `5a`–`5d`:
 - **success** → `5d` with the **import review hint**: a field note per `missing` entry, plus one generic "double-check" note. The hint is client-only.

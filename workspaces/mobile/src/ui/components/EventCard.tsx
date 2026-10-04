@@ -72,6 +72,7 @@ export function EventCard({
                 <ParticipantAvatar
                   name={person.name}
                   avatarKey={person.avatarKey}
+                  photo={person.photo}
                   color={person.color}
                   size={AVATAR_SIZE}
                 />

@@ -54,6 +54,7 @@ export function ActivityFeedItem({
           // Their own initial, not "You"'s.
           name={actor?.name ?? actorName}
           avatarKey={actor?.avatarKey}
+          photo={actor?.photo}
           color={actor?.color}
           size={32}
         />
