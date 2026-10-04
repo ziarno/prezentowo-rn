@@ -11,7 +11,6 @@ import plusIconAsset from '@/assets/svg/plus-icon.svg'
 import { Text } from '@/components/ui/text'
 import { type AvatarKey, avatar } from '@/constants/avatars'
 import { errorMessage } from '@/localization/errorMessage'
-import { useAuthStore } from '@/store/useAuthStore'
 import { AuthField } from '@/ui/components/AuthField'
 import { Avatar } from '@/ui/components/Avatar'
 import {
@@ -25,7 +24,6 @@ export function FirstLoginScreen() {
   const [selected, setSelected] = useState<AvatarKey>('f1')
   const avatarPickerRef = useRef<AvatarPickerModalHandle>(null)
   const { t } = useTranslation()
-  const setFirstLoginPending = useAuthStore(s => s.setFirstLoginPending)
 
   const validationSchema = Yup.object({
     name: Yup.string().trim().required(t('common.required')),
@@ -42,12 +40,11 @@ export function FirstLoginScreen() {
   } = useFormik({
     initialValues: { name: '' },
     validationSchema,
+    // Once the name is saved, the user document carries it and the root
+    // guards open the app; there's no skipping it.
     onSubmit: (formValues, { setSubmitting, setFieldError }) => {
       updateUser({ name: formValues.name.trim(), avatar: selected })
-        .then(() => {
-          setFirstLoginPending(false)
-          setSubmitting(false)
-        })
+        .then(() => setSubmitting(false))
         .catch((err: unknown) => {
           setSubmitting(false)
           setFieldError(
@@ -69,16 +66,7 @@ export function FirstLoginScreen() {
             <Text className="text-xs font-bold uppercase tracking-[1px] text-garland-ink-40">
               {t('firstLogin.step')}
             </Text>
-            <View className="flex-row items-center gap-3">
-              <LanguageChangeButton />
-              <GarlandButton
-                variant="link"
-                hitSlop={12}
-                onPress={() => setFirstLoginPending(false)}
-              >
-                <GarlandButtonText>{t('common.skip')}</GarlandButtonText>
-              </GarlandButton>
-            </View>
+            <LanguageChangeButton />
           </View>
 
           <View className="pt-1.5">

@@ -10,6 +10,7 @@ import { findInvitePreview, ignoreInvite } from '@/api/invites'
 import { CheckIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
+import { useAccountStage } from '@/hooks/useAccountStage'
 import { useMyEvents } from '@/hooks/useMyEvents'
 import { useOffline } from '@/hooks/useOffline'
 import { errorMessage } from '@/localization/errorMessage'
@@ -38,16 +39,15 @@ export function InviteScreen({ code }: { code: string }) {
   const ready = useSubscription('invites.byCode', [code])
   const preview = useTracker(() => findInvitePreview(code), [code])
 
-  const userToken = useAuthStore(s => s.userToken)
-  const firstLoginPending = useAuthStore(s => s.firstLoginPending)
+  const stage = useAccountStage()
   const hasCompletedOnboarding = useAuthStore(s => s.hasCompletedOnboarding)
-  const appOpen = !!userToken && !firstLoginPending
+  const appOpen = stage === 'app'
   const { events } = useMyEvents()
 
   // Wherever the guards let this person be right now.
   const home: Href = appOpen
     ? '/'
-    : userToken
+    : stage === 'firstLogin'
       ? '/first-login'
       : hasCompletedOnboarding
         ? '/welcome'

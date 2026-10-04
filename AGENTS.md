@@ -41,6 +41,7 @@ yarn workspace backend tsc --noEmit       # backend type check (not scripted)
 - **Day to day**, once that build is installed: `yarn workspace mobile start` reuses it — Metro-only, no native rebuild.
 - No EAS project is configured; this is a **local** dev build (`expo run:ios` / `expo run:android` under the hood). Needs Xcode + a simulator (or Android Studio + an emulator/device) on the machine running it.
 - The splash waits for fonts, onboarding state and the encrypted offline cache, not for the backend (`src/ui/SplashScreenController.tsx`). Without `yarn workspace backend start` (or root `yarn dev`) a signed-in app opens offline from its cache, under the offline banner; a first run stays signed out.
+- Signed in, the splash also waits for the user's own document, which decides first-login (no `profile.name`) vs the app (`src/api/accountStage.ts`). Usually it comes from the cache. If the cache doesn't have it, the splash waits for the server, but no longer than the 1.5 s offline grace (`useOffline`).
 - `expo-env.d.ts` (ambient types for `expo/types`, needed for the `global.css` side-effect import to typecheck) is gitignored and only written the first time the dev server or a native build runs in a given checkout/worktree — run `yarn workspace mobile start` (or `ios`/`android`) once before `tsc --noEmit` on a fresh checkout.
 
 ## Mobile wiring

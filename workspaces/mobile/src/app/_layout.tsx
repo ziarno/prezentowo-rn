@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider'
+import { useAccountStage } from '@/hooks/useAccountStage'
 import { useMagicLinkDeepLink } from '@/hooks/useMagicLinkDeepLink'
 import { usePendingInvite } from '@/hooks/usePendingInvite'
 import { LanguageModalProvider } from '@/localization/LanguageModalProvider'
@@ -38,17 +39,20 @@ export default function Root() {
 
 function RootNavigator() {
   useMagicLinkDeepLink()
-  const userToken = useAuthStore(s => s.userToken)
   const hasCompletedOnboarding = useAuthStore(s => s.hasCompletedOnboarding)
-  const firstLoginPending = useAuthStore(s => s.firstLoginPending)
+  const stage = useAccountStage()
 
   // hasCompletedOnboarding === null means we haven't read from SecureStore yet;
   // the splash screen stays up until then, so any guard would work — but we
   // gate explicitly to avoid a one-frame flash of the wrong screen.
   const showOnboarding = hasCompletedOnboarding === false
-  const showAuth = hasCompletedOnboarding === true && !userToken
-  const showFirstLogin = !!userToken && firstLoginPending
-  const showApp = !!userToken && !firstLoginPending
+  // Just signed in, the user document still on its way: stay on the auth
+  // screen rather than guess between first-login and the app.
+  const showAuth =
+    hasCompletedOnboarding === true &&
+    (stage === 'signedOut' || stage === 'loading')
+  const showFirstLogin = stage === 'firstLogin'
+  const showApp = stage === 'app'
   usePendingInvite(showApp)
 
   return (
