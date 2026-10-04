@@ -1,8 +1,8 @@
-import { useTranslation } from 'react-i18next'
+import { useLocalSearchParams } from 'expo-router'
 
-import { StubScreen } from '@/ui/components/StubScreen'
+import { ChatScreen } from '@/ui/screens/ChatScreen'
 
 export default function EventChatRoute() {
-  const { t } = useTranslation()
-  return <StubScreen title={t('shell.eventChat')} />
+  const { eventId } = useLocalSearchParams<{ eventId: string }>()
+  return <ChatScreen key={eventId} eventId={eventId} kind="event" />
 }

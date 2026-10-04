@@ -36,6 +36,7 @@ import { useQueuedWrites } from '@/hooks/useQueuedWrites'
 import { errorMessage } from '@/localization/errorMessage'
 import { discardWrite } from '@/sync'
 import { BuyerChips } from '@/ui/components/BuyerChips'
+import { ChatRecapBox } from '@/ui/components/ChatRecapBox'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { FAILED_KEY } from '@/ui/components/GiftRow'
 import { LockNote } from '@/ui/components/LockNote'
@@ -297,6 +298,15 @@ export function PresentDetailScreen({
           ) : (
             <LockNote className="mt-6">{t('present.onYourList')}</LockNote>
           )}
+
+          {/* Buyers coordinate in the recipient's thread, which the
+              recipient is never sent: on their own present it's absent. */}
+          <ChatRecapBox
+            eventId={eventId}
+            participantId={gift.forParticipantId}
+            label={t('chat.presentRecap', { name: nameOf(recipient) })}
+            className="mt-8"
+          />
 
           {canRemoveGift(event, gift, user._id) && serverGift ? (
             <View className="mt-10 border-t border-garland-ink-08 pt-5">

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 
+import { chatSession } from '@/chat'
 import { useAuthStore } from '@/store/useAuthStore'
 import {
   type LoginResult,
@@ -92,6 +93,7 @@ export const useAuth = () => {
     },
     // The local session is cleared even when the server call fails.
     signOut: ({ onError }: SignOutParams) => {
+      chatSession.end()
       logout().then(
         () => setUserToken(null),
         err => {

@@ -120,15 +120,12 @@
     "activity": "Aktywność",
     "editEvent": "Edytuj wydarzenie",
     "chat": "Czat",
-    "eventChat": "Czat wydarzenia",
     "addPresent": "Dodaj prezent",
     "person": "Prezenty",
-    "personChat": "Czat o prezentach",
     "present": "Prezent",
     "people": "Osoby",
     "invitePeople": "Zaproś osoby",
     "you": "— ty",
-    "comingSoon": "Już wkrótce.",
     "openMenu": "Otwórz menu",
     "back": "Wstecz",
     "close": "Zamknij",
@@ -533,5 +530,20 @@
       "notAParticipant": "Nie bierzesz już udziału w tym wydarzeniu.",
       "other": "Nie udało się tego wysłać."
     }
+  },
+  "chat": {
+    "eventTitle": "Czat wydarzenia",
+    "personTitle": "Prezenty: {{name}}",
+    "eventNote": "Ten czat widzą wszyscy w wydarzeniu. Rozmawiajcie tu tylko o prezentach, które ktoś dodał sam sobie.",
+    "personNote": "{{name}} nigdy nie widzi tego czatu. Tu ustalacie prezenty dla tej osoby.",
+    "personRecap": "Czat o prezentach dla tej osoby. {{name}} nigdy go nie widzi.",
+    "presentRecap": "Ustalcie szczegóły na czacie o prezentach dla: {{name}}.",
+    "open": "Czat",
+    "loading": "Wczytywanie wiadomości…",
+    "noMessages": "Nie ma jeszcze wiadomości.",
+    "attachment": "📎 Załącznik",
+    "notFound": "Ten czat jest niedostępny.",
+    "cantLoad": "Nie można wczytać wiadomości.",
+    "retry": "Spróbuj ponownie"
   }
 }

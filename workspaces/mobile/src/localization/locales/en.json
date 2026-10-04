@@ -120,15 +120,12 @@
     "activity": "Activity",
     "editEvent": "Edit event",
     "chat": "Chat",
-    "eventChat": "Event chat",
     "addPresent": "Add present",
     "person": "Presents",
-    "personChat": "Presents chat",
     "present": "Present",
     "people": "People",
     "invitePeople": "Invite people",
     "you": "— you",
-    "comingSoon": "Coming soon.",
     "openMenu": "Open menu",
     "back": "Back",
     "close": "Close",
@@ -501,5 +498,20 @@
       "notAParticipant": "You're no longer in this event.",
       "other": "It couldn't be sent."
     }
+  },
+  "chat": {
+    "eventTitle": "Event chat",
+    "personTitle": "{{name}}'s presents",
+    "eventNote": "Everyone in the event sees this chat. Only talk about presents people added for themselves.",
+    "personNote": "{{name}} never sees this chat. Plan their presents here.",
+    "personRecap": "Chat about {{name}}'s presents. {{name}} never sees it.",
+    "presentRecap": "Talk it over in the chat about {{name}}'s presents.",
+    "open": "Chat",
+    "loading": "Loading messages…",
+    "noMessages": "No messages yet.",
+    "attachment": "📎 Attachment",
+    "notFound": "This chat isn't available.",
+    "cantLoad": "Can't load messages.",
+    "retry": "Try again"
   }
 }

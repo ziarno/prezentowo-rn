@@ -62,9 +62,12 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-svg": "15.15.4",
+    "react-native-teleport": "^1.2.2",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.10.1",
     "react-stately": "^3.45.0",
+    "stream-chat": "^9.53.0",
+    "stream-chat-expo": "^9.9.2",
     "tailwind-variants": "^0.1.20",
     "yup": "^1.7.1",
     "zustand": "^5.0.11"

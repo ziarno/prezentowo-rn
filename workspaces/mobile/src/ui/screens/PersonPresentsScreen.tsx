@@ -22,6 +22,7 @@ import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { usePersonName } from '@/hooks/usePersonName'
 import { useQueuedWrites } from '@/hooks/useQueuedWrites'
 import { discardWrite } from '@/sync'
+import { ChatRecapBox } from '@/ui/components/ChatRecapBox'
 import { GiftRow } from '@/ui/components/GiftRow'
 import { LockNote } from '@/ui/components/LockNote'
 import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
@@ -159,6 +160,13 @@ export function PersonPresentsScreen({
             </Text>
           </View>
         </View>
+
+        <ChatRecapBox
+          eventId={eventId}
+          participantId={participantId}
+          label={t('chat.personRecap', { name: person.name })}
+          className="mx-[22px] mb-2"
+        />
 
         {list.kind === 'mine' ? (
           <>
