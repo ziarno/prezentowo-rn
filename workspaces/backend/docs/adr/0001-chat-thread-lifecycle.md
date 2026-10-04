@@ -12,6 +12,6 @@ Stream delivers `notification.removed_from_channel` to the removed user. A deriv
 
 ## Consequences
 
-- Retired threads keep their history in Stream but drop out of the UI.
+- Retired threads keep their history and members in Stream, frozen so nobody can post, but drop out of the UI. Stream still lists them in a member's own queries, so the client asks for the published threads by cid.
 - A beneficiary change starts that recipient's secret conversation from empty.
 - Chat never feeds the activity feed or notifications.

@@ -11,9 +11,14 @@ export type FakeChatCall =
   | { op: 'createChannel'; cid: string; members: string[]; createdById: string }
   | { op: 'addMembers'; cid: string; userIds: string[]; hideHistory: boolean }
   | { op: 'removeMembers'; cid: string; userIds: string[] }
+  | { op: 'freezeChannel'; cid: string }
   | { op: 'deleteChannels'; cids: string[]; hardDelete: boolean }
 
-type FakeChannel = { createdById: string; members: Set<string> }
+type FakeChannel = {
+  createdById: string
+  members: Set<string>
+  frozen?: boolean
+}
 
 /**
  * An in-memory Stream server: records every call and keeps channels and
@@ -42,6 +47,14 @@ export class FakeChatServer implements ChatServer {
     const channel = this.channels.get(cid)
     if (!channel) throw new Error(`No channel ${cid}`)
     return [...channel.members].sort()
+  }
+
+  /** Whether the channel backing `thread` is frozen. */
+  isFrozen(
+    thread: Pick<ChatThreadDoc, 'streamChannelType' | 'streamChannelId'>,
+  ) {
+    const cid = `${thread.streamChannelType}:${thread.streamChannelId}`
+    return this.channel(cid).frozen === true
   }
 
   createToken(userId: string, exp: number, iat: number) {
@@ -115,6 +128,14 @@ export class FakeChatServer implements ChatServer {
     const channel = this.channel(cid)
     this.calls.push({ op: 'removeMembers', cid, userIds: [...userIds] })
     for (const userId of userIds) channel.members.delete(userId)
+  }
+
+  async freezeChannel(type: ChannelType, id: string) {
+    this.write()
+    const cid = `${type}:${id}`
+    const channel = this.channel(cid)
+    this.calls.push({ op: 'freezeChannel', cid })
+    channel.frozen = true
   }
 
   async deleteChannels(cids: string[], options: { hard_delete: boolean }) {

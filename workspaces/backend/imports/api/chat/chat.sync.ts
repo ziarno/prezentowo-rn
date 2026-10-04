@@ -78,6 +78,7 @@ async function syncEvent(server: ChatServer, eventId: string) {
   // a thread live for someone who must lose it. A thread is never edited to
   // drop the person it's about (backend ADR 0001).
   const kept: ChatThreadRecord[] = []
+  const retired: ChatThreadRecord[] = []
   for (const thread of live) {
     const stillWanted =
       thread.kind === 'event' ||
@@ -91,6 +92,7 @@ async function syncEvent(server: ChatServer, eventId: string) {
       await ChatThreads.updateAsync(thread._id, {
         $set: { retiredAt: new Date() },
       })
+      retired.push(thread)
     }
   }
 
@@ -148,6 +150,13 @@ async function syncEvent(server: ChatServer, eventId: string) {
         $set: { memberIds: want.memberIds },
       })
     }
+  }
+
+  // Last, as it only tidies up: a retired thread keeps its history, but a
+  // client still holding it can't post there. Not retried if it fails; the
+  // client only shows the threads chatThreads.byEvent publishes anyway.
+  for (const thread of retired) {
+    await server.freezeChannel(thread.streamChannelType, thread.streamChannelId)
   }
 }
 

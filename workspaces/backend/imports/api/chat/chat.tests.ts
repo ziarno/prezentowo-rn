@@ -251,6 +251,7 @@ describe('chat threads', function () {
         beneficiaryParticipantId: participants.bartek,
       })
       const bartekThread = (await secretThreadFor(participants.bartek))!
+      const bartekMembers = stream.membersOf(bartekThread)
       const celinaBefore = (await ChatThreads.findOneAsync({
         recipientParticipantId: participants.celina,
       }))!
@@ -264,6 +265,9 @@ describe('chat threads', function () {
 
       const retired = await ChatThreads.findOneAsync(bartekThread._id)
       assert.ok(retired!.retiredAt instanceof Date)
+      // Frozen, with its members and history left as they were.
+      assert.ok(stream.isFrozen(bartekThread))
+      assert.deepStrictEqual(stream.membersOf(bartekThread), bartekMembers)
       const celinaThread = (await secretThreadFor(participants.celina))!
       assert.notStrictEqual(
         celinaThread.streamChannelId,
@@ -330,18 +334,18 @@ describe('chat threads', function () {
       const calls = await callsDuring(() => remove(participants.celina))
 
       assert.ok((await ChatThreads.findOneAsync(celinaThread._id))!.retiredAt)
+      assert.ok(stream.isFrozen(celinaThread))
       for (const thread of await liveThreads()) {
         assert.ok(
           !stream.membersOf(thread).includes(users.celina),
           cidOf(thread),
         )
       }
-      // Never edits the thread about them.
+      // Never edits the members of the thread about them.
       assert.ok(
         !calls.some(
           c =>
-            c.op !== 'upsertUsers' &&
-            c.op !== 'deleteChannels' &&
+            (c.op === 'addMembers' || c.op === 'removeMembers') &&
             c.cid === cidOf(celinaThread),
         ),
       )
@@ -416,6 +420,27 @@ describe('chat threads', function () {
           cidOf(thread),
         )
       }
+    })
+
+    it('still retires the thread of a removed recipient', async function () {
+      const { users, participants } = family
+      const celinaThread = (await secretThreadFor(participants.celina))!
+      const sub = await subscribeAsUser(
+        users.bartek,
+        'chatThreads.byEvent',
+        family.eventId,
+      )
+
+      stream.failing = true
+      await callAsUser(users.ola, 'events.removeParticipant', {
+        eventId: family.eventId,
+        participantId: participants.celina,
+      })
+      stream.failing = false
+
+      assert.ok((await ChatThreads.findOneAsync(celinaThread._id))!.retiredAt)
+      await waitFor(() => !sub.docs('chatThreads').has(celinaThread._id))
+      sub.stop()
     })
 
     it('events.delete still removes the threads', async function () {

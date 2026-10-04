@@ -299,7 +299,7 @@ Both event publications omit `participants.invitedUserId`: a reserved placeholde
 - One `event_thread` per event. One `secret_thread` per **recipient**: every participant in many-to-many, only the beneficiary in many-to-one. Each secret thread's members are every real participant except its recipient.
 - Channels are created eagerly by whichever method changes membership: `events.create`, `events.join`, `events.update` (beneficiary change), `events.removeParticipant`. Placeholders cause no Stream calls.
 - A new member sees full history (`hide_history: false`).
-- **Retire, don't edit** when someone must lose access (a beneficiary change, removal of that recipient). Set `retiredAt`, mint a replacement, and never remove the person the thread concerns from a live channel.
+- **Retire, don't edit** when someone must lose access (a beneficiary change, removal of that recipient). Set `retiredAt`, freeze the Stream channel (history stays readable, nobody can post), mint a replacement, and never remove the person the thread concerns from a live channel.
 - No webhook ingestion into Mongo, ever. Chat is online-only.
 
 ---
@@ -459,7 +459,8 @@ Link-import outcomes on `5a`–`5d`:
 
 - `stream-chat-expo` with a token provider backed by `stream.token`. `connectUser` runs only when `8a`/`8b` opens, never on app start, because billing counts MAU and peak connections.
 - `8b` is the event thread. `8a` is a person's secret thread and is opened from `3f`'s 💬 button. The recipient never has a button for their own thread.
-- Recap boxes (`3f`, `1e`) call `queryChannels({ type, members: { $in: [userId] } }, …, { state: false, watch: false, message_limit: 3 })` without `connectUser` where the SDK allows it. If it doesn't, the recap box is hidden until the viewer has opened chat once in the session. This is a build-time fallback, not a product change.
+- Chat only ever shows the threads `chatThreads.byEvent` publishes, looked up by their cids. A member-based query would also return retired channels, which keep their members ([#60](https://github.com/ziarno/prezentowo-rn/issues/60)).
+- Recap boxes (`3f`, `1e`) call `queryChannels({ cid: { $in: publishedCids } }, …, { state: false, watch: false, message_limit: 3 })` without `connectUser` where the SDK allows it. If it doesn't, the recap box is hidden until the viewer has opened chat once in the session. This is a build-time fallback, not a product change.
 - When Stream is unreachable, show a plain "can't load messages" state.
 
 ---

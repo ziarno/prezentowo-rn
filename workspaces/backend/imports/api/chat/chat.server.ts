@@ -32,6 +32,8 @@ export interface ChatServer {
     options: { hide_history: boolean },
   ): Promise<void>
   removeMembers(type: ChannelType, id: string, userIds: string[]): Promise<void>
+  // Stops new messages; members keep reading the history.
+  freezeChannel(type: ChannelType, id: string): Promise<void>
   deleteChannels(
     cids: string[],
     options: { hard_delete: boolean },
@@ -55,6 +57,10 @@ export const streamChatServer = (
         .addMembers(userIds, undefined, options)),
     removeMembers: async (type, id, userIds) =>
       void (await client.channel(type, id).removeMembers(userIds)),
+    freezeChannel: async (type, id) =>
+      void (await client
+        .channel(type, id)
+        .updatePartial({ set: { frozen: true } })),
     deleteChannels: async (cids, options) =>
       void (await client.deleteChannels(cids, options)),
   }
