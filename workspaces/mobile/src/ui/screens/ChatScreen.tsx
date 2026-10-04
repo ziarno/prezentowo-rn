@@ -13,6 +13,7 @@ import {
 } from 'stream-chat-expo'
 
 import {
+  chatI18n,
   chatSession,
   cidOf,
   eventThreadOf,
@@ -128,8 +129,8 @@ function ThreadView({ thread }: { thread: ChatThreadDoc }) {
     )
   }
   return (
-    <OverlayProvider>
-      <Chat client={client}>
+    <OverlayProvider i18nInstance={chatI18n}>
+      <Chat client={client} i18nInstance={chatI18n}>
         <Channel
           channel={shown}
           // It measures itself within this screen, which starts at the top

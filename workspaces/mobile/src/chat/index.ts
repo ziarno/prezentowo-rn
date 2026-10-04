@@ -1,6 +1,7 @@
 // Stream chat (docs/spec.md §7): connected lazily, only while a chat screen
 // is open, and only ever for the threads `chatThreads.byEvent` publishes.
 export { chatSession } from './client'
+export { chatI18n } from './i18n'
 export {
   useChatConnection,
   useChatRecap,
