@@ -1,22 +1,9 @@
 import * as Linking from 'expo-linking'
 import { useEffect, useEffectEvent } from 'react'
 
+import { parseMagicLink } from '@/api/magicLink'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/store/useAuthStore'
-
-const PATH = 'magic-link'
-
-export function parseMagicLink(url: string) {
-  const parsed = Linking.parse(url)
-  if (parsed.path !== PATH && parsed.hostname !== PATH) return null
-
-  const q = parsed.queryParams ?? {}
-  const email = typeof q.email === 'string' ? q.email : null
-  const token = typeof q.token === 'string' ? q.token : null
-  if (!email || !token) return null
-
-  return { email, token }
-}
 
 // The launch URL stays the same for the whole process, so a remount (Fast
 // Refresh, StrictMode) must not sign in with its already-spent token again.

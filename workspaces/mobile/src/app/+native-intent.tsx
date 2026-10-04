@@ -1,9 +1,10 @@
-import { parseMagicLink } from '@/hooks/useMagicLinkDeepLink'
+import { isMagicLink } from '@/api/magicLink'
 
-// A magic link isn't a screen: `useMagicLinkDeepLink` signs in from it and the
-// root guards route the user afterwards. Launched by the link, start at the
-// root like a normal cold start; while running, stay where the user is (a
-// null return skips navigation).
+// A magic link isn't a screen: `useMagicLinkDeepLink` signs in from it (a
+// broken one is just ignored) and the root guards route the user afterwards.
+// Launched by the link, start at the root like a normal cold start; while
+// running, stay where the user is (expo-router skips navigation on null).
+// `isMagicLink` never throws, so this can't crash the router.
 export function redirectSystemPath({
   path,
   initial,
@@ -11,10 +12,6 @@ export function redirectSystemPath({
   path: string
   initial: boolean
 }) {
-  try {
-    if (parseMagicLink(path)) return initial ? '/' : null
-  } catch {
-    // Never crash here; let the router handle the path as it is.
-  }
+  if (isMagicLink(path)) return initial ? '/' : null
   return path
 }
