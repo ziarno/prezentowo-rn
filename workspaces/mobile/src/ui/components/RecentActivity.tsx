@@ -9,6 +9,7 @@ import type { EventParticipantsResult } from '@/hooks/useEventParticipants'
 import { usePersonName } from '@/hooks/usePersonName'
 import { useRecentActivity } from '@/hooks/useRecentActivity'
 import { activityKey, activityTime } from '@/localization/activityText'
+import { ActivityKindIcon } from '@/ui/components/ActivityKindIcon'
 
 // The up-to-3 recent items under a `3a` row, one compact line each. Nothing
 // at all while the event has none.
@@ -38,7 +39,9 @@ export function RecentActivity({
             : undefined
         return (
           <View key={item._id} className="flex-row items-start gap-2">
-            <View className="mt-[7px] size-1.5 rounded-full bg-garland-ink-40" />
+            <View className="mt-[3px]">
+              <ActivityKindIcon kind={line.kind} size={12} />
+            </View>
             <Text
               className="min-w-0 flex-1 text-[13px] leading-[18px] text-garland-ink"
               numberOfLines={2}

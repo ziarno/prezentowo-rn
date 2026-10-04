@@ -7,10 +7,12 @@ import type { ResolvedParticipant } from '@/api/participants'
 import { Text } from '@/components/ui/text'
 import { usePersonName } from '@/hooks/usePersonName'
 import { activityKey, activityTime } from '@/localization/activityText'
+import { ActivityKindBadge } from '@/ui/components/ActivityKindIcon'
 import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
 import { PresentTile } from '@/ui/components/PresentTile'
 
-// One `3c`–`3c4` card: who did it, what, the present it was about, and when.
+// One `3c`–`3c4` card: who did it (badged with the kind of item), what, the
+// present it was about, and when.
 // A self-added present is named in the sentence.
 export function ActivityFeedItem({
   line,
@@ -47,13 +49,16 @@ export function ActivityFeedItem({
       accessibilityRole={onPress ? 'button' : undefined}
       className="flex-row items-start gap-3 rounded-2xl border border-garland-ink-08 bg-garland-paper px-3.5 py-3 active:opacity-70"
     >
-      <ParticipantAvatar
-        // Their own initial, not "You"'s.
-        name={actor?.name ?? actorName}
-        avatarKey={actor?.avatarKey}
-        color={actor?.color}
-        size={32}
-      />
+      <View>
+        <ParticipantAvatar
+          // Their own initial, not "You"'s.
+          name={actor?.name ?? actorName}
+          avatarKey={actor?.avatarKey}
+          color={actor?.color}
+          size={32}
+        />
+        <ActivityKindBadge kind={line.kind} />
+      </View>
       <View className="min-w-0 flex-1 gap-1">
         <Text className="text-sm leading-[19px] text-garland-ink">
           <Trans

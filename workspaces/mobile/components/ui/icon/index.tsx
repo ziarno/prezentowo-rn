@@ -278,3 +278,38 @@ export function PhotoIcon({ color = 'currentColor', ...props }: IconProps) {
     />
   )
 }
+
+export function PersonPlusIcon({
+  color = 'currentColor',
+  ...props
+}: IconProps) {
+  return (
+    <StrokeIcon
+      {...props}
+      color={color}
+      strokeWidth={1.8}
+      d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M19 8v6M22 11h-6"
+      extra={<Circle cx={9} cy={7} r={4} stroke={color} strokeWidth={1.8} />}
+    />
+  )
+}
+
+export function LightbulbIcon(props: IconProps) {
+  return (
+    <StrokeIcon
+      {...props}
+      strokeWidth={1.8}
+      d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5M9 18h6M10 22h4"
+    />
+  )
+}
+
+export function UndoIcon(props: IconProps) {
+  return (
+    <StrokeIcon
+      {...props}
+      strokeWidth={1.8}
+      d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11"
+    />
+  )
+}
