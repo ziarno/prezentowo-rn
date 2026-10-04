@@ -1,4 +1,5 @@
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
+import type { UserSearchResult } from '@prezentowo/types'
 import { router, useNavigation } from 'expo-router'
 import { usePreventRemove } from 'expo-router/react-navigation'
 import { useRef, useState } from 'react'
@@ -13,10 +14,12 @@ import {
   type EventType,
   type WizardMode,
   type WizardStep,
+  addInvitee,
   addPlaceholder,
   draftFromEvent,
   emptyDraft,
   firstInvalidStep,
+  hasUser,
   removePerson,
   setPlaceholderAvatar,
   stepError,
@@ -34,6 +37,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useOffline } from '@/hooks/useOffline'
+import { type UserSearch, useUserSearch } from '@/hooks/useUserSearch'
 import { errorMessage } from '@/localization/errorMessage'
 import type { MeteorError } from '@/sync'
 import {
@@ -42,7 +46,6 @@ import {
 } from '@/ui/components/AvatarPickerModal'
 import { DateField } from '@/ui/components/DateField'
 import { EventBackground } from '@/ui/components/EventBackground'
-import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { GarlandField } from '@/ui/components/GarlandField'
 import { ImagePickerGrid } from '@/ui/components/ImagePickerGrid'
 import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
@@ -66,8 +69,9 @@ const SAVE_ERRORS: Record<string, string> = {
 // How a person in the draft is shown.
 type PersonView = { name: string; avatarKey?: string; color?: string }
 
-const placeholderView = (
-  person: Extract<DraftPerson, { kind: 'placeholder' }>,
+// Someone the draft itself names: added by name, or found by search.
+const namedView = (
+  person: Extract<DraftPerson, { kind: 'placeholder' | 'invited' }>,
 ): PersonView => ({
   name: person.name,
   avatarKey: person.avatar,
@@ -110,7 +114,9 @@ function CreateEvent({ start }: { start: WizardStep }) {
       start={start}
       initialDraft={emptyDraft()}
       viewOf={person =>
-        person.kind === 'placeholder' ? placeholderView(person) : you
+        person.kind === 'placeholder' || person.kind === 'invited'
+          ? namedView(person)
+          : you
       }
       onSubmit={async draft => {
         if (!user) throw new Error('signedOut')
@@ -149,7 +155,9 @@ function EditEvent({ eventId, start }: { eventId: string; start: WizardStep }) {
       start={start}
       initialDraft={draftFromEvent(event, user._id)}
       viewOf={person => {
-        if (person.kind === 'placeholder') return placeholderView(person)
+        if (person.kind === 'placeholder' || person.kind === 'invited') {
+          return namedView(person)
+        }
         const resolved = resolve(person.key)
         return {
           name: resolved?.name ?? '',
@@ -475,7 +483,8 @@ function BackgroundStep({
   )
 }
 
-// `4d`
+// `4d`: one field that searches Prezentowo and adds by name. A user found by
+// search is invited (they join by accepting); anyone else is added by name.
 function PeopleStep({
   draft,
   onChange,
@@ -486,13 +495,15 @@ function PeopleStep({
   viewOf: (person: DraftPerson) => PersonView
 }) {
   const { t } = useTranslation()
-  const [name, setName] = useState('')
+  const [query, setQuery] = useState('')
   const [avatarTarget, setAvatarTarget] = useState<string | null>(null)
   const avatarPicker = useRef<AvatarPickerModalHandle>(null)
+  const search = useUserSearch(query)
+  const name = query.trim()
 
-  const add = () => {
+  const addByName = () => {
     onChange(addPlaceholder(draft, name))
-    setName('')
+    setQuery('')
   }
 
   const target = draft.people.find(p => p.key === avatarTarget)
@@ -508,6 +519,7 @@ function PeopleStep({
         {draft.people.map(person => {
           const view = viewOf(person)
           const isPlaceholder = person.kind === 'placeholder'
+          const removable = isPlaceholder || person.kind === 'invited'
           return (
             <View
               key={person.key}
@@ -553,10 +565,12 @@ function PeopleStep({
                 <Text className="mt-0.5 text-[11px] text-garland-ink-40">
                   {isPlaceholder
                     ? t('createEvent.people.addedByName')
-                    : t('createEvent.people.onPrezentowo')}
+                    : person.kind === 'invited'
+                      ? t('createEvent.people.willBeInvited')
+                      : t('createEvent.people.onPrezentowo')}
                 </Text>
               </View>
-              {isPlaceholder ? (
+              {removable ? (
                 <Pressable
                   onPress={() => onChange(removePerson(draft, person.key))}
                   hitSlop={10}
@@ -577,27 +591,46 @@ function PeopleStep({
             <PlusIcon width={14} height={14} color={garland.ink40} />
           </View>
           <TextInput
-            value={name}
-            onChangeText={setName}
-            onSubmitEditing={add}
+            value={query}
+            onChangeText={setQuery}
+            onSubmitEditing={addByName}
             submitBehavior="submit"
             returnKeyType="done"
+            autoCorrect={false}
             placeholder={t('createEvent.people.namePlaceholder')}
             placeholderTextColor={garland.ink40}
             accessibilityLabel={t('createEvent.people.namePlaceholder')}
             className="flex-1 py-2.5 text-sm text-garland-ink"
           />
-          <GarlandButton
-            variant="link"
-            onPress={add}
-            disabled={!name.trim()}
-            hitSlop={10}
-          >
-            <GarlandButtonText className="font-bold text-garland-green">
-              {t('createEvent.people.add')}
-            </GarlandButtonText>
-          </GarlandButton>
         </View>
+
+        {name ? (
+          <View className="rounded-2xl bg-garland-paper2 px-3.5 py-1">
+            <SearchResults
+              search={search}
+              draft={draft}
+              onInvite={user => {
+                onChange(addInvitee(draft, user))
+                setQuery('')
+              }}
+            />
+            <Pressable
+              onPress={addByName}
+              accessibilityRole="button"
+              className="flex-row items-center gap-3 py-2.5 active:opacity-70"
+            >
+              <View className="size-8 items-center justify-center rounded-full border-[1.5px] border-dashed border-garland-ink-15">
+                <PlusIcon width={12} height={12} color={garland.green} />
+              </View>
+              <Text
+                className="min-w-0 flex-1 text-sm font-bold text-garland-green"
+                numberOfLines={1}
+              >
+                {t('createEvent.people.addByName', { name })}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
 
       <View className="mt-4 rounded-xl bg-garland-paper2 px-3.5 py-2.5">
@@ -616,6 +649,79 @@ function PeopleStep({
       />
     </>
   )
+}
+
+// What `4d`'s search has to say above the add-by-name row: matching users,
+// or why there are none.
+function SearchResults({
+  search,
+  draft,
+  onInvite,
+}: {
+  search: UserSearch
+  draft: EventDraft
+  onInvite: (user: UserSearchResult) => void
+}) {
+  const { t } = useTranslation()
+  const note = (text: string) => (
+    <Text className="border-b border-garland-ink-08 py-2.5 text-[13px] text-garland-ink-60">
+      {text}
+    </Text>
+  )
+
+  switch (search.status) {
+    case 'idle':
+      return null
+    case 'offline':
+      return note(t('createEvent.people.searchOffline'))
+    case 'loading':
+      return note(t('createEvent.people.searching'))
+    case 'rateLimited':
+      return note(t('createEvent.people.rateLimited'))
+    case 'failed':
+      return note(t('createEvent.people.searchFailed'))
+    case 'done':
+      if (search.results.length === 0) {
+        return note(t('createEvent.people.noMatches'))
+      }
+      return (
+        <View className="border-b border-garland-ink-08">
+          {search.results.map(user => {
+            const added = hasUser(draft, user.userId)
+            return (
+              <Pressable
+                key={user.userId}
+                disabled={added}
+                onPress={() => onInvite(user)}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: added }}
+                accessibilityLabel={
+                  added
+                    ? t('createEvent.people.alreadyAdded', { name: user.name })
+                    : t('createEvent.people.invite', { name: user.name })
+                }
+                className="flex-row items-center gap-3 py-2 active:opacity-70"
+              >
+                <ParticipantAvatar
+                  name={user.name}
+                  avatarKey={user.avatar}
+                  size={32}
+                />
+                <Text
+                  className="min-w-0 flex-1 text-sm font-semibold text-garland-ink"
+                  numberOfLines={1}
+                >
+                  {user.name}
+                </Text>
+                {added ? (
+                  <CheckIcon width={16} height={16} color={garland.green} />
+                ) : null}
+              </Pressable>
+            )
+          })}
+        </View>
+      )
+  }
 }
 
 // `4e`

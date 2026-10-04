@@ -44,6 +44,36 @@ export async function clearInviteDeferred(userId: string, eventId: string) {
 }
 
 /**
+ * `invited`, for `userId` added to `eventId` as a reserved placeholder. One
+ * per user and event, like `invite-deferred`.
+ */
+export async function recordInvited(userId: string, eventId: string) {
+  await insert({ userId, kind: 'invited', eventId })
+}
+
+// The reservation is gone: claimed by joining, or removed by the creator.
+export async function clearInvited(userId: string, eventId: string) {
+  await Notifications.removeAsync({ userId, eventId, kind: 'invited' })
+}
+
+// Joining answers every invitation to the event, set aside or not.
+export async function clearInvitesTo(userId: string, eventId: string) {
+  await Notifications.removeAsync({
+    userId,
+    eventId,
+    kind: { $in: ['invite-deferred', 'invited'] },
+  })
+}
+
+// Whether `userId` holds an `invited` for `eventId`.
+export async function hasInvited(userId: string, eventId: string) {
+  return !!(await Notifications.findOneAsync(
+    { userId, eventId, kind: 'invited' },
+    { fields: { _id: 1 } },
+  ))
+}
+
+/**
  * `suggestion-claimed`, to whoever suggested `gift`. Written only for a
  * suggested gift (its creator isn't its recipient) and never to the claimer
  * themselves; this check is what keeps a self-added gift's claim quiet.

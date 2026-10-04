@@ -73,6 +73,10 @@ describe('dev login', function () {
       const user = await Meteor.users.findOneAsync(id)
       assert.strictEqual(user?.emails?.[0]?.address, DEV_LOGIN_EMAIL)
       assert.strictEqual(user?.profile?.name, DEV_LOGIN_NAME)
+      assert.deepStrictEqual(
+        (user as { nameTokens?: string[] } | undefined)?.nameTokens,
+        [DEV_LOGIN_NAME.toLowerCase()],
+      )
     })
 
     it('logs in as the same user every time', async function () {

@@ -262,11 +262,19 @@
       "host": "Host",
       "onPrezentowo": "On Prezentowo",
       "addedByName": "Added by name",
-      "namePlaceholder": "Type a name",
-      "add": "Add",
+      "namePlaceholder": "Search Prezentowo or type a name",
       "remove": "Remove {{name}}",
       "pickAvatar": "Choose an avatar for {{name}}",
-      "joinLater": "Anyone can also join later with an invite link — no approval needed."
+      "joinLater": "Anyone can also join later with an invite link — no approval needed.",
+      "willBeInvited": "Will be invited",
+      "addByName": "Add ‘{{name}}’ by name",
+      "invite": "Invite {{name}}",
+      "alreadyAdded": "{{name}} is already on the list",
+      "searching": "Searching…",
+      "noMatches": "No one on Prezentowo matches",
+      "searchOffline": "Search needs a connection",
+      "rateLimited": "Try again in a moment",
+      "searchFailed": "Couldn't search. Try again."
     },
     "beneficiary": {
       "heading": "Who is the event for?",
@@ -358,7 +366,8 @@
     "join": "Join event",
     "ignore": "Ignore",
     "openEvent": "Open event",
-    "shareMessage": "Join “{{title}}” on Prezentowo: {{link}}"
+    "shareMessage": "Join “{{title}}” on Prezentowo: {{link}}",
+    "reservedForYou": "<0>{{inviter}}</0> added you as <0>{{name}}</0>"
   },
   "editEvent": {
     "background": "Background",

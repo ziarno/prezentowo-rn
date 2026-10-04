@@ -264,11 +264,19 @@
       "host": "Gospodarz",
       "onPrezentowo": "W Prezentowo",
       "addedByName": "Dodano po imieniu",
-      "namePlaceholder": "Wpisz imię",
-      "add": "Dodaj",
+      "namePlaceholder": "Szukaj w Prezentowo lub wpisz imię",
       "remove": "Usuń: {{name}}",
       "pickAvatar": "Wybierz awatar: {{name}}",
-      "joinLater": "Każdy może też dołączyć później przez link z zaproszeniem — bez zatwierdzania."
+      "joinLater": "Każdy może też dołączyć później przez link z zaproszeniem — bez zatwierdzania.",
+      "willBeInvited": "Otrzyma zaproszenie",
+      "addByName": "Dodaj „{{name}}” po imieniu",
+      "invite": "Zaproś: {{name}}",
+      "alreadyAdded": "{{name}} — już na liście",
+      "searching": "Wyszukiwanie…",
+      "noMatches": "Nikt w Prezentowo nie pasuje",
+      "searchOffline": "Wyszukiwanie wymaga połączenia",
+      "rateLimited": "Spróbuj ponownie za chwilę",
+      "searchFailed": "Nie udało się wyszukać. Spróbuj ponownie."
     },
     "beneficiary": {
       "heading": "Dla kogo jest wydarzenie?",
@@ -380,7 +388,8 @@
     "join": "Dołącz",
     "ignore": "Zignoruj",
     "openEvent": "Otwórz wydarzenie",
-    "shareMessage": "Dołącz do „{{title}}” w Prezentowo: {{link}}"
+    "shareMessage": "Dołącz do „{{title}}” w Prezentowo: {{link}}",
+    "reservedForYou": "<0>{{inviter}}</0> dodaje Cię jako <0>{{name}}</0>"
   },
   "editEvent": {
     "background": "Tło",

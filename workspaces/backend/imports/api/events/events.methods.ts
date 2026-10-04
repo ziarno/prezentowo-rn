@@ -27,8 +27,9 @@ import {
 import { insertInvite } from '../invites/invites.codes'
 import { eventForCode } from '../invites/invites.lookup'
 import {
-  clearInviteDeferred,
+  clearInvitesTo,
   recordParticipantJoined as notifyParticipantJoined,
+  recordInvited,
 } from '../notifications/notifications.records'
 import {
   cascadeEventDeletion,
@@ -43,6 +44,13 @@ const participantPattern = Match.Where(
     const p = value as { kind?: unknown }
     if (p.kind === 'real') {
       check(value, Match.ObjectIncluding({ kind: String, userId: String }))
+      return true
+    }
+    if (p.kind === 'invited') {
+      check(
+        value,
+        Match.ObjectIncluding({ kind: String, userId: String, color: String }),
+      )
       return true
     }
     if (p.kind === 'placeholder') {
@@ -66,6 +74,38 @@ const isCalendarDate = (date: string) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false
   const parsed = new Date(`${date}T00:00:00Z`)
   return !isNaN(parsed.getTime()) && parsed.toISOString().startsWith(date)
+}
+
+/**
+ * The profiles of the users `participants` invites, by userId, for their
+ * reserved placeholders. Only the caller can be a `real` entry: anyone else
+ * is invited, and joins only by accepting.
+ */
+async function loadInvitees(
+  participants: EventParticipantInput[],
+  userId: string,
+): Promise<Map<string, { name: string; avatar?: string }>> {
+  const invitees = new Map<string, { name: string; avatar?: string }>()
+  for (const p of participants) {
+    if (p.kind === 'real' && p.userId !== userId) {
+      throw new Meteor.Error('notAuthorized', 'cannotAddOthers')
+    }
+    if (p.kind !== 'invited') continue
+    if (p.userId === userId) {
+      throw new Meteor.Error('invalidArgs', 'cannotInviteYourself')
+    }
+    if (invitees.has(p.userId)) {
+      throw new Meteor.Error('invalidArgs', 'duplicateInvitee')
+    }
+    const user = await Meteor.users.findOneAsync(p.userId, {
+      fields: { 'profile.name': 1, 'profile.avatar': 1 },
+    })
+    const { name, avatar } = user?.profile ?? {}
+    // Someone without a name can't be found, so can't be invited either.
+    if (!name?.trim()) throw new Meteor.Error('notFound', 'userNotFound')
+    invitees.set(p.userId, { name: name.trim(), ...(avatar ? { avatar } : {}) })
+  }
+  return invitees
 }
 
 // The stored kind, with `beneficiaryIndex` resolved to the minted id of the
@@ -126,24 +166,32 @@ const createEvent = async function (
   assertStockArt(options.background, BACKGROUND_ILLUSTRATION_IDS)
 
   const host: EventParticipant = { id: Random.id(), kind: 'real', userId }
+  const invitees = await loadInvitees(options.participants, userId)
 
   // Mint an id per input entry, in order, so `beneficiaryIndex` can be
   // resolved. The host is always the caller: any `real` entry for them maps
   // to the one host participant, which is prepended exactly once.
-  const minted = options.participants.map(
-    (p): EventParticipant =>
-      p.kind === 'real'
-        ? p.userId === userId
-          ? host
-          : { id: Random.id(), kind: 'real', userId: p.userId }
-        : {
-            id: Random.id(),
-            kind: 'placeholder',
-            name: p.name.trim(),
-            color: p.color,
-            ...(p.avatar ? { avatar: p.avatar } : {}),
-          },
-  )
+  const minted = options.participants.map((p): EventParticipant => {
+    if (p.kind === 'real') return host
+    if (p.kind === 'invited') {
+      const profile = invitees.get(p.userId)!
+      return {
+        id: Random.id(),
+        kind: 'placeholder',
+        name: profile.name,
+        color: p.color,
+        ...(profile.avatar ? { avatar: profile.avatar } : {}),
+        invitedUserId: p.userId,
+      }
+    }
+    return {
+      id: Random.id(),
+      kind: 'placeholder',
+      name: p.name.trim(),
+      color: p.color,
+      ...(p.avatar ? { avatar: p.avatar } : {}),
+    }
+  })
   const kind = resolveKind(
     options,
     minted.map(p => p.id),
@@ -172,6 +220,7 @@ const createEvent = async function (
       return eventId
     },
   )
+  for (const invitee of invitees.keys()) await recordInvited(invitee, _id)
   await syncChatThreads(_id)
 
   return { _id }
@@ -265,6 +314,33 @@ const updateEvent = async function (
   if (options.kind !== undefined) await syncChatThreads(event._id)
 }
 
+/**
+ * The placeholder a join by `userId` claims, if any: their own reservation
+ * whatever `participantId` says, else the placeholder `participantId` names.
+ * Someone else's reservation answers like a missing placeholder, so a join
+ * never confirms one is there.
+ */
+function claimTarget(
+  event: EventDoc,
+  userId: string,
+  participantId: string | undefined,
+): EventParticipant | undefined {
+  const reserved = event.participants.find(
+    p => p.kind === 'placeholder' && p.invitedUserId === userId,
+  )
+  if (reserved) return reserved
+  if (!participantId) return undefined
+
+  const target = event.participants.find(p => p.id === participantId)
+  if (!target || (target.kind === 'placeholder' && target.invitedUserId)) {
+    throw new Meteor.Error('notFound', 'placeholderNotFound')
+  }
+  if (target.kind !== 'placeholder') {
+    throw new Meteor.Error('invalidArgs', 'mustBeAPlaceholder')
+  }
+  return target
+}
+
 // Another join may rewrite the participant list between our read and write,
 // so the write only lands on the list it was computed from; otherwise it's
 // recomputed from a fresh read, a few times at most.
@@ -298,17 +374,10 @@ const joinEvent = async function (
 
     let joinedAsParticipantId: string
     let nextParticipants: EventParticipant[]
-    if (options.participantId) {
-      const target = event.participants.find(
-        p => p.id === options.participantId,
-      )
-      if (!target) {
-        throw new Meteor.Error('notFound', 'placeholderNotFound')
-      }
-      if (target.kind !== 'placeholder') {
-        throw new Meteor.Error('invalidArgs', 'mustBeAPlaceholder')
-      }
+    const target = claimTarget(event, userId, options.participantId)
+    if (target) {
       // The placeholder's id is kept, so gifts already on their list stay.
+      // A reservation's `invitedUserId` goes with the rest of it.
       joinedAsParticipantId = target.id
       nextParticipants = event.participants.map(p =>
         p.id === target.id ? { id: p.id, kind: 'real', userId } : p,
@@ -333,7 +402,7 @@ const joinEvent = async function (
     if (updated) {
       await recordParticipantJoined(event._id, joinedAsParticipantId)
       await notifyParticipantJoined(event, joinedAsParticipantId)
-      await clearInviteDeferred(userId, event._id)
+      await clearInvitesTo(userId, event._id)
       await syncChatThreads(event._id)
       return { eventId: event._id }
     }

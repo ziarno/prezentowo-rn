@@ -11,6 +11,7 @@ import {
   type InboxSection,
   type NotificationTarget,
   inboxSections,
+  isInvite,
   notificationTarget,
 } from '@/api/notificationInbox'
 import {
@@ -32,7 +33,7 @@ import {
 
 // What one row needs beyond its notification, read as of now.
 export type NotificationDetails = {
-  // Every kind but `invite-deferred`, which isn't the viewer's event yet.
+  // Every kind but the invitations, whose event isn't the viewer's yet.
   event?: EventDoc
   invite?: DeferredInvite
   // The claimer or the joiner; undefined once they've left the event.
@@ -62,7 +63,7 @@ export function useNotificationInbox(): NotificationInbox {
   const notifications = useTracker(() => findMyNotifications())
 
   const memberEventIds = notifications
-    .filter(n => n.kind !== 'invite-deferred')
+    .filter(n => !isInvite(n))
     .map(n => n.eventId)
   const giftEventIds = notifications
     .filter(n => n.kind === 'suggestion-claimed')
@@ -97,10 +98,7 @@ export function useNotificationInbox(): NotificationInbox {
     return new Map(
       notifications.map(n => {
         const event = findEventById(n.eventId)
-        const invite =
-          n.kind === 'invite-deferred'
-            ? findDeferredInvite(n.eventId)
-            : undefined
+        const invite = isInvite(n) ? findDeferredInvite(n.eventId) : undefined
         const actorId =
           n.kind === 'participant-joined'
             ? n.joinedParticipantId
@@ -130,7 +128,7 @@ export function useNotificationInbox(): NotificationInbox {
 
   const visible = notifications.filter(n => {
     const { event, invite } = details.get(n._id) ?? {}
-    return n.kind === 'invite-deferred' ? !!invite : !!event
+    return isInvite(n) ? !!invite : !!event
   })
   const now = new Date()
 

@@ -5,6 +5,7 @@ import { Events } from '../events/events.collection'
 import { isMemberOf, loadOwnEvent } from '../events/events.membership'
 import {
   clearInviteDeferred,
+  hasInvited,
   recordInviteDeferred,
 } from '../notifications/notifications.records'
 import { rotateInvite } from './invites.codes'
@@ -12,7 +13,8 @@ import { eventForCode } from './invites.lookup'
 
 // `7a`'s Ignore: upserts the caller's `invite-deferred` notification. It never
 // touches `Invites`, so the code keeps working for a later join. Someone
-// already in the event has nothing to defer.
+// already in the event has nothing to defer, and someone invited from `4d`
+// keeps their `invited` as it is: there's no decline.
 const ignoreInvite = async function (
   this: Meteor.MethodThisType,
   options: { code: string },
@@ -24,6 +26,7 @@ const ignoreInvite = async function (
   }
   const event = await eventForCode(options.code)
   if (isMemberOf(event, this.userId)) return
+  if (await hasInvited(this.userId, event._id)) return
   await recordInviteDeferred(this.userId, event._id)
   // A join may have landed between the check and the upsert; it would have
   // cleared nothing, so clear what we just wrote.

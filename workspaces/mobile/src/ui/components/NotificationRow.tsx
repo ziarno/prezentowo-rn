@@ -149,6 +149,7 @@ export function NotificationRow({
 
   switch (notification.kind) {
     case 'invite-deferred':
+    case 'invited':
       return (
         <RowFrame
           {...frame}
@@ -161,6 +162,7 @@ export function NotificationRow({
           }
         >
           <Sentence isNew={isNew}>
+            {/* Both read "{inviter} invited you to {event}". */}
             <Trans
               i18nKey="notifications.inviteDeferred"
               values={{

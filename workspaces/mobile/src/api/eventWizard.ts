@@ -3,6 +3,7 @@ import type {
   EventDoc,
   EventKind,
   UpdateEventArgs,
+  UserSearchResult,
 } from '@prezentowo/types'
 
 import { garland } from '@/constants/colors'
@@ -25,10 +26,19 @@ export type WizardMode = 'create' | 'edit'
 export type EventType = EventKind['type']
 
 // Someone in the draft. `you` is the host; `member` is an existing
-// participant in edit mode. `key` is the participant id in edit mode.
+// participant in edit mode; `invited` is a user found by `4d`'s search, who
+// becomes a reserved placeholder. `key` is the participant id in edit mode.
 export type DraftPerson =
   | { key: string; kind: 'you' }
   | { key: string; kind: 'member' }
+  | {
+      key: string
+      kind: 'invited'
+      userId: string
+      name: string
+      avatar?: string
+      color: string
+    }
   | {
       key: string
       kind: 'placeholder'
@@ -151,12 +161,19 @@ export function draftFromEvent(event: EventDoc, userId: string): EventDraft {
 
 let placeholderSeq = 0
 
+// The color the next placeholder or invitee gets, rotating through the
+// palette.
+const nextColor = (draft: EventDraft) => {
+  const colored = draft.people.filter(
+    p => p.kind === 'placeholder' || p.kind === 'invited',
+  )
+  return PLACEHOLDER_COLORS[colored.length % PLACEHOLDER_COLORS.length]!
+}
+
 export function addPlaceholder(draft: EventDraft, name: string): EventDraft {
   const trimmed = name.trim()
   if (!trimmed) return draft
-  const placeholders = draft.people.filter(p => p.kind === 'placeholder')
-  const color =
-    PLACEHOLDER_COLORS[placeholders.length % PLACEHOLDER_COLORS.length]!
+  const color = nextColor(draft)
   placeholderSeq += 1
   return {
     ...draft,
@@ -167,6 +184,33 @@ export function addPlaceholder(draft: EventDraft, name: string): EventDraft {
         kind: 'placeholder',
         name: trimmed,
         color,
+      },
+    ],
+  }
+}
+
+// Whether a user found by search is already in the draft.
+export const hasUser = (draft: EventDraft, userId: string) =>
+  draft.people.some(p => p.kind === 'invited' && p.userId === userId)
+
+// Adds a user found by search, once. They're invited, not added: they join
+// only by accepting.
+export function addInvitee(
+  draft: EventDraft,
+  user: UserSearchResult,
+): EventDraft {
+  if (hasUser(draft, user.userId)) return draft
+  return {
+    ...draft,
+    people: [
+      ...draft.people,
+      {
+        key: `invited-${user.userId}`,
+        kind: 'invited',
+        userId: user.userId,
+        name: user.name,
+        ...(user.avatar ? { avatar: user.avatar } : {}),
+        color: nextColor(draft),
       },
     ],
   }
@@ -207,6 +251,9 @@ export function toCreateEventArgs(
   const participants = draft.people.flatMap<CreateEventArgs['participants'][0]>(
     p => {
       if (p.kind === 'you') return [{ kind: 'real', userId }]
+      if (p.kind === 'invited') {
+        return [{ kind: 'invited', userId: p.userId, color: p.color }]
+      }
       if (p.kind === 'placeholder') {
         return [
           {

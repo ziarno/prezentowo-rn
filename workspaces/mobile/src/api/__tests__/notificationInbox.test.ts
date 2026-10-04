@@ -135,19 +135,21 @@ describe('inboxTime', function () {
 describe('notificationTarget', function () {
   const known = { giftGone: false, recipientInEvent: true }
 
-  it('opens 7a with the invite’s current code', function () {
-    const n = notification({ kind: 'invite-deferred' })
+  it('opens 7a with the invite’s current code, set aside or invited', function () {
+    for (const kind of ['invite-deferred', 'invited'] as const) {
+      const n = notification({ kind })
 
-    expect(notificationTarget(n, { ...known, inviteCode: 'Ab3x' })).toEqual({
-      pathname: '/e/[code]',
-      params: { code: 'Ab3x' },
-    })
+      expect(notificationTarget(n, { ...known, inviteCode: 'Ab3x' })).toEqual({
+        pathname: '/e/[code]',
+        params: { code: 'Ab3x' },
+      })
+    }
   })
 
   it('opens nothing for an invite whose code is not known yet', function () {
-    const n = notification({ kind: 'invite-deferred' })
-
-    expect(notificationTarget(n, known)).toBeNull()
+    for (const kind of ['invite-deferred', 'invited'] as const) {
+      expect(notificationTarget(notification({ kind }), known)).toBeNull()
+    }
   })
 
   it('opens the claimed present', function () {

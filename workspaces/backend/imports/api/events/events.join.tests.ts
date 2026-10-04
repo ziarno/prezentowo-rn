@@ -13,6 +13,8 @@ import {
 } from '../../../tests/helpers'
 import { Gifts } from '../gifts/gifts.collection'
 import { Invites, createInviteIndexes } from '../invites/invites.collection'
+import '../invites/invites.methods'
+import { Notifications } from '../notifications/notifications.collection'
 import { Events } from './events.collection'
 import './events.methods'
 
@@ -148,5 +150,106 @@ describe('events.join', function () {
 
   it('requires a signed-in caller', async function () {
     await rejectsWithReason(join(null, { code }), 'mustBeLoggedIn')
+  })
+
+  describe('a reserved placeholder', function () {
+    let reserved: { eventId: string; code: string; id: string; babcia: string }
+
+    const reservedEvent = async () =>
+      (await Events.findOneAsync(reserved.eventId)) as EventDoc
+
+    // Ola invites the newcomer from `4d`, beside a plain placeholder.
+    beforeEach(async function () {
+      const { _id: eventId } = await callAsUser<{ _id: string }>(
+        family.users.ola,
+        'events.create',
+        {
+          title: 'Imieniny',
+          date: '2026-06-01',
+          type: 'many-to-many',
+          participants: [
+            { kind: 'invited', userId: newcomer, color: '#3c3' },
+            { kind: 'placeholder', name: 'Babcia', color: '#c33' },
+          ],
+        },
+      )
+      const event = (await Events.findOneAsync(eventId)) as EventDoc
+      reserved = {
+        eventId,
+        code: (await Invites.findOneAsync({ eventId }))!.code,
+        id: event.participants[1]!.id,
+        babcia: event.participants[2]!.id,
+      }
+    })
+
+    it('is claimed by its invitee on a plain join, keeping its id', async function () {
+      await join(newcomer, { code: reserved.code })
+
+      const event = await reservedEvent()
+      assert.strictEqual(event.participants.length, 3)
+      assert.deepStrictEqual(event.participants[1], {
+        id: reserved.id,
+        kind: 'real',
+        userId: newcomer,
+      })
+    })
+
+    it('is claimed by its invitee whatever participantId says', async function () {
+      await join(newcomer, {
+        code: reserved.code,
+        participantId: reserved.babcia,
+      })
+
+      const event = await reservedEvent()
+      assert.deepStrictEqual(event.participants[1], {
+        id: reserved.id,
+        kind: 'real',
+        userId: newcomer,
+      })
+      assert.strictEqual(event.participants[2]!.kind, 'placeholder')
+    })
+
+    it("clears the invitee's `invited` and `invite-deferred` for the event", async function () {
+      await callAsUser(newcomer, 'invites.ignore', { code: reserved.code })
+      await callAsUser(newcomer, 'invites.ignore', { code })
+
+      await join(newcomer, { code: reserved.code })
+
+      const left = await Notifications.find({ userId: newcomer }).fetchAsync()
+      assert.deepStrictEqual(
+        left.map(n => [n.kind, n.eventId]),
+        [['invite-deferred', family.eventId]],
+      )
+    })
+
+    it("answers someone else's claim of it like a missing placeholder", async function () {
+      const other = await createUser('Other')
+
+      await rejectsWithReason(
+        join(other, { code: reserved.code, participantId: reserved.id }),
+        'placeholderNotFound',
+      )
+
+      const placeholder = (await reservedEvent()).participants[1]!
+      assert.ok(
+        placeholder.kind === 'placeholder' &&
+          placeholder.invitedUserId === newcomer,
+      )
+    })
+
+    it("is never touched by someone else's plain join", async function () {
+      const other = await createUser('Other')
+
+      await join(other, { code: reserved.code })
+
+      const event = await reservedEvent()
+      const placeholder = event.participants[1]!
+      assert.ok(
+        placeholder.kind === 'placeholder' &&
+          placeholder.invitedUserId === newcomer,
+      )
+      const joined = event.participants.at(-1)!
+      assert.ok(joined.kind === 'real' && joined.userId === other)
+    })
   })
 })

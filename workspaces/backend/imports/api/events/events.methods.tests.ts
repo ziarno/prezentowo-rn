@@ -1,5 +1,7 @@
 import type { CreateEventArgs, EventDoc } from '@prezentowo/types'
 import assert from 'assert'
+import { Accounts } from 'meteor/accounts-base'
+import { Meteor } from 'meteor/meteor'
 
 import {
   addGiftAs,
@@ -20,6 +22,7 @@ import {
 } from '../../../tests/images'
 import { INVITE_CODE_ALPHABET } from '../invites/invites.codes'
 import { Invites, createInviteIndexes } from '../invites/invites.collection'
+import { Notifications } from '../notifications/notifications.collection'
 import { Events } from './events.collection'
 import './events.methods'
 
@@ -62,7 +65,7 @@ describe('events.create', function () {
     it('ignores a beneficiaryIndex sent with many-to-many', async function () {
       const event = await create({
         type: 'many-to-many',
-        participants: [{ kind: 'real', userId: bartek }],
+        participants: [{ kind: 'real', userId: ola }],
         beneficiaryIndex: 0,
       })
 
@@ -76,7 +79,7 @@ describe('events.create', function () {
     })
 
     it('rejects many-to-one without a beneficiary in range', async function () {
-      const participants = [{ kind: 'real', userId: bartek }]
+      const participants = [{ kind: 'real', userId: ola }]
       for (const beneficiaryIndex of [undefined, -1, 1, 0.5, '0']) {
         await rejectsWith(
           { type: 'many-to-one', participants, beneficiaryIndex },
@@ -100,7 +103,7 @@ describe('events.create', function () {
       const event = await create({
         type: 'many-to-one',
         participants: [
-          { kind: 'real', userId: bartek },
+          { kind: 'real', userId: ola },
           { kind: 'placeholder', name: 'Babcia', color: '#c33' },
         ],
         beneficiaryIndex: 1,
@@ -116,18 +119,18 @@ describe('events.create', function () {
       assert.strictEqual(beneficiary.name, 'Babcia')
     })
 
-    it('resolves the index to another real participant', async function () {
+    it("resolves the index to an invited user's reserved placeholder", async function () {
       const event = await create({
         type: 'many-to-one',
-        participants: [{ kind: 'real', userId: bartek }],
+        participants: [{ kind: 'invited', userId: bartek, color: '#3c3' }],
         beneficiaryIndex: 0,
       })
 
-      const bartekId = event.participants.find(
-        p => p.kind === 'real' && p.userId === bartek,
-      )!.id
+      const reserved = event.participants.find(
+        p => p.kind === 'placeholder' && p.invitedUserId === bartek,
+      )!
       assert.ok(event.type === 'many-to-one')
-      assert.strictEqual(event.beneficiaryParticipantId, bartekId)
+      assert.strictEqual(event.beneficiaryParticipantId, reserved.id)
     })
 
     it("resolves the caller's own entry to the host participant", async function () {
@@ -147,6 +150,93 @@ describe('events.create', function () {
       assert.strictEqual(event.participants[0], host[0])
       assert.ok(event.type === 'many-to-one')
       assert.strictEqual(event.beneficiaryParticipantId, host[0]!.id)
+    })
+  })
+
+  describe('people', function () {
+    it('rejects a real entry for anyone but the caller', async function () {
+      await rejectsWith(
+        { participants: [{ kind: 'real', userId: bartek }] },
+        'cannotAddOthers',
+      )
+
+      assert.strictEqual(await Events.find().countAsync(), 0)
+    })
+
+    it('adds an invited user as a reserved placeholder, snapshotting their profile', async function () {
+      await Meteor.users.updateAsync(bartek, {
+        $set: { 'profile.avatar': 'f2' },
+      })
+
+      const event = await create({
+        participants: [{ kind: 'invited', userId: bartek, color: '#3c3' }],
+      })
+
+      assert.strictEqual(event.participants.length, 2)
+      const { id, ...reserved } = event.participants[1]!
+      assert.ok(id)
+      assert.deepStrictEqual(reserved, {
+        kind: 'placeholder',
+        name: 'Bartek',
+        color: '#3c3',
+        avatar: 'f2',
+        invitedUserId: bartek,
+      })
+      // Not a member until they join.
+      assert.ok(
+        !event.participants.some(p => p.kind === 'real' && p.userId === bartek),
+      )
+    })
+
+    it('sends each invitee an `invited` notification, and nobody else one', async function () {
+      const celina = await createUser('Celina')
+
+      const event = await create({
+        participants: [
+          { kind: 'invited', userId: bartek, color: '#3c3' },
+          { kind: 'invited', userId: celina, color: '#c33' },
+          { kind: 'placeholder', name: 'Dziadek', color: '#33c' },
+        ],
+      })
+
+      const sent = await Notifications.find(
+        {},
+        { fields: { _id: 0, createdAt: 0 } },
+      ).fetchAsync()
+      assert.deepStrictEqual(
+        sent.sort((a, b) => a.userId.localeCompare(b.userId)),
+        [bartek, celina].sort().map(userId => ({
+          userId,
+          kind: 'invited',
+          eventId: event._id,
+          read: false,
+        })),
+      )
+    })
+
+    it('rejects inviting the caller, the same user twice, or an unknown or nameless user', async function () {
+      const nameless = await Accounts.createUserAsync({
+        email: 'nameless@example.com',
+      })
+      const invited = (userId: string) => ({
+        kind: 'invited',
+        userId,
+        color: '#3c3',
+      })
+
+      await rejectsWith(
+        { participants: [invited(ola)] },
+        'cannotInviteYourself',
+      )
+      await rejectsWith(
+        { participants: [invited(bartek), invited(bartek)] },
+        'duplicateInvitee',
+      )
+      await rejectsWith({ participants: [invited('nobody')] }, 'userNotFound')
+      await rejectsWith({ participants: [invited(nameless)] }, 'userNotFound')
+
+      assert.strictEqual(await Events.find().countAsync(), 0)
+      assert.strictEqual(await Notifications.find().countAsync(), 0)
     })
   })
 

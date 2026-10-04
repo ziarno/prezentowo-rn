@@ -8,6 +8,8 @@ import { Accounts } from 'meteor/accounts-base'
 import { Match, check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 
+import { nameFields } from '../users/users.nameTokens'
+
 const registerNewUser = async function (options: RegisterNewUserArgs) {
   check(
     options,
@@ -66,7 +68,7 @@ const updateUser = async function (
   const updates: Record<string, unknown> = {}
 
   if (name) {
-    updates['profile.name'] = name
+    Object.assign(updates, nameFields(name))
   }
 
   if (avatar) {

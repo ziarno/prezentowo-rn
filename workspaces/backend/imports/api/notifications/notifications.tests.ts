@@ -151,6 +151,64 @@ describe('notifications', function () {
     })
   })
 
+  describe('invited', function () {
+    let event: { eventId: string; code: string; reservedId: string }
+
+    // Ola invites the outsider from `4d`.
+    beforeEach(async function () {
+      const { users } = family
+      const { _id: eventId } = await callAsUser<{ _id: string }>(
+        users.ola,
+        'events.create',
+        {
+          title: 'Imieniny',
+          date: '2026-06-01',
+          type: 'many-to-many',
+          participants: [
+            { kind: 'invited', userId: users.outsider, color: '#3c3' },
+          ],
+        },
+      )
+      const created = (await Events.findOneAsync(eventId))!
+      event = {
+        eventId,
+        code: (await Invites.findOneAsync({ eventId }))!.code,
+        reservedId: created.participants[1]!.id,
+      }
+    })
+
+    const kindsOf = async (userId: string) =>
+      (await of(userId)).map(n => [n.kind, n.eventId])
+
+    it('is left as it is by invites.ignore, with no invite-deferred beside it', async function () {
+      const { users } = family
+      const [before] = await of(users.outsider)
+
+      await callAsUser(users.outsider, 'invites.ignore', { code: event.code })
+
+      assert.deepStrictEqual(await of(users.outsider), [before])
+    })
+
+    it('is deleted when the creator removes the reservation', async function () {
+      const { users } = family
+
+      await callAsUser(users.ola, 'events.removeParticipant', {
+        eventId: event.eventId,
+        participantId: event.reservedId,
+      })
+
+      assert.deepStrictEqual(await kindsOf(users.outsider), [])
+    })
+
+    it('is deleted with its event', async function () {
+      const { users } = family
+
+      await callAsUser(users.ola, 'events.delete', { eventId: event.eventId })
+
+      assert.deepStrictEqual(await kindsOf(users.outsider), [])
+    })
+  })
+
   describe('gifts.claim', function () {
     it('notifies the suggester, with the snapshots', async function () {
       const { users, participants, eventId } = family

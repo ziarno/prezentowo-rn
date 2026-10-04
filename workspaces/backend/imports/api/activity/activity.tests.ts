@@ -3,6 +3,7 @@ import assert from 'assert'
 
 import {
   addGiftAs,
+  createEventWithMembers,
   createFamilyEvent,
   createUser,
 } from '../../../tests/fixtures'
@@ -290,16 +291,9 @@ describe('activity cascades', function () {
   it('events.delete removes all of its activity and no other event’s', async function () {
     const { users, participants, eventId } = family
     await addGiftAs(users.bartek, eventId, participants.celina, 'Book')
-    const { _id: otherEventId } = await callAsUser<{ _id: string }>(
-      users.bartek,
-      'events.create',
-      {
-        title: 'Urodziny',
-        date: '2026-05-01',
-        type: 'many-to-many',
-        participants: [{ kind: 'real', userId: users.celina }],
-      },
-    )
+    const otherEventId = await createEventWithMembers(users.bartek, [
+      users.celina,
+    ])
     const other = (await Events.findOneAsync(otherEventId)) as EventDoc
     await addGiftAs(
       users.bartek,

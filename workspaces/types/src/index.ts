@@ -20,7 +20,11 @@ export type RequestMagicLinkArgs = {
 }
 
 export type EventParticipantInput =
+  // Only ever the caller: nobody is made a member of someone else's event
+  // without accepting, so any other userId is rejected.
   | { kind: 'real'; userId: string }
+  // A user found by `users.search`; becomes a reserved placeholder.
+  | { kind: 'invited'; userId: string; color: string }
   | { kind: 'placeholder'; name: string; color: string; avatar?: string }
 
 export type EventParticipant =
@@ -31,6 +35,9 @@ export type EventParticipant =
       name: string
       color: string
       avatar?: string
+      // Set = a reserved placeholder: only this user can claim it, by
+      // joining. Server-only, never published.
+      invitedUserId?: string
     }
 
 export type ImageRef =
@@ -183,11 +190,14 @@ export type InvitePreview = {
   inviterName: string
   // Who's already taking part: the real participants, by name and avatar key.
   realParticipants: { id: string; name: string; avatar?: string }[]
+  // Reserved placeholders are left out, except the viewer's own, which
+  // carries `reservedForYou` (so none are listed signed out).
   unclaimedPlaceholders: {
     id: string
     name: string
     color: string
     avatar?: string
+    reservedForYou?: true
   }[]
 }
 
@@ -272,6 +282,7 @@ export type NotificationDoc = {
   userId: string
   kind:
     | 'invite-deferred'
+    | 'invited'
     | 'suggestion-claimed'
     | 'participant-joined'
     | 'claimed-gift-removed'
@@ -291,8 +302,9 @@ export type NotificationDoc = {
   joinedParticipantId?: string
 }
 
-// An invite the caller set aside with Ignore, as the notifications inbox shows
-// it: `invites.deferred` publishes one per `invite-deferred`, keyed by
+// An invite waiting in the caller's notifications inbox, set aside with
+// Ignore or sent by a creator who added them from `4d`: `invites.deferred`
+// publishes one per event with an `invite-deferred` or `invited`, keyed by
 // `eventId`. `code` is the event's current one, so it survives a rotate.
 export type DeferredInvite = {
   eventId: string
@@ -337,6 +349,29 @@ export type ChatThreadDoc = {
   // Set once the thread is replaced; a retired thread is never published.
   retiredAt?: Date
 }
+
+// `4d`'s people search (`users.search`). Never carries an email.
+export type UserSearchArgs = { query: string }
+export type UserSearchResult = { userId: string; name: string; avatar?: string }
+
+// The searchable words of a name, or of a search query: lower case,
+// diacritics stripped (`ł` too, which has no decomposition), split on
+// whitespace and hyphens. The server stores a user's as `nameTokens`.
+export function nameTokens(text: string): string[] {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/ł/g, 'l')
+    .split(/[\s-]+/)
+    .filter(Boolean)
+}
+
+// A query shorter than this many folded characters searches nothing.
+const USER_SEARCH_MIN_CHARS = 3
+
+export const isSearchableQuery = (query: string) =>
+  nameTokens(query).join('').length >= USER_SEARCH_MIN_CHARS
 
 // What `stream.token` resolves to: the app's public API key and a user token
 // for the caller, valid for an hour.

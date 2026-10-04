@@ -7,5 +7,11 @@ declare module 'meteor/meteor' {
       name?: string
       avatar?: string
     }
+
+    interface User {
+      // `profile.name` folded and split, for `users.search`. Server-only:
+      // no publication sends it.
+      nameTokens?: string[]
+    }
   }
 }

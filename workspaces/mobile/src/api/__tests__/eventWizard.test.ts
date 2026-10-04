@@ -3,10 +3,12 @@ import type { EventDoc } from '@prezentowo/types'
 
 import {
   type EventDraft,
+  addInvitee,
   addPlaceholder,
   draftFromEvent,
   emptyDraft,
   firstInvalidStep,
+  hasUser,
   parseStep,
   removePerson,
   stepError,
@@ -181,6 +183,36 @@ describe('people', () => {
   it('never removes the host', () => {
     expect(removePerson(draft(), 'you').people).toHaveLength(1)
   })
+
+  it('adds a found user once, as invited, with the next color', () => {
+    const bartek = { userId: 'u-bartek', name: 'Bartek', avatar: 'f2' }
+    let d = addPlaceholder(draft(), 'Babcia')
+    d = addInvitee(d, bartek)
+    d = addInvitee(d, bartek)
+
+    expect(d.people).toHaveLength(3)
+    const [, babcia, invited] = d.people
+    expect(invited).toEqual({
+      key: expect.any(String),
+      kind: 'invited',
+      userId: 'u-bartek',
+      name: 'Bartek',
+      avatar: 'f2',
+      color: expect.any(String),
+    })
+    expect(invited!.key).not.toBe(babcia!.key)
+    expect(babcia!.kind === 'placeholder' && babcia.color).not.toBe(
+      invited!.kind === 'invited' && invited.color,
+    )
+  })
+
+  it('knows which found users are already in the list', () => {
+    const d = addInvitee(draft(), { userId: 'u-bartek', name: 'Bartek' })
+
+    expect(hasUser(d, 'u-bartek')).toBe(true)
+    expect(hasUser(d, 'u-celina')).toBe(false)
+    expect(hasUser(removePerson(d, d.people[1]!.key), 'u-bartek')).toBe(false)
+  })
 })
 
 describe('toCreateEventArgs', () => {
@@ -200,6 +232,19 @@ describe('toCreateEventArgs', () => {
         },
       ],
     })
+  })
+
+  it('sends a found user as invited, by userId and color only', () => {
+    const d = addInvitee(draft({ type: 'many-to-many' }), {
+      userId: 'u-bartek',
+      name: 'Bartek',
+      avatar: 'f2',
+    })
+
+    expect(toCreateEventArgs(d, ME).participants).toEqual([
+      { kind: 'real', userId: ME },
+      { kind: 'invited', userId: 'u-bartek', color: expect.any(String) },
+    ])
   })
 
   it('names the beneficiary by index, host included', () => {

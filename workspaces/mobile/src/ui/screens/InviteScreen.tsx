@@ -1,7 +1,7 @@
 import type { InvitePreview } from '@prezentowo/types'
 import { type Href, router } from 'expo-router'
 import { type ReactNode, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -102,13 +102,16 @@ function InviteBody({
   const [error, setError] = useState<string | null>(null)
 
   const { code, eventId, unclaimedPlaceholders: placeholders } = preview
+  // Added from `4d`: joining claims it whatever they'd pick, so there's
+  // nothing to ask.
+  const reserved = placeholders.find(p => p.reservedForYou)
   // The one they picked may have just been claimed by someone else.
   const pickTaken =
     typeof choice === 'string' && !placeholders.some(p => p.id === choice)
   const picked = pickTaken ? undefined : choice
   // Once they've answered, the question stays even if the last placeholder
   // goes, so losing their pick never quietly turns into joining as new.
-  const asking = placeholders.length > 0 || choice !== undefined
+  const asking = !reserved && (placeholders.length > 0 || choice !== undefined)
   const answered = !asking || picked !== undefined
 
   const { date, countdown } = eventWhen(
@@ -120,7 +123,8 @@ function InviteBody({
   const when = [date, countdown].filter(Boolean).join(' · ')
 
   const join = async () => {
-    const invite = picked ? { code, participantId: picked } : { code }
+    const participantId = reserved?.id ?? picked
+    const invite = participantId ? { code, participantId } : { code }
     setError(null)
     if (!appOpen) {
       await savePendingInvite(invite)
@@ -195,6 +199,27 @@ function InviteBody({
                 )
               })}
             </View>
+          </View>
+        ) : null}
+
+        {!isMember && reserved ? (
+          <View className="mt-7 flex-row items-center gap-3 rounded-2xl bg-garland-paper2 px-3.5 py-3">
+            <ParticipantAvatar
+              name={reserved.name}
+              avatarKey={reserved.avatar}
+              color={reserved.color}
+              size={32}
+            />
+            <Text className="min-w-0 flex-1 text-[15px] text-garland-ink">
+              <Trans
+                i18nKey="invite.reservedForYou"
+                values={{
+                  inviter: preview.inviterName || t('person.someone'),
+                  name: reserved.name,
+                }}
+                components={[<Text key="name" className="font-bold" />]}
+              />
+            </Text>
           </View>
         ) : null}
 

@@ -1,7 +1,11 @@
 import type { EventDoc } from '@prezentowo/types'
 import assert from 'assert'
 
-import { addGiftAs, createFamilyEvent } from '../../../tests/fixtures'
+import {
+  addGiftAs,
+  createEventWithMembers,
+  createFamilyEvent,
+} from '../../../tests/fixtures'
 import {
   callAsUser,
   rejectsWithReason,
@@ -224,16 +228,9 @@ describe('events.removeParticipant', function () {
 
     it('leaves their claims in other events alone', async function () {
       const { users, participants } = family
-      const { _id: otherEventId } = await callAsUser<{ _id: string }>(
-        users.bartek,
-        'events.create',
-        {
-          title: 'Urodziny',
-          date: '2026-05-04',
-          type: 'many-to-many',
-          participants: [{ kind: 'real', userId: users.celina }],
-        },
-      )
+      const otherEventId = await createEventWithMembers(users.bartek, [
+        users.celina,
+      ])
       const host = (await eventOf(otherEventId)).participants[0]!.id
       const gift = await addGiftAs(users.celina, otherEventId, host, 'Cake')
       await callAsUser(users.celina, 'gifts.claim', { giftId: gift })
@@ -322,16 +319,9 @@ describe('events.delete', function () {
 
     it('leaves other events alone', async function () {
       const { users } = family
-      const { _id: otherEventId } = await callAsUser<{ _id: string }>(
-        users.ola,
-        'events.create',
-        {
-          title: 'Urodziny',
-          date: '2026-05-04',
-          type: 'many-to-many',
-          participants: [{ kind: 'real', userId: users.bartek }],
-        },
-      )
+      const otherEventId = await createEventWithMembers(users.ola, [
+        users.bartek,
+      ])
       const bartek = (await eventOf(otherEventId)).participants[1]!.id
       const photo = await uploadAs(users.ola)
       const gift = await addGiftAs(users.ola, otherEventId, bartek, 'Cake', {

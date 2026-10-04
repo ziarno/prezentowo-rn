@@ -7,6 +7,7 @@ import { type GiftRecord, Gifts } from '../gifts/gifts.collection'
 import { releaseImage } from '../images/images.refs'
 import { Invites } from '../invites/invites.collection'
 import { Notifications } from '../notifications/notifications.collection'
+import { clearInvited } from '../notifications/notifications.records'
 
 // Hard-deletes the matching gifts, then their uploads.
 async function deleteGifts(selector: Mongo.Selector<GiftRecord>) {
@@ -41,6 +42,10 @@ export async function cascadeParticipantRemoval(
     eventId: event._id,
     recipientParticipantId: participant.id,
   })
+  // A removed reservation takes its invitation with it.
+  if (participant.kind === 'placeholder' && participant.invitedUserId) {
+    await clearInvited(participant.invitedUserId, event._id)
+  }
 }
 
 /**

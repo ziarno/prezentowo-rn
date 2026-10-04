@@ -140,15 +140,18 @@ describe('chat threads', function () {
           beneficiaryIndex: 1,
           participants: [
             { kind: 'real', userId: ola },
-            { kind: 'real', userId: bartek },
+            { kind: 'placeholder', name: 'Bartek', color: '#3c3' },
             { kind: 'placeholder', name: 'Dziadek', color: '#c33' },
           ],
         },
       )
       const event = (await Events.findOneAsync(eventId)) as EventDoc
-      const beneficiary = event.participants.find(
-        p => p.kind === 'real' && p.userId === bartek,
-      )!
+      const beneficiary = event.participants[1]!
+      const { code } = (await Invites.findOneAsync({ eventId }))!
+      await callAsUser(bartek, 'events.join', {
+        code,
+        participantId: beneficiary.id,
+      })
       const secret = (await liveThreads(eventId)).filter(
         t => t.kind === 'secret',
       )

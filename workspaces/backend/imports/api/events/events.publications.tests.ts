@@ -1,3 +1,4 @@
+import type { EventParticipant } from '@prezentowo/types'
 import assert from 'assert'
 
 import { createFamilyEvent } from '../../../tests/fixtures'
@@ -7,6 +8,7 @@ import {
   subscribeAsUser,
   waitFor,
 } from '../../../tests/helpers'
+import { Events } from './events.collection'
 import './events.publications'
 
 describe('events.byId', function () {
@@ -78,5 +80,33 @@ describe('events.byId', function () {
 
     await waitFor(() => sub.stopped())
     assert.strictEqual(sub.docs('events').size, 0)
+  })
+
+  it('never sends a reserved placeholder’s invitedUserId', async function () {
+    const { users, eventId } = family
+    await Events.updateAsync(
+      { _id: eventId, 'participants.kind': 'placeholder' },
+      { $set: { 'participants.$.invitedUserId': users.outsider } },
+    )
+    const sub = await subscribe(users.bartek)
+    const mine = await subscribeAsUser(users.bartek, 'events.mine')
+    subs.push(mine)
+
+    await callAsUser(users.ola, 'events.update', { eventId, title: 'Święta' })
+    await waitFor(() => sub.docs('events').get(eventId)?.title === 'Święta')
+    await waitFor(() => mine.docs('events').get(eventId)?.title === 'Święta')
+
+    for (const { messages } of [sub, mine]) {
+      assert.ok(!JSON.stringify(messages).includes('invitedUserId'))
+    }
+    const placeholder = (
+      sub.docs('events').get(eventId)?.participants as EventParticipant[]
+    ).find(p => p.kind === 'placeholder')
+    assert.deepStrictEqual(placeholder, {
+      id: family.participants.dziadek,
+      kind: 'placeholder',
+      name: 'Dziadek',
+      color: '#c33',
+    })
   })
 })

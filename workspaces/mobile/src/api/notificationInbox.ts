@@ -4,6 +4,11 @@ import { timeAgo } from './activityFeed'
 
 // Pure helpers behind the notifications screen (#28's flat inbox).
 
+// An invitation waiting in the inbox, set aside with Ignore or sent from
+// `4d`: the viewer isn't in its event, so it opens `7a`.
+export const isInvite = (notification: NotificationDoc) =>
+  notification.kind === 'invite-deferred' || notification.kind === 'invited'
+
 export type InboxRow =
   | { kind: 'single'; notification: NotificationDoc; isNew: boolean }
   // Two or more `participant-joined` for one event, newest first.
@@ -118,7 +123,7 @@ export type NotificationTarget =
 export function notificationTarget(
   notification: NotificationDoc,
   context: {
-    // The event's current invite code, for `invite-deferred`.
+    // The event's current invite code, for `invite-deferred` and `invited`.
     inviteCode?: string
     // Known to be deleted, not merely not loaded yet.
     giftGone: boolean
@@ -137,6 +142,7 @@ export function notificationTarget(
 
   switch (notification.kind) {
     case 'invite-deferred':
+    case 'invited':
       return context.inviteCode
         ? { pathname: '/e/[code]', params: { code: context.inviteCode } }
         : null

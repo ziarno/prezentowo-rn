@@ -3,6 +3,7 @@ import assert from 'assert'
 
 import {
   addGiftAs,
+  createEventWithMembers,
   createFamilyEvent,
   createUser,
 } from '../../../tests/fixtures'
@@ -156,17 +157,7 @@ describe('activity publications', function () {
 
     const createSecondEvent = async () => {
       const { users } = family
-      const { _id } = await callAsUser<{ _id: string }>(
-        users.bartek,
-        'events.create',
-        {
-          title: 'Urodziny',
-          date: '2026-05-01',
-          type: 'many-to-many',
-          participants: [{ kind: 'real', userId: users.celina }],
-        },
-      )
-      return _id
+      return createEventWithMembers(users.bartek, [users.celina])
     }
 
     it('publishes the 3 newest items of each of the caller’s events', async function () {

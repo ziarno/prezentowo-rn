@@ -1,5 +1,8 @@
 import { Accounts } from 'meteor/accounts-base'
 
+// Creates the dev user with its `nameTokens`.
+import '../users/users.nameTokens'
+
 // A fixed account for one-tap sign-in while developing. The handler is only
 // ever registered in development; see registerDevLogin.
 export const DEV_LOGIN_EMAIL = 'dev@prezentowo.local'

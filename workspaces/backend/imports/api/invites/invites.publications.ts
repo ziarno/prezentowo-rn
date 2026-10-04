@@ -48,7 +48,7 @@ Meteor.publish('invites.byCode', async function (code: string) {
   const show = async (event: EventDoc) => {
     const profileOf = await profilesFor(event)
     if (!invite) return
-    const preview = invitePreview(code, event, profileOf)
+    const preview = invitePreview(code, event, profileOf, this.userId)
     if (shown) {
       // A cleared background has to be sent as undefined to clear it.
       this.changed(INVITE_PREVIEWS, code, { background: undefined, ...preview })
@@ -101,15 +101,19 @@ Meteor.publish('invites.forEvent', async function (eventId: string) {
   return Invites.find({ eventId })
 })
 
-// The notifications inbox's view of every invite the caller set aside with
-// Ignore: one `DeferredInvite` per `invite-deferred`, keyed by event. The
-// notification keeps only the eventId so a rotate never orphans it (#11);
-// this follows the event's current code instead. Title and inviter are read
-// when the invite is added.
+// The notifications inbox's view of every invite waiting for the caller,
+// whether they set it aside with Ignore or were invited from `4d`: one
+// `DeferredInvite` per event with an `invite-deferred` or `invited`, keyed by
+// event. The notification keeps only the eventId so a rotate never orphans it
+// (#11); this follows the event's current code instead. Title and inviter are
+// read when the invite is added.
 Meteor.publish('invites.deferred', async function () {
   if (!this.userId) return this.ready()
 
   const watched = new Map<string, { stop: () => void }>()
+  // How many of the caller's notifications name each event: an event may have
+  // both kinds, and is shown until the last goes.
+  const counts = new Map<string, number>()
   const shown = new Set<string>()
   let stopped = false
   // Each watch waits on lookups, so adds and removes are chained in order.
@@ -158,12 +162,21 @@ Meteor.publish('invites.deferred', async function () {
 
   const notificationsHandle = await observable<NotificationDoc>(
     Notifications.find(
-      { userId: this.userId, kind: 'invite-deferred' },
+      { userId: this.userId, kind: { $in: ['invite-deferred', 'invited'] } },
       { fields: { eventId: 1 } },
     ),
   ).observeAsync({
-    added: n => enqueue(() => watch(n.eventId)),
-    removed: n => enqueue(() => unwatch(n.eventId)),
+    added: n => {
+      const count = (counts.get(n.eventId) ?? 0) + 1
+      counts.set(n.eventId, count)
+      if (count === 1) enqueue(() => watch(n.eventId))
+    },
+    removed: n => {
+      const count = (counts.get(n.eventId) ?? 1) - 1
+      if (count > 0) return void counts.set(n.eventId, count)
+      counts.delete(n.eventId)
+      enqueue(() => unwatch(n.eventId))
+    },
   })
   this.onStop(() => {
     stopped = true
