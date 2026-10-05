@@ -30,7 +30,14 @@ export type EventParticipantInput =
   | { kind: 'real'; userId: string }
   // A user found by `users.search`; becomes a reserved placeholder.
   | { kind: 'invited'; userId: string; color: string }
-  | { kind: 'placeholder'; name: string; color: string; avatar?: string }
+  // `photo` is the caller's own upload id, attached on create (§1.11).
+  | {
+      kind: 'placeholder'
+      name: string
+      color: string
+      avatar?: string
+      photo?: string
+    }
 
 export type EventParticipant =
   | { id: string; kind: 'real'; userId: string }
@@ -39,7 +46,11 @@ export type EventParticipant =
       kind: 'placeholder'
       name: string
       color: string
+      // A stock avatar key. A reserved placeholder snapshots its invitee's.
       avatar?: string
+      // An upload id the creator gave a placeholder added by name, shown
+      // instead of `avatar` (docs/spec.md §1.11). Never on a reserved one.
+      photo?: string
       // Set = a reserved placeholder: only this user can claim it, by
       // joining. Server-only, never published.
       invitedUserId?: string
@@ -167,6 +178,17 @@ export type UpdateEventArgs = {
 // placeholder.
 export type RemoveParticipantArgs = { eventId: string; participantId: string }
 
+// The creator's edit of a placeholder's picture (docs/spec.md §1.11). Like
+// `UpdateUserArgs`: picking a stock avatar sends `{ avatar, photo: null }`.
+export type UpdateParticipantArgs = {
+  eventId: string
+  participantId: string
+  // A stock avatar key, e.g. "f3".
+  avatar?: string
+  // An upload id. null clears it; undefined leaves it unchanged.
+  photo?: string | null
+}
+
 // `participantId` names the placeholder being claimed; without it the caller
 // joins as a new participant. The invite code is the only join capability.
 export type JoinEventArgs = { code: string; participantId?: string }
@@ -208,13 +230,14 @@ export type InvitePreview = {
     name: string
     color: string
     avatar?: string
+    photo?: string
     reservedForYou?: true
   }[]
 }
 
 // The WebP derivatives of an upload, by long edge in px, served at
-// `/images/<id>/<size>.webp`: 400 present tile and profile photo, 1000
-// present detail, 1600 event cover.
+// `/images/<id>/<size>.webp`: 400 present tile and profile or placeholder
+// photo, 1000 present detail, 1600 event cover.
 export type ImageSize = 400 | 1000 | 1600
 
 // `POST /api/images` (single-file multipart) responds 200 with this.

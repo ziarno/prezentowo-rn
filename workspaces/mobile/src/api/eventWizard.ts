@@ -8,7 +8,12 @@ import type {
 
 import { garland } from '@/constants/colors'
 
-import { type DraftImage, imageChange, savedImage } from './draftImage'
+import {
+  type DraftImage,
+  type LocalPhoto,
+  imageChange,
+  savedImage,
+} from './draftImage'
 import { parseEventDate } from './eventList'
 import { beneficiaryIdOf } from './events'
 
@@ -45,7 +50,13 @@ export type DraftPerson =
       name: string
       color: string
       avatar?: string
+      // Shown instead of `avatar`; uploaded when the wizard saves (§1.11).
+      photo?: PlaceholderPhoto
     }
+
+// A placeholder's photo, still on the device or already uploaded (kept in
+// the draft so a retried save doesn't upload it again).
+export type PlaceholderPhoto = LocalPhoto | { kind: 'upload'; id: string }
 
 export type EventDraft = {
   title: string
@@ -216,17 +227,67 @@ export function addInvitee(
   }
 }
 
+type Placeholder = Extract<DraftPerson, { kind: 'placeholder' }>
+
+const updatePlaceholder = (
+  draft: EventDraft,
+  key: string,
+  update: (placeholder: Placeholder) => Placeholder,
+): EventDraft => ({
+  ...draft,
+  people: draft.people.map(p =>
+    p.key === key && p.kind === 'placeholder' ? update(p) : p,
+  ),
+})
+
+// A stock avatar replaces the photo.
 export function setPlaceholderAvatar(
   draft: EventDraft,
   key: string,
   avatar: string,
 ): EventDraft {
-  return {
-    ...draft,
-    people: draft.people.map(p =>
-      p.key === key && p.kind === 'placeholder' ? { ...p, avatar } : p,
-    ),
+  return updatePlaceholder(draft, key, ({ photo: _, ...p }) => ({
+    ...p,
+    avatar,
+  }))
+}
+
+// `uri` is a photo taken or picked on the device.
+export function setPlaceholderPhoto(
+  draft: EventDraft,
+  key: string,
+  uri: string,
+): EventDraft {
+  return updatePlaceholder(draft, key, p => ({
+    ...p,
+    photo: { kind: 'local', uri },
+  }))
+}
+
+export function removePlaceholderPhoto(
+  draft: EventDraft,
+  key: string,
+): EventDraft {
+  return updatePlaceholder(draft, key, ({ photo: _, ...p }) => p)
+}
+
+/**
+ * The draft with every placeholder photo still on the device uploaded with
+ * `upload`, one after another.
+ */
+export async function uploadPlaceholderPhotos(
+  draft: EventDraft,
+  upload: (localUri: string) => Promise<{ kind: 'upload'; id: string }>,
+): Promise<EventDraft> {
+  const people: DraftPerson[] = []
+  for (const p of draft.people) {
+    people.push(
+      p.kind === 'placeholder' && p.photo?.kind === 'local'
+        ? { ...p, photo: await upload(p.photo.uri) }
+        : p,
+    )
   }
+  return { ...draft, people }
 }
 
 export function removePerson(draft: EventDraft, key: string): EventDraft {
@@ -255,12 +316,16 @@ export function toCreateEventArgs(
         return [{ kind: 'invited', userId: p.userId, color: p.color }]
       }
       if (p.kind === 'placeholder') {
+        if (p.photo?.kind === 'local') {
+          throw new Error('A photo must be uploaded before saving')
+        }
         return [
           {
             kind: 'placeholder',
             name: p.name,
             color: p.color,
             ...(p.avatar ? { avatar: p.avatar } : {}),
+            ...(p.photo ? { photo: p.photo.id } : {}),
           },
         ]
       }

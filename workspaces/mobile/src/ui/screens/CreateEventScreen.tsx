@@ -2,7 +2,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import type { UserSearchResult } from '@prezentowo/types'
 import { router, useNavigation } from 'expo-router'
 import { usePreventRemove } from 'expo-router/react-navigation'
-import { useRef, useState } from 'react'
+import { type Dispatch, type SetStateAction, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Keyboard, Pressable, ScrollView, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -21,10 +21,13 @@ import {
   firstInvalidStep,
   hasUser,
   removePerson,
+  removePlaceholderPhoto,
   setPlaceholderAvatar,
+  setPlaceholderPhoto,
   stepError,
   toCreateEventArgs,
   toUpdateEventArgs,
+  uploadPlaceholderPhotos,
   wizardSteps,
 } from '@/api/eventWizard'
 import { createEvent, updateEvent } from '@/api/events'
@@ -37,6 +40,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useOffline } from '@/hooks/useOffline'
+import { usePhotoPrompt } from '@/hooks/usePhotoPrompt'
 import { type UserSearch, useUserSearch } from '@/hooks/useUserSearch'
 import { errorMessage } from '@/localization/errorMessage'
 import type { MeteorError } from '@/sync'
@@ -71,18 +75,25 @@ type PersonView = {
   name: string
   avatarKey?: string
   photo?: string
+  // A placeholder's photo not yet uploaded.
+  photoUri?: string
   color?: string
 }
 
-// Someone the draft itself names: added by name, or found by search. No
-// photo: an invitee is shown as their reserved placeholder will be (§1.10).
+// Someone the draft itself names: added by name, or found by search. An
+// invitee shows no photo, as their reserved placeholder won't (§1.10).
 const namedView = (
   person: Extract<DraftPerson, { kind: 'placeholder' | 'invited' }>,
-): PersonView => ({
-  name: person.name,
-  avatarKey: person.avatar,
-  color: person.color,
-})
+): PersonView => {
+  const photo = person.kind === 'placeholder' ? person.photo : undefined
+  return {
+    name: person.name,
+    avatarKey: person.avatar,
+    ...(photo?.kind === 'local' ? { photoUri: photo.uri } : {}),
+    ...(photo?.kind === 'upload' ? { photo: photo.id } : {}),
+    color: person.color,
+  }
+}
 
 // `4a`–`4e`: creates an event, or, with `eventId`, edits one from `6a`
 // starting at `start`.
@@ -252,13 +263,15 @@ function EventWizard({
     leaving.current = true
     try {
       // Kept in the draft, so a retry after a failed save doesn't upload
-      // the photo again.
+      // the photos again.
       const background = await uploadDraftImage(
         draft.background,
         uploadImage,
         downloadImage,
       )
-      const uploaded = { ...draft, background }
+      let uploaded: EventDraft = { ...draft, background }
+      setDraft(uploaded)
+      uploaded = await uploadPlaceholderPhotos(uploaded, uploadImage)
       setDraft(uploaded)
       await onSubmit(uploaded)
     } catch (e) {
@@ -492,14 +505,15 @@ function BackgroundStep({
 }
 
 // `4d`: one field that searches Prezentowo and adds by name. A user found by
-// search is invited (they join by accepting); anyone else is added by name.
+// search is invited (they join by accepting); anyone else is added by name,
+// with a photo or stock avatar if wanted.
 function PeopleStep({
   draft,
   onChange,
   viewOf,
 }: {
   draft: EventDraft
-  onChange: (draft: EventDraft) => void
+  onChange: Dispatch<SetStateAction<EventDraft>>
   viewOf: (person: DraftPerson) => PersonView
 }) {
   const { t } = useTranslation()
@@ -508,17 +522,31 @@ function PeopleStep({
   const avatarPicker = useRef<AvatarPickerModalHandle>(null)
   const search = useUserSearch(query)
   const name = query.trim()
+  // The picker returns after this render, so the photo goes on the draft as
+  // it is by then.
+  const photoPrompt = usePhotoPrompt(
+    uri => {
+      if (avatarTarget) {
+        onChange(d => setPlaceholderPhoto(d, avatarTarget, uri))
+      }
+    },
+    { square: true },
+  )
 
   const addByName = () => {
     onChange(addPlaceholder(draft, name))
     setQuery('')
   }
 
-  const target = draft.people.find(p => p.key === avatarTarget)
-  const targetAvatar =
-    target?.kind === 'placeholder' && isAvatarKey(target.avatar)
-      ? target.avatar
+  // A photo shows instead of the stock avatar, so none is preselected then.
+  const stockOf = (person: DraftPerson | undefined) =>
+    person?.kind === 'placeholder' &&
+    !person.photo &&
+    isAvatarKey(person.avatar)
+      ? person.avatar
       : null
+  const target = draft.people.find(p => p.key === avatarTarget)
+  const targetHasPhoto = target?.kind === 'placeholder' && !!target.photo
 
   return (
     <>
@@ -538,8 +566,9 @@ function PeopleStep({
                 onPress={() => {
                   // The keyboard would cover the sheet.
                   Keyboard.dismiss()
+                  photoPrompt.clearError()
                   setAvatarTarget(person.key)
-                  avatarPicker.current?.present()
+                  avatarPicker.current?.present(stockOf(person))
                 }}
                 accessibilityRole={isPlaceholder ? 'button' : undefined}
                 accessibilityLabel={
@@ -553,6 +582,7 @@ function PeopleStep({
                   name={view.name}
                   avatarKey={view.avatarKey}
                   photo={view.photo}
+                  photoUri={view.photoUri}
                   color={view.color}
                   size={36}
                 />
@@ -642,6 +672,12 @@ function PeopleStep({
         ) : null}
       </View>
 
+      {photoPrompt.error ? (
+        <Text className="mt-3 text-xs text-garland-berry">
+          {t(`photoPicker.errors.${photoPrompt.error}`)}
+        </Text>
+      ) : null}
+
       <View className="mt-4 rounded-xl bg-garland-paper2 px-3.5 py-2.5">
         <Text className="text-xs leading-[17px] text-garland-ink-60">
           {t('createEvent.people.joinLater')}
@@ -650,11 +686,17 @@ function PeopleStep({
 
       <AvatarPickerModal
         ref={avatarPicker}
-        value={targetAvatar}
+        value={stockOf(target)}
         onConfirm={(key: AvatarKey) => {
           if (avatarTarget)
             onChange(setPlaceholderAvatar(draft, avatarTarget, key))
         }}
+        onPhoto={photoPrompt.prompt}
+        onRemovePhoto={
+          targetHasPhoto && avatarTarget
+            ? () => onChange(removePlaceholderPhoto(draft, avatarTarget))
+            : undefined
+        }
       />
     </>
   )
@@ -765,6 +807,7 @@ function BeneficiaryStep({
                 name={view.name}
                 avatarKey={view.avatarKey}
                 photo={view.photo}
+                photoUri={view.photoUri}
                 color={view.color}
                 size={36}
               />

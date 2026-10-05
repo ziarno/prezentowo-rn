@@ -5,6 +5,7 @@ import type {
   JoinEventResult,
   RemoveParticipantArgs,
   UpdateEventArgs,
+  UpdateParticipantArgs,
 } from '@prezentowo/types'
 
 import { call, collection } from '@/sync'
@@ -31,6 +32,11 @@ export function createEvent(args: CreateEventArgs): Promise<{ _id: string }> {
 
 export function updateEvent(args: UpdateEventArgs): Promise<void> {
   return call('events.update', args)
+}
+
+// `6a`'s picture for a placeholder added by name (docs/spec.md §1.11).
+export function updateParticipant(args: UpdateParticipantArgs): Promise<void> {
+  return call('events.updateParticipant', args)
 }
 
 export function joinEvent(args: JoinEventArgs): Promise<JoinEventResult> {

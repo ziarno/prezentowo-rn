@@ -81,7 +81,8 @@
     "female": "Female",
     "male": "Male",
     "cancel": "Cancel",
-    "accept": "Accept"
+    "accept": "Accept",
+    "removePhoto": "Remove photo"
   },
   "eventDetail": {
     "forName": "For {{name}}"
@@ -266,7 +267,7 @@
       "addedByName": "Added by name",
       "namePlaceholder": "Search Prezentowo or type a name",
       "remove": "Remove {{name}}",
-      "pickAvatar": "Choose an avatar for {{name}}",
+      "pickAvatar": "Choose a photo or avatar for {{name}}",
       "joinLater": "Anyone can also join later with an invite link — no approval needed.",
       "willBeInvited": "Will be invited",
       "addByName": "Add ‘{{name}}’ by name",
@@ -371,6 +372,9 @@
     "reservedForYou": "<0>{{inviter}}</0> added you as <0>{{name}}</0>"
   },
   "editEvent": {
+    "changePicture": "Change {{name}}'s picture",
+    "pictureFailed": "Couldn't save {{name}}'s picture. Try again.",
+    "placeholderReserved": "{{name}} was invited from Prezentowo, so they show their own picture.",
     "background": "Background",
     "changeBackground": "Change",
     "type": "Type",

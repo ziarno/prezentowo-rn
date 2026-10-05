@@ -248,6 +248,7 @@ function InviteBody({
                     <ParticipantAvatar
                       name={p.name}
                       avatarKey={p.avatar}
+                      photo={p.photo}
                       color={p.color}
                       size={32}
                     />

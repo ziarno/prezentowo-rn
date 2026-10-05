@@ -1,16 +1,30 @@
 import * as Clipboard from 'expo-clipboard'
 import { router } from 'expo-router'
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Pressable, ScrollView, Share, View } from 'react-native'
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Share,
+  View,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import type { WizardStep } from '@/api/eventWizard'
-import { beneficiaryIdOf, deleteEvent, removeParticipant } from '@/api/events'
+import {
+  beneficiaryIdOf,
+  deleteEvent,
+  removeParticipant,
+  updateParticipant,
+} from '@/api/events'
+import { uploadImage } from '@/api/images'
 import { inviteLink, rotateInvite } from '@/api/invites'
 import type { ResolvedParticipant } from '@/api/participants'
 import { ArrowRightIcon, LockIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
+import { type AvatarKey, isAvatarKey } from '@/constants/avatars'
 import { garland } from '@/constants/colors'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
@@ -18,8 +32,14 @@ import { useEventGifts } from '@/hooks/useEventGifts'
 import { useEventInvite } from '@/hooks/useEventInvite'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useOffline } from '@/hooks/useOffline'
+import { usePhotoPrompt } from '@/hooks/usePhotoPrompt'
+import { errorMessage } from '@/localization/errorMessage'
 import { formatEventDate } from '@/localization/eventDates'
-import { isNetworkError } from '@/sync'
+import { type MeteorError, isNetworkError } from '@/sync'
+import {
+  AvatarPickerModal,
+  type AvatarPickerModalHandle,
+} from '@/ui/components/AvatarPickerModal'
 import { EventBackground } from '@/ui/components/EventBackground'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LockNote } from '@/ui/components/LockNote'
@@ -159,7 +179,7 @@ export function EditEventScreen({ eventId }: { eventId: string }) {
 }
 
 // Everyone but the host can be removed, and the beneficiary only once the
-// event is no longer for them.
+// event is no longer for them. A placeholder's avatar opens its picture.
 function PeopleList({
   eventId,
   participants,
@@ -171,6 +191,7 @@ function PeopleList({
 }) {
   const { t } = useTranslation()
   const { confirm, pending: removingId, error } = useConfirmedAction()
+  const picture = usePlaceholderPicture(eventId)
 
   const confirmRemove = ({ id, name }: ResolvedParticipant) =>
     confirm({
@@ -191,13 +212,31 @@ function PeopleList({
             key={p.id}
             className="flex-row items-center gap-3.5 border-t border-garland-ink-08 px-[22px] py-3"
           >
-            <ParticipantAvatar
-              name={p.name}
-              avatarKey={p.avatarKey}
-              photo={p.photo}
-              color={p.color}
-              size={34}
-            />
+            <Pressable
+              disabled={!p.isPlaceholder || picture.saving !== null}
+              onPress={() => picture.open(p)}
+              accessibilityRole={p.isPlaceholder ? 'button' : undefined}
+              accessibilityLabel={
+                p.isPlaceholder
+                  ? t('editEvent.changePicture', { name: p.name })
+                  : undefined
+              }
+              accessibilityState={{ busy: picture.saving === p.id }}
+              className="active:opacity-70"
+            >
+              <ParticipantAvatar
+                name={p.name}
+                avatarKey={p.avatarKey}
+                photo={p.photo}
+                color={p.color}
+                size={34}
+              />
+              {picture.saving === p.id ? (
+                <View className="absolute inset-0 items-center justify-center rounded-full bg-[rgba(255,250,242,0.5)]">
+                  <ActivityIndicator size="small" color={garland.ink} />
+                </View>
+              ) : null}
+            </Pressable>
             <Text className="flex-1 text-[15px] font-semibold text-garland-ink">
               {p.name}
             </Text>
@@ -230,8 +269,100 @@ function PeopleList({
           {error}
         </Text>
       ) : null}
+      {picture.error ? (
+        <Text className="px-[22px] pt-1 text-xs text-garland-berry">
+          {picture.error}
+        </Text>
+      ) : null}
+      {picture.picker}
     </View>
   )
+}
+
+/**
+ * The creator's picture for a placeholder added by name (docs/spec.md
+ * §1.11): a photo, taken or chosen and uploaded at once, or a stock avatar,
+ * which replaces the photo. Saved as soon as it's picked.
+ */
+function usePlaceholderPicture(eventId: string) {
+  const { t } = useTranslation()
+  const pickerRef = useRef<AvatarPickerModalHandle>(null)
+  const [target, setTarget] = useState<ResolvedParticipant | null>(null)
+  const [saving, setSaving] = useState<string | null>(null)
+  const [failure, setFailure] = useState<string | null>(null)
+
+  const save = async (
+    person: ResolvedParticipant,
+    change: () => Promise<{ avatar?: string; photo?: string | null }>,
+  ) => {
+    setSaving(person.id)
+    setFailure(null)
+    try {
+      await updateParticipant({
+        eventId,
+        participantId: person.id,
+        ...(await change()),
+      })
+    } catch (e) {
+      // A reserved placeholder looks like any other here (its invitee never
+      // reaches the client), so only the server can turn it down.
+      const reason = (e as Partial<MeteorError> | undefined)?.reason
+      setFailure(
+        reason === 'placeholderReserved'
+          ? t('editEvent.placeholderReserved', { name: person.name })
+          : errorMessage(
+              e,
+              t('editEvent.pictureFailed', { name: person.name }),
+            ),
+      )
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  const photoPrompt = usePhotoPrompt(
+    uri => {
+      if (target) {
+        void save(target, async () => ({ photo: (await uploadImage(uri)).id }))
+      }
+    },
+    { square: true },
+  )
+
+  // A photo shows instead of the stock avatar, so none is preselected then.
+  const stockOf = (person: ResolvedParticipant | null) =>
+    person && !person.photo && isAvatarKey(person.avatarKey)
+      ? person.avatarKey
+      : null
+
+  const open = (person: ResolvedParticipant) => {
+    setFailure(null)
+    photoPrompt.clearError()
+    setTarget(person)
+    pickerRef.current?.present(stockOf(person))
+  }
+
+  const picker = (
+    <AvatarPickerModal
+      ref={pickerRef}
+      value={stockOf(target)}
+      onConfirm={(avatar: AvatarKey) => {
+        if (target) void save(target, async () => ({ avatar, photo: null }))
+      }}
+      onPhoto={photoPrompt.prompt}
+      onRemovePhoto={
+        target?.photo
+          ? () => void save(target, async () => ({ photo: null }))
+          : undefined
+      }
+    />
+  )
+
+  const error =
+    failure ??
+    (photoPrompt.error ? t(`photoPicker.errors.${photoPrompt.error}`) : null)
+
+  return { open, saving, error, picker }
 }
 
 // Set apart at the bottom of `6a`: everyone loses the event, presents and

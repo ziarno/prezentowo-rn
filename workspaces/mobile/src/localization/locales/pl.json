@@ -81,7 +81,8 @@
     "female": "Kobieta",
     "male": "Mężczyzna",
     "cancel": "Anuluj",
-    "accept": "Zatwierdź"
+    "accept": "Zatwierdź",
+    "removePhoto": "Usuń zdjęcie"
   },
   "eventDetail": {
     "forName": "Dla {{name}}"
@@ -268,7 +269,7 @@
       "addedByName": "Dodano po imieniu",
       "namePlaceholder": "Szukaj w Prezentowo lub wpisz imię",
       "remove": "Usuń: {{name}}",
-      "pickAvatar": "Wybierz awatar: {{name}}",
+      "pickAvatar": "Wybierz zdjęcie lub awatar: {{name}}",
       "joinLater": "Każdy może też dołączyć później przez link z zaproszeniem — bez zatwierdzania.",
       "willBeInvited": "Otrzyma zaproszenie",
       "addByName": "Dodaj „{{name}}” po imieniu",
@@ -393,6 +394,9 @@
     "reservedForYou": "<0>{{inviter}}</0> dodaje Cię jako <0>{{name}}</0>"
   },
   "editEvent": {
+    "changePicture": "Zmień zdjęcie: {{name}}",
+    "pictureFailed": "Nie udało się zapisać zdjęcia: {{name}}. Spróbuj ponownie.",
+    "placeholderReserved": "{{name}} – zaproszenie z Prezentowo, więc widać zdjęcie z profilu tej osoby.",
     "background": "Tło",
     "changeBackground": "Zmień",
     "type": "Rodzaj",

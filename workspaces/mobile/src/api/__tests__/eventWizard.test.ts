@@ -11,9 +11,13 @@ import {
   hasUser,
   parseStep,
   removePerson,
+  removePlaceholderPhoto,
+  setPlaceholderAvatar,
+  setPlaceholderPhoto,
   stepError,
   toCreateEventArgs,
   toUpdateEventArgs,
+  uploadPlaceholderPhotos,
   wizardSteps,
 } from '../eventWizard'
 
@@ -265,6 +269,78 @@ describe('toCreateEventArgs', () => {
         ME,
       ).title,
     ).toBe('Urodziny')
+  })
+})
+
+describe('placeholder photos', () => {
+  const withBabcia = () => {
+    const d = addPlaceholder(draft({ type: 'many-to-many' }), 'Babcia')
+    return { d, key: d.people[1]!.key }
+  }
+  const babcia = (d: EventDraft) => d.people[1]
+
+  it('takes a photo on the device for a placeholder', () => {
+    const { d, key } = withBabcia()
+
+    expect(babcia(setPlaceholderPhoto(d, key, 'file:///babcia.jpg'))).toEqual(
+      expect.objectContaining({
+        photo: { kind: 'local', uri: 'file:///babcia.jpg' },
+      }),
+    )
+  })
+
+  it('drops the photo for a stock avatar, or on its own', () => {
+    const { d, key } = withBabcia()
+    const withPhoto = setPlaceholderPhoto(d, key, 'file:///babcia.jpg')
+
+    const stock = babcia(setPlaceholderAvatar(withPhoto, key, 'f2'))
+    expect(stock).toEqual(expect.objectContaining({ avatar: 'f2' }))
+    expect(stock).not.toHaveProperty('photo')
+    expect(babcia(removePlaceholderPhoto(withPhoto, key))).not.toHaveProperty(
+      'photo',
+    )
+  })
+
+  it('uploads every photo still on the device, once', async () => {
+    const { d, key } = withBabcia()
+    const withPhoto = setPlaceholderPhoto(d, key, 'file:///babcia.jpg')
+    const upload = jest.fn(async (uri: string) => ({
+      kind: 'upload' as const,
+      id: `id-of-${uri}`,
+    }))
+
+    const uploaded = await uploadPlaceholderPhotos(withPhoto, upload)
+    const again = await uploadPlaceholderPhotos(uploaded, upload)
+
+    expect(babcia(again)).toEqual(
+      expect.objectContaining({
+        photo: { kind: 'upload', id: 'id-of-file:///babcia.jpg' },
+      }),
+    )
+    expect(upload).toHaveBeenCalledTimes(1)
+  })
+
+  it('sends an uploaded photo by its id', async () => {
+    const { d, key } = withBabcia()
+    const uploaded = await uploadPlaceholderPhotos(
+      setPlaceholderPhoto(d, key, 'file:///babcia.jpg'),
+      async () => ({ kind: 'upload', id: 'photo-id' }),
+    )
+
+    expect(toCreateEventArgs(uploaded, ME).participants[1]).toEqual({
+      kind: 'placeholder',
+      name: 'Babcia',
+      color: expect.any(String),
+      photo: 'photo-id',
+    })
+  })
+
+  it('refuses to send a photo not yet uploaded', () => {
+    const { d, key } = withBabcia()
+
+    expect(() =>
+      toCreateEventArgs(setPlaceholderPhoto(d, key, 'file:///b.jpg'), ME),
+    ).toThrow()
   })
 })
 

@@ -22,7 +22,7 @@ _Avoid_: pending participant
 Finding existing Prezentowo users by name in `4d` (`users.search`): a case- and diacritic-insensitive prefix match on any word of their name, returning only name, avatar and photo. Everyone with a name is findable.
 
 **Avatar** / **Photo**:
-How a user is pictured. Their **avatar** is a stock key (`f1`…`f12`, `m1`…`m12`) into avatars bundled with the app; their **photo** is an upload of their own (`profile.photo`, an upload id). The photo wins when set, else the avatar, else their initial. A user always keeps an avatar beside a photo, as its fallback and as what a **reserved placeholder** snapshots: an upload sits on one document only, so a placeholder never carries a photo.
+How a user is pictured. Their **avatar** is a stock key (`f1`…`f12`, `m1`…`m12`) into avatars bundled with the app; their **photo** is an upload of their own (`profile.photo`, an upload id). The photo wins when set, else the avatar, else their initial. A user always keeps an avatar beside a photo, as its fallback and as what a **reserved placeholder** snapshots: an upload sits on one document only, so a reserved placeholder never carries a photo. A placeholder added by name is pictured the same way, with a stock avatar and a photo the event creator gives it; the photo is deleted when someone claims the placeholder.
 _Avoid_: profile picture (the UI's word for whichever is shown)
 
 **Recipient**:

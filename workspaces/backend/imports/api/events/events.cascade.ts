@@ -4,7 +4,7 @@ import type { Mongo } from 'meteor/mongo'
 import { Activity } from '../activity/activity.collection'
 import { deleteChatThreads } from '../chat/chat.sync'
 import { type GiftRecord, Gifts } from '../gifts/gifts.collection'
-import { releaseImage } from '../images/images.refs'
+import { asUpload, releaseImage } from '../images/images.refs'
 import { Invites } from '../invites/invites.collection'
 import { Notifications } from '../notifications/notifications.collection'
 import { clearInvited } from '../notifications/notifications.records'
@@ -46,14 +46,17 @@ export async function cascadeParticipantRemoval(
   if (participant.kind === 'placeholder' && participant.invitedUserId) {
     await clearInvited(participant.invitedUserId, event._id)
   }
+  if (participant.kind === 'placeholder') {
+    await releaseImage(asUpload(participant.photo))
+  }
 }
 
 /**
  * Everything a deleted event owns (docs/spec.md §2.2): its presents, its
  * invite, its activity, its chat threads and their Stream channels, and the
- * uploads the event and its presents point at. Call it once the `Events` doc
- * is gone, so nothing new is added to it meanwhile. Every collection keyed by
- * `eventId` is deleted here.
+ * uploads the event, its placeholders and its presents point at. Call it
+ * once the `Events` doc is gone, so nothing new is added to it meanwhile.
+ * Every collection keyed by `eventId` is deleted here.
  */
 export async function cascadeEventDeletion(event: EventDoc) {
   await Invites.removeAsync({ eventId: event._id })
@@ -62,4 +65,7 @@ export async function cascadeEventDeletion(event: EventDoc) {
   await deleteChatThreads(event._id)
   await deleteGifts({ eventId: event._id })
   await releaseImage(event.background)
+  for (const p of event.participants) {
+    if (p.kind === 'placeholder') await releaseImage(asUpload(p.photo))
+  }
 }

@@ -24,7 +24,11 @@ import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { GenderToggle } from '@/ui/components/GenderToggle'
 import { PhotoUploadTile } from '@/ui/components/PhotoUploadTile'
 
-export type AvatarPickerModalHandle = { present: () => void }
+// `initial` overrides `value` for a caller that picks whose avatar to show
+// in the same tap, before `value` re-renders.
+export type AvatarPickerModalHandle = {
+  present: (initial?: AvatarKey | null) => void
+}
 
 type Props = {
   value: AvatarKey | null
@@ -32,10 +36,16 @@ type Props = {
   // Set: the grid starts with an upload tile, which closes the sheet and
   // calls this to take or pick a photo instead.
   onPhoto?: () => void
+  // Set: a "Remove photo" link under the grid, which closes the sheet and
+  // calls this.
+  onRemovePhoto?: () => void
 }
 
 export const AvatarPickerModal = forwardRef<AvatarPickerModalHandle, Props>(
-  function AvatarPickerModal({ value, onConfirm, onPhoto }, ref) {
+  function AvatarPickerModal(
+    { value, onConfirm, onPhoto, onRemovePhoto },
+    ref,
+  ) {
     const { t } = useTranslation()
     const insets = useSafeAreaInsets()
     const sheetRef = useRef<BottomSheetModal>(null)
@@ -43,9 +53,10 @@ export const AvatarPickerModal = forwardRef<AvatarPickerModalHandle, Props>(
     // Opens on the current `value`, which may have changed since it last
     // closed (e.g. a photo replaced it).
     useImperativeHandle(ref, () => ({
-      present: () => {
-        setDraft(value)
-        setGender(value ? avatarGender(value) : 'female')
+      present: initial => {
+        const start = initial === undefined ? value : initial
+        setDraft(start)
+        setGender(start ? avatarGender(start) : 'female')
         sheetRef.current?.present()
       },
     }))
@@ -118,6 +129,21 @@ export const AvatarPickerModal = forwardRef<AvatarPickerModalHandle, Props>(
               </View>
             ))}
           </View>
+
+          {onRemovePhoto ? (
+            <GarlandButton
+              variant="link"
+              onPress={() => {
+                dismiss()
+                onRemovePhoto()
+              }}
+              className="mt-3 self-center"
+            >
+              <GarlandButtonText className="text-garland-berry">
+                {t('avatarPicker.removePhoto')}
+              </GarlandButtonText>
+            </GarlandButton>
+          ) : null}
 
           <View className="mt-5 flex-row gap-3">
             <View className="flex-1">

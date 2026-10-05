@@ -54,6 +54,26 @@ export async function withUploadAttached<T>(
 }
 
 /**
+ * `withUploadAttached` for several images stored by one write, e.g. an
+ * event's background and its placeholders' photos. One upload sent twice is
+ * `imageInUse`; whatever fails, none stays attached.
+ */
+export function withUploadsAttached<T>(
+  { images, userId }: { images: (ImageRef | undefined)[]; userId: string },
+  write: () => Promise<T>,
+): Promise<T> {
+  return images.reduceRight<() => Promise<T>>(
+    (inner, image) => () => withUploadAttached({ image, userId }, inner),
+    write,
+  )()
+}
+
+/** An upload id stored as a plain string, e.g. a photo, as an `ImageRef`. */
+export const asUpload = (
+  id: string | null | undefined,
+): ImageRef | undefined => (id ? { kind: 'upload', id } : undefined)
+
+/**
  * Asserts an `illustration` image is stock art bundled for its field
  * (docs/spec.md §1.1): `ids` is the field's allowlist from
  * `@prezentowo/types`, presents for a gift and backgrounds for an event.

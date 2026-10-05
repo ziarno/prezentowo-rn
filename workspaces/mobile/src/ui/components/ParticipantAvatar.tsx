@@ -9,8 +9,11 @@ import { Avatar } from '@/ui/components/Avatar'
 type ParticipantAvatarProps = {
   name: string
   avatarKey?: string
-  // An upload id: a real user's photo, shown instead of `avatarKey`.
+  // An upload id: a real user's or a placeholder's photo, shown instead of
+  // `avatarKey`.
   photo?: string
+  // A photo still on the device, e.g. in `4d` before it's uploaded.
+  photoUri?: string
   // Placeholder accent color, used for the initial-circle fallback.
   color?: string
   size?: number
@@ -23,9 +26,13 @@ export function ParticipantAvatar({
   name,
   avatarKey,
   photo,
+  photoUri,
   color,
   size = 38,
 }: ParticipantAvatarProps) {
+  if (photoUri) {
+    return <Avatar source={{ uri: photoUri }} size={size} />
+  }
   if (photo) {
     return <Avatar source={{ uri: uploadImageUrl(photo, 400) }} size={size} />
   }

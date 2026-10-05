@@ -9,7 +9,9 @@ import {
   type JoinEventResult,
   type RemoveParticipantArgs,
   type UpdateEventArgs,
+  type UpdateParticipantArgs,
 } from '@prezentowo/types'
+import { isEmpty } from 'lodash'
 import { Match, check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 import type { Mongo } from 'meteor/mongo'
@@ -20,9 +22,11 @@ import { syncChatThreads } from '../chat/chat.sync'
 import { Gifts } from '../gifts/gifts.collection'
 import { imageRefPattern } from '../images/images.patterns'
 import {
+  asUpload,
   assertStockArt,
   releaseImage,
   withUploadAttached,
+  withUploadsAttached,
 } from '../images/images.refs'
 import { insertInvite } from '../invites/invites.codes'
 import { eventForCode } from '../invites/invites.lookup'
@@ -31,6 +35,7 @@ import {
   recordParticipantJoined as notifyParticipantJoined,
   recordInvited,
 } from '../notifications/notifications.records'
+import { nonEmptyString } from '../patterns'
 import {
   cascadeEventDeletion,
   cascadeParticipantRemoval,
@@ -61,6 +66,7 @@ const participantPattern = Match.Where(
           name: String,
           color: String,
           avatar: Match.Maybe(String),
+          photo: Match.Optional(nonEmptyString),
         }),
       )
       return true
@@ -190,6 +196,7 @@ const createEvent = async function (
       name: p.name.trim(),
       color: p.color,
       ...(p.avatar ? { avatar: p.avatar } : {}),
+      ...(p.photo ? { photo: p.photo } : {}),
     }
   })
   const kind = resolveKind(
@@ -197,8 +204,12 @@ const createEvent = async function (
     minted.map(p => p.id),
   )
 
-  const _id = await withUploadAttached(
-    { image: options.background, userId },
+  // The placeholders' photos, attached with the background (§1.11).
+  const photos = options.participants.map(p =>
+    p.kind === 'placeholder' ? asUpload(p.photo) : undefined,
+  )
+  const _id = await withUploadsAttached(
+    { images: [options.background, ...photos], userId },
     async () => {
       const eventId = await Events.insertAsync({
         title,
@@ -314,6 +325,84 @@ const updateEvent = async function (
   if (options.kind !== undefined) await syncChatThreads(event._id)
 }
 
+// The placeholder whose picture the creator may set: one added by name. A
+// reserved placeholder shows its invitee's picture (docs/spec.md §1.11).
+const editablePlaceholder = (event: EventDoc, participantId: string) => {
+  const participant = event.participants.find(p => p.id === participantId)
+  if (!participant) {
+    throw new Meteor.Error('notFound', 'participantNotFound')
+  }
+  if (participant.kind !== 'placeholder') {
+    throw new Meteor.Error('notAuthorized', 'mustBeAPlaceholder')
+  }
+  if (participant.invitedUserId) {
+    throw new Meteor.Error('notAuthorized', 'placeholderReserved')
+  }
+  return participant
+}
+
+const updateParticipant = async function (
+  this: Meteor.MethodThisType,
+  options: UpdateParticipantArgs,
+) {
+  check(options, {
+    eventId: String,
+    participantId: String,
+    avatar: Match.Optional(nonEmptyString),
+    photo: Match.Optional(Match.OneOf(nonEmptyString, null)),
+  })
+
+  if (!this.userId) {
+    throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
+  }
+  const userId = this.userId
+  const { avatar, photo } = options
+
+  const event = await loadOwnEvent(options.eventId, userId)
+  const placeholder = editablePlaceholder(event, options.participantId)
+
+  const $set: Record<string, string> = {}
+  const $unset: Record<string, ''> = {}
+  if (avatar) $set['participants.$.avatar'] = avatar
+  if (photo) $set['participants.$.photo'] = photo
+  if (photo === null) $unset['participants.$.photo'] = ''
+  if (isEmpty($set) && isEmpty($unset)) return
+
+  // Lands only on the placeholder as read: still unclaimed, unreserved and
+  // holding the photo this call replaces, so a dropped upload is never left
+  // attached.
+  const unchangedSinceRead = {
+    _id: event._id,
+    participants: {
+      $elemMatch: {
+        id: placeholder.id,
+        kind: 'placeholder',
+        invitedUserId: { $exists: false },
+        photo: placeholder.photo ?? { $exists: false },
+      },
+    },
+  } as unknown as Mongo.Selector<EventDoc>
+  const current = asUpload(placeholder.photo)
+  await withUploadAttached(
+    { image: asUpload(photo), userId, current },
+    async () => {
+      const updated = await Events.updateAsync(unchangedSinceRead, {
+        ...(isEmpty($set) ? {} : { $set }),
+        ...(isEmpty($unset) ? {} : { $unset }),
+      })
+      if (!updated) {
+        // Throws whichever reason now applies.
+        editablePlaceholder(
+          await loadOwnEvent(options.eventId, userId),
+          options.participantId,
+        )
+        throw new Meteor.Error('serverError', 'concurrentChange')
+      }
+    },
+  )
+  if (photo !== undefined) await releaseImage(current, asUpload(photo))
+}
+
 /**
  * The placeholder a join by `userId` claims, if any: their own reservation
  * whatever `participantId` says, else the placeholder `participantId` names.
@@ -400,6 +489,10 @@ const joinEvent = async function (
       $set: { participants: nextParticipants },
     })
     if (updated) {
+      // The claimant shows their own picture from now on (§1.11).
+      if (target?.kind === 'placeholder') {
+        await releaseImage(asUpload(target.photo))
+      }
       await recordParticipantJoined(event._id, joinedAsParticipantId)
       await notifyParticipantJoined(event, joinedAsParticipantId)
       await clearInvitesTo(userId, event._id)
@@ -445,10 +538,15 @@ const removeParticipant = async function (
   const participant = assertRemovable(event, options.participantId)
 
   // The pull only lands while they're still not the beneficiary: an
-  // `events.update` may have made them one since the read.
+  // `events.update` may have made them one since the read. A placeholder
+  // must still hold the photo the cascade deletes, so a newer one isn't left
+  // behind.
+  const photo = participant.kind === 'placeholder' ? participant.photo : null
   const stillRemovable = {
     _id: event._id,
-    'participants.id': participant.id,
+    participants: {
+      $elemMatch: { id: participant.id, photo: photo ?? { $exists: false } },
+    },
     beneficiaryParticipantId: { $ne: participant.id },
   } as unknown as Mongo.Selector<EventDoc>
   const removed = await Events.updateAsync(stillRemovable, {
@@ -485,6 +583,7 @@ const deleteEvent = async function (
 Meteor.methods({
   'events.create': createEvent,
   'events.update': updateEvent,
+  'events.updateParticipant': updateParticipant,
   'events.join': joinEvent,
   'events.removeParticipant': removeParticipant,
   'events.delete': deleteEvent,

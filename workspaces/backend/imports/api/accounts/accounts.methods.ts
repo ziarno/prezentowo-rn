@@ -1,5 +1,4 @@
 import type {
-  ImageRef,
   RegisterNewUserArgs,
   RequestMagicLinkArgs,
   UpdateUserArgs,
@@ -9,7 +8,12 @@ import { Accounts } from 'meteor/accounts-base'
 import { Match, check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 
-import { releaseImage, withUploadAttached } from '../images/images.refs'
+import {
+  asUpload,
+  releaseImage,
+  withUploadAttached,
+} from '../images/images.refs'
+import { nonEmptyString } from '../patterns'
 import { nameFields } from '../users/users.nameTokens'
 
 const registerNewUser = async function (options: RegisterNewUserArgs) {
@@ -39,13 +43,6 @@ const registerNewUser = async function (options: RegisterNewUserArgs) {
 
   return { id: userId, token: stampedToken.token }
 }
-
-const nonEmptyString = Match.Where(
-  (value: unknown) => typeof value === 'string' && value !== '',
-)
-
-const asUpload = (id: string | null | undefined): ImageRef | undefined =>
-  id ? { kind: 'upload', id } : undefined
 
 const updateUser = async function (
   this: Meteor.MethodThisType,

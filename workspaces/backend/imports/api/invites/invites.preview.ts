@@ -43,6 +43,7 @@ export const invitePreview = (
         name: p.name,
         color: p.color,
         ...(p.avatar ? { avatar: p.avatar } : {}),
+        ...(p.photo ? { photo: p.photo } : {}),
         ...(reservedForYou ? { reservedForYou: true as const } : {}),
       },
     ]
