@@ -1,5 +1,6 @@
-// The landing page's two languages and its copy, per "Design the web invite
-// landing page" (#29). Shared by the server render and the client bundle.
+// The landing pages' two languages and their copy, per "Design the web invite
+// landing page" (#29) and "Web brand page at /" (#77). Shared by the server
+// render and the client bundle.
 
 export type Lang = 'en' | 'pl'
 
@@ -42,6 +43,7 @@ export const COPY = {
     bad: 'This invite link doesn’t work anymore',
     badP: 'It may have been replaced with a new one. Ask the person who sent it for a fresh link.',
     badSub: 'Prezentowo is a shared gift list for family and friends.',
+    tagline: 'A shared gift list for family and friends.',
     appStore: ['Download on the', 'App Store'],
     play: ['Get it on', 'Google Play'],
   },
@@ -56,6 +58,7 @@ export const COPY = {
     bad: 'Ten link z zaproszeniem już nie działa',
     badP: 'Mógł zostać zastąpiony nowym. Poproś osobę, która go wysłała, o aktualny link.',
     badSub: 'Prezentowo to wspólna lista prezentów dla rodziny i znajomych.',
+    tagline: 'Wspólna lista prezentów dla rodziny i znajomych.',
     appStore: ['Pobierz z', 'App Store'],
     play: ['Pobierz z', 'Google Play'],
   },
@@ -68,6 +71,8 @@ export const OG_COPY = {
   description: 'Dołącz do wspólnej listy prezentów w Prezentowo.',
   invalidTitle: 'Prezentowo',
   invalidDescription: 'Wspólna lista prezentów dla rodziny i znajomych.',
+  brandTitle: 'Prezentowo',
+  brandDescription: 'Wspólna lista prezentów',
 }
 
 // Spelled out rather than taken from Intl, so the server and every browser

@@ -321,6 +321,91 @@ describe('invite landing page', function () {
     })
   })
 
+  describe('GET / (brand page)', function () {
+    it('says what Prezentowo is, with HTTP 200', async function () {
+      const page = await get('/')
+
+      assert.strictEqual(page.status, 200)
+      assert.match(page.body, /<h1[^>]*>Prezentowo<\/h1>/)
+      assert.match(
+        page.body,
+        /Wspólna lista prezentów dla rodziny i znajomych\./,
+      )
+      assert.match(page.body, /Prezentowo to wspólna lista prezentów\./)
+      assert.doesNotMatch(page.body, /prezentowo:\/\//)
+    })
+
+    it('is not hydrated', async function () {
+      assert.doesNotMatch((await get('/')).html, /id="landing-props"/)
+    })
+
+    it('serves /index.html the same', async function () {
+      const root = await get('/')
+      const index = await get('/index.html')
+
+      assert.strictEqual(index.status, 200)
+      assert.strictEqual(index.body, root.body)
+    })
+
+    it('carries the brand OG tags and a canonical root URL', async function () {
+      const page = await get('/?lang=en', { 'Accept-Language': 'en' })
+
+      assert.match(page.head, /<title>Prezentowo<\/title>/)
+      assert.strictEqual(meta(page, 'og:title'), 'Prezentowo')
+      assert.strictEqual(
+        meta(page, 'og:description'),
+        'Wspólna lista prezentów',
+      )
+      assert.strictEqual(meta(page, 'og:image'), Meteor.absoluteUrl('og.png'))
+      assert.strictEqual(meta(page, 'og:url'), Meteor.absoluteUrl())
+      assert.match(
+        page.head,
+        new RegExp(`<link rel="canonical" href="${Meteor.absoluteUrl()}"/>`),
+      )
+      assert.doesNotMatch(page.head, /name="robots"/)
+    })
+
+    it('links the stores without a referrer, the visitor’s first', async function () {
+      const page = await get('/', { 'User-Agent': ANDROID })
+
+      assert.deepStrictEqual(stores(page), [
+        {
+          store: 'play',
+          filled: true,
+          href: 'https://play.google.com/store/apps/details?id=com.prezentowo.app',
+        },
+        {
+          store: 'appStore',
+          filled: false,
+          href: 'https://apps.apple.com/search?term=Prezentowo',
+        },
+      ])
+    })
+
+    it('is in the visitor’s language, Polish by default', async function () {
+      const pl = await get('/', { 'Accept-Language': 'de' })
+      const en = await get('/', { 'Accept-Language': 'en' })
+
+      assert.match(pl.html, /<html[^>]* lang="pl"/)
+      assert.match(en.html, /<html[^>]* lang="en"/)
+      assert.match(en.body, /A shared gift list for family and friends\./)
+    })
+
+    it('answers any unknown path as a 404 the crawlers skip', async function () {
+      for (const path of ['/foo', '/e/', '/e/abc/def']) {
+        const page = await get(path)
+
+        assert.strictEqual(page.status, 404, path)
+        assert.match(page.body, /<h1[^>]*>Prezentowo<\/h1>/, path)
+        assert.match(
+          page.head,
+          /<meta name="robots" content="noindex"\/>/,
+          path,
+        )
+      }
+    })
+  })
+
   describe('pickLanguage', function () {
     it('takes the best of en and pl from Accept-Language', function () {
       assert.strictEqual(pickLanguage(undefined, undefined), 'pl')

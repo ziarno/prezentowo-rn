@@ -43,6 +43,8 @@ a { color: var(--green); }
   box-shadow: 0 10px 30px rgba(29,26,20,.08); text-align: center;
 }
 .card .garland { margin: 0 -26px; width: calc(100% + 52px); }
+.card .brand-title { margin: 14px 0 8px; font-size: 40px; overflow-wrap: normal; }
+.tagline { font-size: 15px; line-height: 1.5; }
 .eyebrow { margin-top: 14px; font-size: 15px; }
 .card h1 {
   margin: 10px 0 12px; color: var(--green);

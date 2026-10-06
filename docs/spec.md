@@ -367,6 +367,16 @@ Both event publications omit `participants.invitedUserId`: a reserved placeholde
 - An invalid or rotated code renders one identical "link doesn't work anymore" page with HTTP 404.
 - The Play Store button carries `&referrer=code%3D<code>`. On first launch the app reads it with `expo-application` `getInstallReferrerAsync()` and treats it as a pending invite (§4.3). iOS has no equivalent and relies on the copy. No attribution SDK.
 - `GET /.well-known/apple-app-site-association` and `GET /.well-known/assetlinks.json` enable Universal Links and App Links for `https://prezentowo.jarno.pl/e/*`.
+- Every other page path gets the brand page (§3.5).
+
+### 3.5 Web brand page — [#77](https://github.com/ziarno/prezentowo-rn/issues/77), [ADR 0005](adr/0005-web-is-an-invite-landing-page.md)
+
+- `GET /` and `/index.html` serve a static brand page with HTTP 200. Any other path no route claims (`/foo`, `/e/`) serves the same page with HTTP 404 and `robots: noindex`.
+- It is the invite page's garland card with no invite: "Prezentowo" in the display face, the tagline ("Wspólna lista prezentów dla rodziny i znajomych." / "A shared gift list for family and friends."), and the same store buttons with no referrer. The "what is Prezentowo" sentence sits below the card. It has no "Open the invite" and no "After installing".
+- It is server-rendered only and never hydrated.
+- `<title>` "Prezentowo". OG tags are always `pl`: `og:title` "Prezentowo", `og:description` "Wspólna lista prezentów", the static brand card as `og:image`, and the root URL as `og:url` and `<link rel="canonical">`.
+- Language is picked as on §3.4.
+- It stands in for a fuller marketing page (features, screenshots), which comes once the app is ready.
 
 ---
 
