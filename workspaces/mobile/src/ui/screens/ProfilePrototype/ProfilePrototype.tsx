@@ -22,6 +22,7 @@ import {
   EditableName,
   OfflineStrip,
   PrePromptSheet,
+  QueuedNote,
   STATS,
   SectionHeading,
   SettingsRow,
@@ -182,6 +183,7 @@ function VariantA({
         >
           <Text className="text-sm font-bold text-garland-berry">Sign out</Text>
         </Pressable>
+        <QueuedNote center />
         <Pressable
           onPress={openDelete}
           disabled={d.offline}
@@ -294,6 +296,11 @@ function VariantB({
             tone="berry"
             chevron={false}
             onPress={() => confirmSignOut(queued)}
+            sublabel={
+              queued
+                ? `${queued} offline change${queued === 1 ? '' : 's'} not synced yet`
+                : undefined
+            }
             last
           />
         </Card>
@@ -412,6 +419,11 @@ function VariantC({
                 tone="berry"
                 chevron={false}
                 onPress={() => confirmSignOut(queued)}
+                sublabel={
+                  queued
+                    ? `${queued} offline change${queued === 1 ? '' : 's'} not synced yet`
+                    : undefined
+                }
               />
               <SettingsRow
                 label="Delete account"

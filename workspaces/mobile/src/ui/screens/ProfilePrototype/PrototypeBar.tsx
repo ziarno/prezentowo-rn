@@ -9,6 +9,8 @@ import { type Permission, VARIANTS, setProto, useProto } from './store'
 
 const PERMISSIONS: Permission[] = ['undetermined', 'granted', 'denied']
 
+// Variant arrows show on every prototype screen; they always pick the Profile
+// layout, which you see when you go back.
 export function PrototypeBar({ showVariants }: { showVariants: boolean }) {
   const s = useProto()
   const insets = useSafeAreaInsets()
@@ -34,7 +36,7 @@ export function PrototypeBar({ showVariants }: { showVariants: boolean }) {
     >
       {s.panelOpen ? (
         <View className="mb-2 w-[92%] gap-2 rounded-2xl bg-[#222] p-3">
-          <Row label="OS permission">
+          <Row label="OS permission" hint="push screen">
             {PERMISSIONS.map(p => (
               <Chip
                 key={p}
@@ -56,7 +58,7 @@ export function PrototypeBar({ showVariants }: { showVariants: boolean }) {
               onPress={() => setProto({ offline: true })}
             />
           </Row>
-          <Row label="Queued writes">
+          <Row label="Queued writes" hint="Sign out">
             {[0, 1, 3].map(n => (
               <Chip
                 key={n}
@@ -66,7 +68,7 @@ export function PrototypeBar({ showVariants }: { showVariants: boolean }) {
               />
             ))}
           </Row>
-          <Row label="Own photo">
+          <Row label="Own photo" hint="avatar + sheet">
             <Chip
               label="stock"
               on={!s.hasPhoto}
@@ -87,19 +89,18 @@ export function PrototypeBar({ showVariants }: { showVariants: boolean }) {
       ) : null}
 
       <View className="flex-row items-center gap-1 rounded-full bg-[#222] px-2 py-1.5">
-        {showVariants ? (
-          <>
-            <BarButton label="‹" onPress={() => step(-1)} />
-            <Text className="min-w-[150px] text-center text-[13px] font-semibold text-white">
-              {current.key} — {current.name}
-            </Text>
-            <BarButton label="›" onPress={() => step(1)} />
-          </>
-        ) : (
-          <Text className="px-2 text-[13px] font-semibold text-white">
-            Prototype state
+        <BarButton label="‹" onPress={() => step(-1)} />
+        <View className="min-w-[160px] items-center">
+          <Text className="text-[13px] font-semibold text-white">
+            {current.key} — {current.name}
           </Text>
-        )}
+          {showVariants ? null : (
+            <Text className="text-[10px] text-white/60">
+              Profile layout · go back to see it
+            </Text>
+          )}
+        </View>
+        <BarButton label="›" onPress={() => step(1)} />
         <BarButton
           label={s.panelOpen ? '✕' : '⚙'}
           onPress={() => setProto({ panelOpen: !s.panelOpen })}
@@ -109,10 +110,23 @@ export function PrototypeBar({ showVariants }: { showVariants: boolean }) {
   )
 }
 
-function Row({ label, children }: { label: string; children: ReactNode }) {
+function Row({
+  label,
+  hint,
+  children,
+}: {
+  label: string
+  hint?: string
+  children: ReactNode
+}) {
   return (
     <View className="flex-row items-center gap-1.5">
-      <Text className="w-[92px] text-[11px] text-white/60">{label}</Text>
+      <View className="w-[92px]">
+        <Text className="text-[11px] text-white/80">{label}</Text>
+        {hint ? (
+          <Text className="text-[9px] text-white/50">→ {hint}</Text>
+        ) : null}
+      </View>
       {children}
     </View>
   )

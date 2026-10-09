@@ -23,6 +23,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { uploadImageUrl } from '@/api/images'
+import fakePhoto from '@/assets/images/presents/p10-600px.png'
 import {
   BellIcon,
   CheckIcon,
@@ -77,8 +78,12 @@ export function useProfileData() {
     setName,
     email: user?.emails?.[0]?.address ?? 'you@example.com',
     joined: 'Joined Aug ’26',
-    avatarSource:
-      s.hasPhoto && photo ? { uri: uploadImageUrl(photo, 400) } : avatar(key),
+    // No real photo saved? A bundled picture stands in for one.
+    avatarSource: s.hasPhoto
+      ? photo
+        ? { uri: uploadImageUrl(photo, 400) }
+        : fakePhoto
+      : avatar(key),
     avatarKey: key,
     language: LOCALES.find(l => l.code === i18n.language)?.label ?? 'English',
     openLanguage,
@@ -103,6 +108,19 @@ export function confirmSignOut(queued: number) {
         onPress: () => Alert.alert('Prototype', 'Would sign out here.'),
       },
     ],
+  )
+}
+
+// Under Sign out: what signing out would lose, before you tap it.
+export function QueuedNote({ center }: { center?: boolean }) {
+  const { queued } = useProto()
+  if (queued === 0) return null
+  return (
+    <Text
+      className={`mt-1.5 text-xs text-garland-ink-40 ${center ? 'text-center' : ''}`}
+    >
+      {queued} offline change{queued === 1 ? '' : 's'} not synced yet
+    </Text>
   )
 }
 
