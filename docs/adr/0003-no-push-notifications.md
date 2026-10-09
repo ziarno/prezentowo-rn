@@ -1,5 +1,7 @@
 # No push notifications, and no event-date reminders
 
+**Status:** superseded by [ADR 0006](0006-push-via-expo-and-stream.md).
+
 Prezentowo has no push transport. Notifications are in-app only (the bell on `3a`, the notifications screen). Nothing is ever scheduled against `EventDoc.date`: no reminder, push or in-app, fires as an event approaches.
 
 The three notification kinds (`invite-deferred`, `suggestion-claimed`, `participant-joined`) are none of them time-critical. The only notification shape whose value depends on reaching someone outside the app is a date reminder, and that is ruled out as a product decision, not deferred.
