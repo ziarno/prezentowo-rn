@@ -5,14 +5,72 @@ export type RegisterNewUserArgs = {
 }
 
 // A user's picture is `profile.photo` when set, else the stock
-// `profile.avatar` (docs/spec.md §1.10).
+// `profile.avatar` (docs/spec.md §1.10). There is no email: it is the
+// magic-link identity and can't be changed.
 export type UpdateUserArgs = {
   name?: string
-  email?: string
   // A stock avatar key, e.g. "f3".
   avatar?: string
   // An upload id. null clears it; undefined leaves it unchanged.
   photo?: string | null
+}
+
+// `users.deleteAccount` (docs/spec.md §1.12): the account's own email,
+// retyped as a deliberate-action check, matched case-insensitively.
+export type DeleteAccountArgs = { email: string }
+
+// What `users.stats` resolves to (docs/spec.md §1.14). Counted fresh from
+// today's data on every call, never stored on the user.
+export type UserStats = {
+  // Events the caller is a real participant of, past ones included.
+  events: number
+  // Gifts the caller added for themselves in those events.
+  wished: number
+  // Gifts in those events whose `claimedBy` holds the caller.
+  claimed: number
+}
+
+// The app's languages, as the Language row sets them.
+export type AppLanguage = 'en' | 'pl'
+
+// What can push (docs/spec.md §1.13): every notification kind except
+// `invite-deferred` and `event-handed-over`, plus chat messages.
+export const PUSH_KINDS = [
+  'invited',
+  'participant-joined',
+  'suggestion-claimed',
+  'claimed-gift-removed',
+  'chat',
+] as const
+export type PushKind = (typeof PUSH_KINDS)[number]
+
+// On the user document, published to that user only. A missing entry counts
+// as on.
+export type PushPreferences = Partial<Record<PushKind, boolean>>
+
+export type SetPushPreferenceArgs = { kind: PushKind; enabled: boolean }
+
+// `push.register`: one device's two addresses, the Expo token for inbox
+// pushes and the native APNs/FCM token the server registers with Stream.
+export type RegisterPushArgs = {
+  expoToken: string
+  deviceToken: string
+  platform: 'ios' | 'android'
+  // The app's language on this device; inbox push text is written in it.
+  locale: AppLanguage
+}
+
+// `push.unregister` takes no login: the token is the proof of the device.
+export type UnregisterPushArgs = { expoToken: string }
+
+// The `data` of an inbox push: the notification it mirrors, and what the
+// inbox's routing needs to open it.
+export type InboxPushData = {
+  notificationId: string
+  kind: Exclude<PushKind, 'chat'>
+  eventId: string
+  giftId?: string
+  recipientParticipantId?: string
 }
 
 export type LoginCredentials = {

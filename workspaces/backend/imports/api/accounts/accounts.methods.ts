@@ -52,7 +52,6 @@ const updateUser = async function (
     options,
     Match.ObjectIncluding({
       name: Match.Maybe(String),
-      email: Match.Maybe(String),
       avatar: Match.Maybe(String),
       photo: Match.Optional(Match.OneOf(nonEmptyString, null)),
     }),
@@ -62,7 +61,7 @@ const updateUser = async function (
     throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
   }
 
-  const { name, email, avatar, photo } = options
+  const { name, avatar, photo } = options
   const userId = this.userId
 
   const user = await Meteor.users.findOneAsync(userId)
@@ -71,7 +70,6 @@ const updateUser = async function (
     throw new Meteor.Error('notFound', 'userNotFound', userId)
   }
 
-  const currentEmail = user.emails?.[0]?.address
   const updates: Record<string, unknown> = {}
 
   if (name) {
@@ -86,10 +84,6 @@ const updateUser = async function (
   const unset = photo === null ? { 'profile.photo': '' } : {}
   if (photo) {
     updates['profile.photo'] = photo
-  }
-
-  if (email && currentEmail !== email) {
-    updates['emails'] = [{ address: email, verified: false }]
   }
 
   if (isEmpty(updates) && isEmpty(unset)) return

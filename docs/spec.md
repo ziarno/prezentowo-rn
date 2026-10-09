@@ -1,6 +1,6 @@
 # Prezentowo v1 — implementation spec
 
-The locked output of the wayfinder map [Prezentowo, from wireframes to an implementation-ready spec](https://github.com/ziarno/prezentowo-rn/issues/1). It states each decision in its final form; the ticket linked beside each section holds the reasoning. Build work is sliced under [Build Prezentowo v1](https://github.com/ziarno/prezentowo-rn/issues/32) (see [§9](#9-build-order)).
+The locked output of the wayfinder map [Prezentowo, from wireframes to an implementation-ready spec](https://github.com/ziarno/prezentowo-rn/issues/1), extended by [Map: Profile page, from wireframe to a real screen](https://github.com/ziarno/prezentowo-rn/issues/78) (Profile, push, account deletion, legal pages: [§10](#10-profile-push-and-account-deletion)). It states each decision in its final form; the ticket linked beside each section holds the reasoning. Build work is sliced under [Build Prezentowo v1](https://github.com/ziarno/prezentowo-rn/issues/32) (see [§9](#9-build-order)).
 
 - **Brief**: the wireframes, [`docs/wireframes/README.md`](wireframes/README.md). Screens are referred to by their ids (`3a`, `5c`, …).
 - **Vocabulary**: [`workspaces/types/CONTEXT.md`](../workspaces/types/CONTEXT.md). Terms in **bold** below are defined there.
@@ -57,6 +57,7 @@ export type EventParticipant =
       avatar?: string
       photo?: string // an upload id the creator gave a placeholder added by name (§1.11); never on a reserved one
       invitedUserId?: string // set = a reserved placeholder; server-only, never published (#68)
+      departedUserId?: string // set = a departed placeholder: the deleted account's former userId; published (§1.12)
     }
 
 export type EventKind =
@@ -121,7 +122,7 @@ export type InvitePreview = {
 }
 ```
 
-`unclaimedPlaceholders` leaves out every **reserved placeholder** except the viewer's own, which carries `reservedForYou` (so signed out, and on the web landing page, none are listed).
+`unclaimedPlaceholders` leaves out every **reserved placeholder** except the viewer's own, which carries `reservedForYou` (so signed out, and on the web landing page, none are listed). It also leaves out every **departed placeholder** (§1.12), which nobody can claim.
 
 ### 1.4 Presents — [#12](https://github.com/ziarno/prezentowo-rn/issues/12)
 
@@ -200,6 +201,7 @@ export type NotificationDoc = {
   _id: string
   userId: string // always account-level
   kind: 'invite-deferred' | 'invited' | 'suggestion-claimed' | 'participant-joined' | 'claimed-gift-removed'
+      | 'event-handed-over' // §1.12: you're now the creator of an event whose creator deleted their account
   createdAt: Date
   read: boolean
   eventId: string                 // every kind (#28: 1e's route needs it for suggestion-claimed)
@@ -222,6 +224,7 @@ export type ChatThreadDoc = {
   streamChannelType: 'event_thread' | 'secret_thread'
   streamChannelId: string         // random, never derived
   retiredAt?: Date
+  frozenAt?: Date                 // set once the Stream freeze of a retired thread succeeds (§2.4)
 }
 ```
 
@@ -232,16 +235,17 @@ export type UserSearchArgs = { query: string }
 export type UserSearchResult = { userId: string; name: string; avatar?: string; photo?: string } // never an email
 ```
 
-### 1.10 Profile photo — [#75](https://github.com/ziarno/prezentowo-rn/issues/75)
+### 1.10 Profile photo — [#75](https://github.com/ziarno/prezentowo-rn/issues/75), [#78](https://github.com/ziarno/prezentowo-rn/issues/78)
 
 ```ts
 export type UpdateUserArgs = {
   name?: string
-  email?: string
   avatar?: string        // a stock avatar key (`f1`…`f12`, `m1`…`m12`)
   photo?: string | null  // an upload id; null clears it, undefined leaves it
 }
 ```
+
+There is no `email`: it is the magic-link identity, and changing it is out of scope (§8). The server ignores an `email` key.
 
 A user's picture is `profile.photo` when set, else the stock `profile.avatar`, else their initial. `profile.avatar` keeps its plain string key, so nothing migrates. A photo is an upload (§3.1) rendered with its `400` derivative; it never replaces `avatar`, which stays the fallback. Picking a stock avatar on Profile sends `{ avatar, photo: null }`. Every payload that carries a user's `avatar` from their profile carries `photo` beside it: `users.inEvent`, `UserSearchResult`, `InvitePreview.realParticipants`. A reserved placeholder snapshots the stock `avatar` and never the photo, since an upload sits on one document only and the user may replace or delete it. A placeholder added by name can carry a photo of its own (§1.11). `InvitePreview` reaches signed-out viewers, so anyone with an invite code can see the photos of those taking part; like every upload URL (§3.1), a photo id is unguessable, not authenticated.
 
@@ -257,6 +261,58 @@ export type UpdateParticipantArgs = {
 ```
 
 The event creator can give a placeholder added by name a photo: in `4d` while creating (`EventParticipantInput.photo`), and later from `6a` (`events.updateParticipant`). Like a user's (§1.10), a placeholder's picture is `photo` when set, else the stock `avatar`, else its initial on its color; `photo` is an upload rendered with its `400` derivative, and picking a stock avatar sends `{ avatar, photo: null }`. Only the creator sets it; a reserved placeholder never takes one, since it shows its invitee's snapshot. The name stays as created: `events.updateParticipant` edits the picture only. On claim the photo is deleted, not offered to the claimant, who shows their own profile picture from then on. `InvitePreview.unclaimedPlaceholders` carries `photo`, so like a taking-part user's photo (§1.10) it reaches anyone with the invite code, signed out included: unguessable, not authenticated.
+
+### 1.12 Account deletion — [#81](https://github.com/ziarno/prezentowo-rn/issues/81), [#88](https://github.com/ziarno/prezentowo-rn/issues/88)
+
+```ts
+export type DeleteAccountArgs = { email: string } // the account's own email, matched case-insensitively
+```
+
+- `NotificationDoc.kind` gains `'event-handed-over'` (§1.7), carrying `eventId` only. It never pushes (§1.13).
+- The placeholder variant of `EventParticipant` gains `departedUserId` (§1.2). A **departed placeholder** is what a deleted account's participant entry becomes (§10.4): same `id`, the profile `name` as it was, the profile's stock `avatar`, no `photo`, and `departedUserId` = the deleted userId.
+  - It is **published**, unlike `invitedUserId`. It reveals nothing new: the same id is already on that user's gifts as `createdBy`.
+  - It is the departed flag, and the key `3f` groups by. The recipient's userId is `userId` for a real participant and `departedUserId` for a departed placeholder, so their own wishes stay apart from the suggestions after they leave (`personPresents`, `src/api/presentLists.ts`). `createdBy` stays write-once, and no gift is rewritten.
+  - It is never claimable: `invites.byCode` leaves it out (§1.3), and `events.join` answers `notFound` for it, as for a missing one.
+  - Otherwise it is a placeholder like one added by name. The creator can `events.removeParticipant` it, and give it a stock avatar or a photo with `events.updateParticipant` (§1.11).
+  - A gift the departed user added for someone else still shows "Deleted user" as its creator, since their userId no longer resolves in `users.inEvent`.
+
+### 1.13 Push — [#82](https://github.com/ziarno/prezentowo-rn/issues/82), [ADR 0006](adr/0006-push-via-expo-and-stream.md)
+
+```ts
+export type AppLanguage = 'en' | 'pl'
+
+export const PUSH_KINDS = ['invited', 'participant-joined', 'suggestion-claimed', 'claimed-gift-removed', 'chat'] as const
+export type PushKind = (typeof PUSH_KINDS)[number]
+
+export type PushPreferences = Partial<Record<PushKind, boolean>> // on the user doc, self only; missing = on
+export type SetPushPreferenceArgs = { kind: PushKind; enabled: boolean }
+
+export type RegisterPushArgs = {
+  expoToken: string    // getExpoPushTokenAsync({ projectId }): inbox pushes
+  deviceToken: string  // getDevicePushTokenAsync(): APNs hex on iOS, FCM on Android; the server registers it with Stream
+  platform: 'ios' | 'android'
+  locale: AppLanguage  // the app's language on this device
+}
+export type UnregisterPushArgs = { expoToken: string }
+
+export type InboxPushData = {          // an Expo push's `data`
+  notificationId: string
+  kind: Exclude<PushKind, 'chat'>
+  eventId: string
+  giftId?: string
+  recipientParticipantId?: string
+}
+```
+
+`invite-deferred` and `event-handed-over` never push. `PUSH_KINDS` is in the order the push settings screen lists them (§10.2).
+
+### 1.14 Profile stats — [#83](https://github.com/ziarno/prezentowo-rn/issues/83)
+
+```ts
+export type UserStats = { events: number; wished: number; claimed: number }
+```
+
+Definitions: §10.3.
 
 ---
 
@@ -274,19 +330,20 @@ All methods are `async`, check `this.userId`, and validate arguments. "Member" m
 | `Activity` | `ActivityDoc` | new | `eventId + createdAt` |
 | `Notifications` | `NotificationDoc` | new | `userId + createdAt`; `userId + eventId + kind` unique partial on `invite-deferred` and `invited` |
 | `ChatThreads` | `ChatThreadDoc` | new | `eventId` |
+| `PushTokens` | `{ _id, userId, expoToken, deviceToken, platform, locale, updatedAt }` | new | `expoToken` unique; `deviceToken` unique; `userId`. Server-only, one per device, never published ([#82](https://github.com/ziarno/prezentowo-rn/issues/82)). |
 | `Images` | `{ _id, ownerId, createdAt, attachedAt? }` | new | — (records who uploaded, and when a document took the upload; used for cleanup) |
-| `Meteor.users` | + `nameTokens: string[]` | changed | `nameTokens` (multikey). Server-only: `profile.name` folded (lower case, diacritics stripped, `ł`→`l`) and split on whitespace and hyphens; rewritten by every write of `profile.name` (registration, `profile.name`, Dev login). Never published ([#68](https://github.com/ziarno/prezentowo-rn/issues/68)). |
+| `Meteor.users` | + `nameTokens: string[]` | changed | `nameTokens` (multikey). Server-only: `profile.name` folded (lower case, diacritics stripped, `ł`→`l`) and split on whitespace and hyphens; rewritten by every write of `profile.name` (registration, `profile.name`, Dev login). Never published ([#68](https://github.com/ziarno/prezentowo-rn/issues/68)). Also + `pushPreferences?: PushPreferences` (§1.13), published to that user only; + `services.accountDeletion?: { hashedToken, createdAt }`, the web deletion token (§3.6), server-only. |
 
 ### 2.2 Methods
 
 | Method | Who | Behaviour | Writes Activity / Notification / Chat |
 |---|---|---|---|
 | `events.create(CreateEventArgs)` | signed in | Mints participant ids and resolves `beneficiaryIndex`. Inserts the `InviteDoc` eagerly. A `real` entry must be the caller (`notAuthorized` otherwise): nobody is made a member of someone else's event without accepting. An `invited` entry becomes a **reserved placeholder**, with `name` and `avatar` snapshotted from that user's profile (`notFound` if the user doesn't exist or has no name; `invalidArgs` for the caller or a duplicate). | Notification `invited` to each invited user. Chat: creates the `event_thread` and a `secret_thread` per real recipient (§2.4). |
-| `events.updateParticipant(UpdateParticipantArgs)` | creator | Sets a placeholder's stock `avatar` and `photo` (§1.11). Rejects a real participant (`notAuthorized` / `mustBeAPlaceholder`), a reserved placeholder (`notAuthorized` / `placeholderReserved`) and an unknown one (`notFound` / `participantNotFound`). A new `photo` attaches the upload per §3.1; a new or `null` photo deletes the replaced upload. The write lands only on the placeholder as read (still unclaimed, holding the photo it replaces), else `serverError` / `concurrentChange`. Online-only `call`. | — |
+| `events.updateParticipant(UpdateParticipantArgs)` | creator | Sets a placeholder's stock `avatar` and `photo` (§1.11). A departed placeholder (§1.12) is allowed, like one added by name. Rejects a real participant (`notAuthorized` / `mustBeAPlaceholder`), a reserved placeholder (`notAuthorized` / `placeholderReserved`) and an unknown one (`notFound` / `participantNotFound`). A new `photo` attaches the upload per §3.1; a new or `null` photo deletes the replaced upload. The write lands only on the placeholder as read (still unclaimed, holding the photo it replaces), else `serverError` / `concurrentChange`. Online-only `call`. | — |
 | `events.update(UpdateEventArgs)` | creator | Title, date and background are always editable. `kind` is rejected if `Gifts.find({eventId}).countAsync() > 0`. | Chat: a beneficiary change retires and replaces the secret thread. |
 | `events.removeParticipant(RemoveParticipantArgs)` | creator | Rejects removing the current beneficiary. Removing a reserved placeholder deletes its invitee's `invited` notification. Removing a placeholder deletes its photo (§1.11). Hard-deletes gifts where they are the recipient. Keeps gifts they created. Pulls their `userId` from every `claimedBy`. | Activity: deletes docs whose `recipientParticipantId` is theirs and keeps docs where they are the actor. Chat: retires their secret thread and removes them from the others. |
 | `events.delete({ eventId })` | creator | Hard cascade: `Events`, `Gifts`, `Invites`, `Activity`, `Notifications` with that `eventId`, `ChatThreads` (and their Stream channels), and the images referenced by the event, its placeholders' photos and its gifts. | — |
-| `events.join(JoinEventArgs)` | signed in | Resolves `code` to an event. If the caller holds a reserved placeholder in it, claims that one whatever `participantId` says. Otherwise, if `participantId` is given, claims that placeholder; one reserved for someone else gets the same `notFound` as a missing one, and a plain join never touches another user's reservation. The id is preserved and `invitedUserId` dropped; a claimed placeholder's photo is deleted (§1.11). Otherwise appends a new real participant. Rejects users who are already real participants. | Activity `participant-joined`. Notification `participant-joined` to the creator. Deletes the joiner's `invite-deferred` and `invited` for the event. Chat: joins every thread except their own secret thread. |
+| `events.join(JoinEventArgs)` | signed in | Resolves `code` to an event. If the caller holds a reserved placeholder in it, claims that one whatever `participantId` says. Otherwise, if `participantId` is given, claims that placeholder; one reserved for someone else, or a departed placeholder (§1.12), gets the same `notFound` as a missing one, and a plain join never touches another user's reservation. The id is preserved and `invitedUserId` dropped; a claimed placeholder's photo is deleted (§1.11). Otherwise appends a new real participant. Rejects users who are already real participants. | Activity `participant-joined`. Notification `participant-joined` to the creator. Deletes the joiner's `invite-deferred` and `invited` for the event. Chat: joins every thread except their own secret thread. |
 | `invites.ignore({ code })` | signed in | Upserts `invite-deferred` for (`userId`, `eventId`), unless the caller already has an `invited` for that event, which stays as it is. Never touches `Invites`. There is no decline: an ignored invitation stays in the inbox until the invitee joins, the creator removes the reservation, or the event is deleted. | Notification |
 | `invites.rotate({ eventId })` | creator | Replaces `code` in place. The old code is dead immediately. | — |
 | `gifts.add(AddGiftArgs)` | member | Inserts the gift. If `clientId` matches an existing (`createdBy`, `clientId`), returns that gift's id (replay-safe). | Activity `gift-added`; `hiddenFromParticipantId` = the recipient only when the gift is suggested. |
@@ -297,7 +354,14 @@ All methods are `async`, check `this.userId`, and validate arguments. "Member" m
 | `users.search(UserSearchArgs)` | signed in | Online-only `call`; never queued, never mirrored. Folds `query` like `nameTokens` and returns `[]` under 3 folded characters. Every query token must be a prefix of some `nameTokens` entry (anchored regex, so the index is used). Excludes the caller and users without a name. At most 10 `UserSearchResult`s, ordered by name. Rate-limited with `DDPRateLimiter` to 10 calls per 10 s per `userId` + `connectionId`. Everyone with a name is findable: no opt-out in v1 (Settings is out of scope, §8). | — |
 | `notifications.markAllRead()` | signed in | Marks every unread notification belonging to the caller as read. | — |
 | `stream.token()` | signed in | `createToken(userId, now+1h, iat=now)`. | — |
-| `updateUser(UpdateUserArgs)` | signed in | Sets `profile.name`, `email`, the stock `profile.avatar` and `profile.photo` (§1.10). A new `photo` attaches the upload per §3.1 (`imageNotFound` / `imageInUse`); re-sending the current one attaches nothing. A new or `null` photo deletes the replaced upload. There is no account deletion in v1. | — |
+| `updateUser(UpdateUserArgs)` | signed in | Sets `profile.name`, the stock `profile.avatar` and `profile.photo` (§1.10). Never touches `emails`; an `email` key is ignored. A new `photo` attaches the upload per §3.1 (`imageNotFound` / `imageInUse`); re-sending the current one attaches nothing. A new or `null` photo deletes the replaced upload. | — |
+| `users.deleteAccount(DeleteAccountArgs)` | signed in | `email` must match the account's email case-insensitively, else `notAuthorized` / `emailMismatch`. Then `deleteAccountFor(this.userId)` (§10.4). Online-only `call`, never queued. No magic-link re-auth: the session came from one, and the typed email is the deliberate-action check. | Per §10.4. |
+| `users.stats()` | signed in | Returns `UserStats`, counted fresh (§10.3). Online-only `call`, never queued, never mirrored, no rate limit. | — |
+| `users.setPushPreference(SetPushPreferenceArgs)` | signed in | Sets `pushPreferences.<kind>`. For `chat` it writes through to Stream: `setPushPreferences([{ user_id, chat_level: enabled ? 'all' : 'none' }])`. Stream can't be read back, so Mongo holds the truth. Online-only `call`, never queued. | — |
+| `push.register(RegisterPushArgs)` | signed in | Upserts this device's `PushTokens` doc (matched on either token) for the caller, with `locale` and `updatedAt`. Takes the same tokens from any other account first: deletes their docs and calls Stream `removeDevice` for them. Then calls Stream `addDevice(deviceToken, 'apn' \| 'firebase', userId, providerName)` and sets `language: locale` on the Stream user. Idempotent; the app calls it often (§10.5). | — |
+| `push.unregister(UnregisterPushArgs)` | **anyone**, signed out included | Deletes the `PushTokens` doc with that `expoToken` and calls Stream `removeDevice` for its `deviceToken`. An unknown token is a no-op. The token is the proof of the device, so there is no user check. | — |
+
+**Push** ([#82](https://github.com/ziarno/prezentowo-rn/issues/82)): every `Notifications` insert of a `PushKind` kind, from any method above, also queues one inbox push to the recipient's devices (§2.5). The push is sent after the insert succeeds and never fails the method.
 
 The Dev login is **not** a method. It is an `Accounts.registerLoginHandler` for `{ devLogin: true }`, registered only when `Meteor.isDevelopment`. It logs in as `dev@prezentowo.local` (created on first use with a first name already set) ([#4](https://github.com/ziarno/prezentowo-rn/issues/4)).
 
@@ -315,20 +379,45 @@ The Dev login is **not** a method. It is an `Accounts.registerLoginHandler` for 
 | `activity.byEvent(eventId)` | members | Excludes docs where `hiddenFromParticipantId` is the viewer's participant id. Omits the `hiddenFromParticipantId` field. |
 | `activity.recentForUser()` | signed in | The same filter helper, capped at **3 per event** across the caller's events (`3a`). |
 | `notifications.mine()` | signed in | The caller's `NotificationDoc`s, newest first, capped at 50. |
+| the user's own document | signed in | Meteor's default self publication, plus `pushPreferences`. |
 | `chatThreads.byEvent(eventId)` | members | Live threads the viewer belongs to. The viewer's own secret thread is never published. |
 
-Both event publications omit `participants.invitedUserId`: a reserved placeholder looks like any other placeholder to members.
+Both event publications omit `participants.invitedUserId`: a reserved placeholder looks like any other placeholder to members. They publish `participants.departedUserId` (§1.12).
 
-**Invariant the rules lean on:** a gift's `forParticipantId` and `createdBy` are write-once. Any future method that reassigns either must also fire `added`/`removed` in `gifts.byEvent` and re-derive activity visibility.
+**Invariant the rules lean on:** a gift's `forParticipantId` and `createdBy` are write-once. Account deletion keeps it: a departed user's gifts keep their `createdBy`, and the placeholder's `departedUserId` matches it (§1.12). Any future method that reassigns either must also fire `added`/`removed` in `gifts.byEvent` and re-derive activity visibility.
 
-### 2.4 Chat lifecycle — [#6](https://github.com/ziarno/prezentowo-rn/issues/6), [#14](https://github.com/ziarno/prezentowo-rn/issues/14), [backend ADR 0001](../workspaces/backend/docs/adr/0001-chat-thread-lifecycle.md)
+### 2.4 Chat lifecycle — [#6](https://github.com/ziarno/prezentowo-rn/issues/6), [#14](https://github.com/ziarno/prezentowo-rn/issues/14), [#82](https://github.com/ziarno/prezentowo-rn/issues/82), [backend ADR 0001](../workspaces/backend/docs/adr/0001-chat-thread-lifecycle.md)
 
 - Stream app setup: two custom channel types, `event_thread` and `secret_thread`, both inheriting `messaging` grants. **`create-channel` revoked from `user`.** Channel ids come from `Random.secret()`.
 - One `event_thread` per event. One `secret_thread` per **recipient**: every participant in many-to-many, only the beneficiary in many-to-one. Each secret thread's members are every real participant except its recipient.
 - Channels are created eagerly by whichever method changes membership: `events.create`, `events.join`, `events.update` (beneficiary change), `events.removeParticipant`. Placeholders cause no Stream calls.
 - A new member sees full history (`hide_history: false`).
-- **Retire, don't edit** when someone must lose access (a beneficiary change, removal of that recipient). Set `retiredAt`, freeze the Stream channel (history stays readable, nobody can post), mint a replacement, and never remove the person the thread concerns from a live channel.
+- **Retire, don't edit** when someone must lose access (a beneficiary change, removal of that recipient). Never remove the person the thread concerns from a live channel. Retiring runs in this order:
+  1. **Mute** every member who loses access: channel-member `chat_level: 'none'` on that channel. A retired channel keeps its members, so without this a failed freeze would keep pushing its messages to them.
+  2. Set `retiredAt` and mint the replacement.
+  3. **Freeze** the Stream channel (history stays readable, nobody can post) with `updatePartial` and no system message. The freeze is **retried** until it succeeds, then `frozenAt` is set: with backoff, and again at server startup for every retired thread without `frozenAt`, since a retired thread is push-safe only once frozen.
+- Every channel is created with `eventId` in its custom data, so a chat push can open its thread (§2.5).
+- The Stream user is upserted as `{ id, name, image, language }`; `language` is set by `push.register` (§2.2).
 - No webhook ingestion into Mongo, ever. Chat is online-only.
+
+### 2.5 Push delivery — [#80](https://github.com/ziarno/prezentowo-rn/issues/80), [#82](https://github.com/ziarno/prezentowo-rn/issues/82), [#85](https://github.com/ziarno/prezentowo-rn/issues/85), [ADR 0006](adr/0006-push-via-expo-and-stream.md)
+
+**Inbox pushes** go through **Expo Push Service** with `expo-server-sdk` (Node ≥ 22.12; Meteor 3.5 bundles Node 24).
+- **When:** on each `Notifications` insert of a `PushKind` kind (§2.2), unless the recipient's `pushPreferences[kind]` is `false`. Turning a kind off stops the push only; the notification still lands in the inbox.
+- **Where:** every `PushTokens` doc of the recipient.
+- **What:** text written by the server in each token's `locale`, saying no more than the inbox row does (the claim-quietly rule needs no extra guard). `data` is an `InboxPushData`. `badge` is the recipient's unread notification count after the insert (iOS). Push copy lives with the server's other copy, in `en` and `pl`.
+- **Receipts:** a job fetches Expo receipts about 15 minutes after sending and deletes the token on `DeviceNotRegistered`. Delivery is at-least-once, so the app is idempotent on `notificationId`.
+
+**Chat pushes** go through **GetStream's built-in push**; our server never sends them.
+- Devices are registered server-side by `push.register` (`addDevice` with the native token), so the app never has to `connectUser` for push (§7). Providers: one APNs `.p8` provider each for sandbox (dev builds) and production, and one Firebase provider for Android.
+- Stream pushes only to channel members, so a recipient never gets a push from their own secret thread. Retired threads are muted, then frozen (§2.4).
+- **Templates** (`message.new`, enabled per provider): the title is localized from the receiver's Stream `language` (`receiver.language` and `equal`); no badge; Android gets an `android.notification` block so it shows; the payload passes `channel.eventId` through. The template content is part of the push setup issue.
+
+**Not pushed:** `invite-deferred` and `event-handed-over` notifications, and anything to a device with no OS permission.
+
+**Accounts and credentials:** an Expo account and EAS project (`eas init`, `projectId` committed in `app.json`), a paid Apple Developer membership, and a Firebase project for Android (`google-services.json`). The APNs key and the FCM service account are uploaded to both Expo and Stream.
+
+**Unverified until the push slices run** (from [#85](https://github.com/ziarno/prezentowo-rn/issues/85)): server-side `addDevice` delivering to a user who never connected; the MAU impact of server-side Stream calls; `apn_development` semantics; template details; the `expo-notifications` tap and cold-start paths on a real device. A slice that finds one of these false raises a ticket instead of working around it.
 
 ---
 
@@ -368,6 +457,7 @@ Both event publications omit `participants.invitedUserId`: a reserved placeholde
 - The Play Store button carries `&referrer=code%3D<code>`. On first launch the app reads it with `expo-application` `getInstallReferrerAsync()` and treats it as a pending invite (§4.3). iOS has no equivalent and relies on the copy. No attribution SDK.
 - `GET /.well-known/apple-app-site-association` and `GET /.well-known/assetlinks.json` enable Universal Links and App Links for `https://prezentowo.jarno.pl/e/*`.
 - Every other page path gets the brand page (§3.5).
+- **Footer** (shared with the brand page, §3.5): Privacy policy · Terms · Delete account, linking `/privacy`, `/terms` and `/delete-account` in the page's language ([#87](https://github.com/ziarno/prezentowo-rn/issues/87)).
 
 ### 3.5 Web brand page — [#77](https://github.com/ziarno/prezentowo-rn/issues/77), [ADR 0005](adr/0005-web-is-an-invite-landing-page.md)
 
@@ -377,6 +467,41 @@ Both event publications omit `participants.invitedUserId`: a reserved placeholde
 - `<title>` "Prezentowo". OG tags are always `pl`: `og:title` "Prezentowo", `og:description` "Wspólna lista prezentów", the static brand card as `og:image`, and the root URL as `og:url` and `<link rel="canonical">`.
 - Language is picked as on §3.4.
 - It stands in for a fuller marketing page (features, screenshots), which comes once the app is ready.
+- It has the same footer as the invite page (§3.4).
+
+### 3.6 Web account deletion — [#84](https://github.com/ziarno/prezentowo-rn/issues/84), [ADR 0005](adr/0005-web-is-an-invite-landing-page.md)
+
+Google Play needs a public page where someone can delete their account without the app. Its URL goes in Play Console's Data safety form: `https://prezentowo.jarno.pl/delete-account`. Every page here is server-rendered plain HTML, no JS, in the language `pickLanguage` picks (`?lang=`, then `Accept-Language`, then `pl`), and names Prezentowo as the store listings do.
+
+- **`GET /delete-account`** (indexed):
+  - first the in-app path, "Profile → Delete account";
+  - then a form with one email field, a plain HTML POST;
+  - then the fallback, the privacy contact `filip@jarno.pl`.
+- **`POST /delete-account`** with `email` always answers the same page: "If an account exists for this address, we've sent a link."
+  - **Unknown address:** no email, and **no user is created** (the opposite of `requestMagicLink`).
+  - **Known address:** issues a **deletion token**: random, stored hashed as `services.accountDeletion` on the user, valid 1 h, single-use, separate from sign-in tokens. A new one replaces the old, so there is one live token per user.
+  - **Limits** (`DDPRateLimiter` doesn't cover HTTP): a repeat request within 60 s of the last one for that user sends nothing; an in-memory per-IP cap of about 10 requests an hour. The answer stays the same either way.
+  - **The email:** plain text like the sign-in email, from the same sender, in the page's language. It says what was asked for, gives `https://prezentowo.jarno.pl/delete-account/<token>` with "expires in 1 hour", and ends with "If you didn't ask for this, ignore it, your account is safe."
+- **`GET /delete-account/:token` only shows** the confirm page (mail scanners fetch GETs, so a GET never deletes): the account's email, the shared consequence list (§10.4), "This can't be undone", and a "Delete my account" button that POSTs the token. No retyped email: the link already proved the address.
+- **`POST /delete-account/:token`** runs `deleteAccountFor(userId)` (§10.4), then shows "Account deleted". The token is spent only when the deletion finishes, so a POST that dies half-way can be retried.
+- An expired, spent or unknown token gets "This link has expired" with the request form again, with HTTP 410.
+- Devices still signed in lose their login tokens with the user, so Meteor closes their connections; the app's rejected-resume path (`onSessionEnd`) wipes the cache and queue. Their unsynced writes are lost without a prompt.
+- **Emailed requests** to `filip@jarno.pl` are answered within one month (GDPR Art. 12(3)): with the self-service link, or by deleting by hand when the person can't use email links.
+
+### 3.7 Privacy policy and terms — [#87](https://github.com/ziarno/prezentowo-rn/issues/87)
+
+- **`GET /privacy`** and **`GET /terms`**: server-rendered plain HTML, no JS, indexed, titled "Polityka prywatności" / "Privacy policy" and "Regulamin" / "Terms of use". Language from `pickLanguage`; the app links with `?lang=<app language>`.
+- **Polish is binding**; each English page says it is a translation. Each page starts with "Last updated: <date>" and links to the other two legal pages.
+- The text is source in `imports/landing/`, next to the landing copy: no CMS, no PDF. The prose is drafted from the outline in [Privacy policy and terms: content and URLs](https://github.com/ziarno/prezentowo-rn/issues/87), which fixes every fact and period: controller Filip Jarno at `filip@jarno.pl`; legal bases (contract, legitimate interest, consent for push only); named processors (mail provider, GetStream, Expo, APNs/FCM, Cloudflare); retention (until deletion; never-signed-in accounts 7 days; logs 14 days; unattached uploads 24 h; backups 30 days); 16+; no analytics, ads or cookies.
+- **Not live until** the mail provider is named and the owner has reviewed both documents (a `ready-for-human` issue).
+- A material change (a new processor, a new kind of data) is announced in-app, before it takes effect for anything consent-based. No re-acceptance flow.
+- If the domain moves, `/privacy`, `/terms` and `/delete-account` 301 to the new one, so the store consoles keep working.
+
+### 3.8 Retention jobs — [#87](https://github.com/ziarno/prezentowo-rn/issues/87)
+
+Server jobs at startup and then daily, beside the upload sweep (§3.1):
+- **Never-signed-in accounts:** delete every user created over **7 days** ago with no `profile.name` and no login token (`services.resume.loginTokens` empty). Such a user never finished first login, so they own no data. `requestMagicLink` pre-creates a user for any typed address, so this keeps strangers' addresses from staying.
+- **Superseded OG cards:** delete cached `.og-cards/` files whose code or title no longer match a live invite.
 
 ---
 
@@ -392,7 +517,9 @@ src/app/
   (app)/
     _layout.tsx               Drawer.Navigator (@react-navigation/drawer, drawerType 'front') → one screen → the Stack
     index.tsx                 3a Home
-    profile.tsx               3b item
+    profile.tsx               3b item; Profile (§10.1)
+    push-notifications.tsx    push settings (§10.2), pushed from Profile
+    delete-account.tsx        typed-email deletion confirm (§10.4), modal
     notifications.tsx         notifications screen (layout from #28)
     create-event.tsx          4a–4e wizard (modal); 6a opens it in edit mode at a given step
     event/[eventId]/
@@ -405,7 +532,7 @@ src/app/
       gift/[giftId].tsx       1e
 ```
 
-`privacy.tsx` is **not built**: the Settings screens are out of scope (§8), so the drawer has no Privacy or dark-mode rows. The person route is keyed by **`participantId`**, not `userId`, because placeholders have no userId and #4's `[userId]` predates that constraint.
+`privacy.tsx` is **not built**: Privacy & visibility and dark mode are out of scope (§8), so neither the drawer nor Profile has those rows. The person route is keyed by **`participantId`**, not `userId`, because placeholders have no userId and #4's `[userId]` predates that constraint.
 
 ### 4.2 Rules
 
@@ -435,18 +562,19 @@ src/app/
 | Screens | Reads | Writes | Notes |
 |---|---|---|---|
 | `3a` Home | `events.mine`, `activity.recentForUser`, `notifications.mine` (bell dot = unread count) | — | The bell shows only our notifications, never Stream's unread count. |
-| `3b` Home drawer | — | — | Rows: Profile, Notifications, sign out, language. |
+| `3b` Home drawer | — | — | Rows: Profile, Notifications, sign out, language. Sign out uses the shared confirm (§10.1). |
 | `3c`–`3c4` feed | `events.byId`, `gifts.byEvent`, `activity.byEvent` | — | "X of Y have a buyer" is computed client-side. |
 | `3d`/`3d2` event drawer | `events.byId`, `gifts.byEvent` (counts) | — | Counts are shown for everyone in `3d` and for the beneficiary only in `3d2`. Includes "＋ Invite people" (share link). |
-| `3e`/`3f` person | `gifts.byEvent` | `gifts.claim`/`unclaim` | `3f` groups the list into own wishes and suggested by others. Chat recap: §7. |
+| `3e`/`3f` person | `gifts.byEvent` | `gifts.claim`/`unclaim` | `3f` groups the list into own wishes and suggested by others, by the recipient's `userId`, or `departedUserId` for a departed placeholder (§1.12). Chat recap: §7. |
 | `1e` detail | `gifts.byEvent` | claim/unclaim, `gifts.update` (creator), `gifts.remove` (gift creator or event creator) | Delete always goes through a confirm dialog, which adds "N people claimed this" only when the viewer's copy carries `claimedBy` (never for the recipient's own self-added gift). |
 | `4a`–`4e` create | `users.search` (`4d`) | `events.create`, `POST /api/images` | `4e` appears only for many-to-one. `4d` is one field ([#68](https://github.com/ziarno/prezentowo-rn/issues/68)): from 3 characters, debounced 300 ms, matching users list under it, and the last row is always "Add ‘X’ by name" (a placeholder). Tapping a user adds them as `invited`, captioned "Will be invited". No matches: "No one on Prezentowo matches" above the add-by-name row. A user already in the list shows a check and isn't tappable. Offline (`useOffline()`): "Search needs a connection" in place of the results; add-by-name still works. Rate-limited: the results keep loading and the search is asked again once `timeToReset` passes; nothing is shown about the limit. `4c` and `5b` share one picker grid: "Upload photo" first, then the stock tiles (§1.1), with a ring on the selected tile. No pick in `4c`, or Skip in `5b`, leaves the field empty. `6a` reuses the grid and adds "Remove". Tapping a by-name placeholder's avatar opens the avatar sheet, which starts with "Upload photo" like Profile's; a picked photo is square-cropped, previewed, and uploaded on save, and a placeholder with one also gets "Remove photo" (§1.11). |
 | `6a` edit | `invites.forEvent` | `events.update`, `events.updateParticipant`, `POST /api/images`, `events.removeParticipant`, `events.delete` (confirm dialog), `invites.rotate` | Type and beneficiary rows are disabled once gifts exist. Tapping a placeholder's avatar opens the same avatar sheet as `4d`; a photo uploads and saves at once, a stock avatar or "Remove photo" saves at once (§1.11). Members can't tell a reserved placeholder apart, so the server's `placeholderReserved` is explained in place. Online-only, dimmed with the rest of `6a`. |
 | `5a`–`5d` add | — | `gifts.importLink`, `POST /api/images`, `gifts.add` | See the link-import outcomes below. |
 | `7a` invite | `invites.byCode` | `events.join`, `invites.ignore` | Renders signed out. The placeholder list ends with "no, I'm new". A `reservedForYou` placeholder replaces the list and "no, I'm new": "{inviter} added you as {name}", with Join and Ignore, since `events.join` claims the reservation either way. Offline: a blocking error. |
-| Notifications | `notifications.mine`, `events.mine` (titles), `invites.deferred`, `users.inEvent` + `gifts.byEvent` per event its rows name | `notifications.markAllRead` on open | Layout per [#28](https://github.com/ziarno/prezentowo-rn/issues/28): flat inbox (New / Earlier this week / Older), same-event joins coalesced, unread styling from a snapshot taken at open. `invite-deferred` and `invited` → `7a` (code derived live from the event's `InviteDoc`; `invited` reads "{inviter} invited you to {event}"), `suggestion-claimed` → `1e` (deleted gift → `3f`, or `3c` if the recipient is gone), `participant-joined` → `3c`, `claimed-gift-removed` → `3f` ("{present} in {event} was removed"). |
+| Notifications | `notifications.mine`, `events.mine` (titles), `invites.deferred`, `users.inEvent` + `gifts.byEvent` per event its rows name | `notifications.markAllRead` on open | Layout per [#28](https://github.com/ziarno/prezentowo-rn/issues/28): flat inbox (New / Earlier this week / Older), same-event joins coalesced, unread styling from a snapshot taken at open. `invite-deferred` and `invited` → `7a` (code derived live from the event's `InviteDoc`; `invited` reads "{inviter} invited you to {event}"), `suggestion-claimed` → `1e` (deleted gift → `3f`, or `3c` if the recipient is gone), `participant-joined` → `3c`, `claimed-gift-removed` → `3f` ("{present} in {event} was removed"), `event-handed-over` → `3c` ("You're now the host of {event}"). An inbox push opens the same route (§10.5). |
 | `8a`/`8b` chat | `chatThreads.byEvent`, `stream.token` | Stream | Connect lazily, only when a chat screen opens. |
-| Profile | current user | `updateUser`, `POST /api/images` | The avatar opens a sheet: take a photo, choose one, or pick a stock avatar (§1.10). A photo is square-cropped in the system picker, downscaled and uploaded at once, then saved. Online-only: dimmed with `useOffline()`, like the rest of the profile edits. First-login's "+" tile does the same take/choose, previews the photo, and uploads it on Continue, saving it with the name. |
+| Profile | current user, `users.stats` | `updateUser`, `POST /api/images`, `users.deleteAccount` | Layout and rows: §10.1. The avatar opens a sheet: take a photo, choose one, or pick a stock avatar (§1.10), plus "Remove photo" when you have a photo of your own. A photo is square-cropped in the system picker, downscaled and uploaded at once, then saved. First-login's "+" tile does the same take/choose, previews the photo, and uploads it on Continue, saving it with the name. |
+| Push notifications | current user (`pushPreferences`), OS permission | `users.setPushPreference`, `push.register` | §10.2. |
 
 Link-import outcomes on `5a`–`5d`:
 - **success** → `5d` with the **import review hint**: a field note per `missing` entry, plus one generic "double-check" note. The hint is client-only.
@@ -473,7 +601,8 @@ Link-import outcomes on `5a`–`5d`:
 
 - `expo-sqlite` with SQLCipher, **encrypted from the first write**. The key is random and stored in SecureStore.
 - It mirrors exactly what the publications send. On reconnect it **replaces per subscription**, never merges, and has no TTL.
-- A full wipe on sign-out. Any event absent from a fresh `events.mine` is wiped on reconnect.
+- A full wipe on sign-out and on account deletion. Any event absent from a fresh `events.mine` is wiped on reconnect.
+- Besides the per-subscription snapshots it holds one small record that no publication backs: the last `UserStats` (§10.3). It is wiped with the rest.
 - `SplashScreenController.tsx` stops gating on DDP. The splash holds only until fonts, onboarding state and the cache are ready.
 
 ### 6.3 Offline queue
@@ -500,19 +629,26 @@ Link-import outcomes on `5a`–`5d`:
 - Chat only ever shows the threads `chatThreads.byEvent` publishes, looked up by their cids. A member-based query would also return retired channels, which keep their members ([#60](https://github.com/ziarno/prezentowo-rn/issues/60)).
 - Recap boxes (`3f`, `1e`) call `queryChannels({ cid: { $in: publishedCids } }, …, { state: false, watch: false, message_limit: 3 })` without `connectUser` where the SDK allows it. If it doesn't, the recap box is hidden until the viewer has opened chat once in the session. This is a build-time fallback, not a product change.
 - When Stream is unreachable, show a plain "can't load messages" state.
+- **Chat push** (§2.5, §10.5): tapping one opens that thread, found from the push's `eventId` and `cid` among `chatThreads.byEvent`. In the foreground a chat push shows a banner unless that thread is on screen.
 
 ---
 
 ## 8. Scope boundaries
 
-**Out of scope for v1** (map "Out of scope"):
+**Out of scope for v1** (map "Out of scope", and [#78](https://github.com/ziarno/prezentowo-rn/issues/78)'s):
 - barcode import
-- event date reminders and any push transport
-- retheming
-- Settings screens (dark mode, Privacy & visibility)
+- event date reminders ("Default reminder")
+- email notifications
+- retheming, dark mode / Appearance
+- Privacy & visibility (`3b`), and opting out of people search
+- changing your email
+- per-thread chat mute and mentions-only chat push
 - chat offline support
-- combining the bell with Stream's unread count
+- combining the bell with Stream's unread count, in the app or on the app-icon badge
+- an in-app data export (access requests are answered by email, §3.7)
 - `price`
+
+Push is **in** scope (§2.5, §10), as is account deletion (§10.4).
 
 **Calls made while consolidating** (mechanical consequences of locked decisions, not new product decisions — reopen on the map if any is wrong):
 - `CreateEventArgs` names the beneficiary by `beneficiaryIndex`, since participant ids are minted server-side.
@@ -524,6 +660,13 @@ Link-import outcomes on `5a`–`5d`:
 - `1e`'s `✎ Edit` reopens the `add-gift` wizard in edit mode at `5d` (mirroring how `6a` reuses `create-event`), saving via `gifts.update`.
 - Caps: `activity.recentForUser` 3 per event (per `3a`), `notifications.mine` 50.
 - If Stream's SDK can't `queryChannels` without `connectUser`, recap boxes hide until chat has been opened once that session.
+- From [#88](https://github.com/ziarno/prezentowo-rn/issues/88), folding in [#78](https://github.com/ziarno/prezentowo-rn/issues/78):
+  - `event-handed-over` doesn't push. It is rare and not urgent, and the accepted push screen has no switch for it.
+  - A departed placeholder's marker is the published `departedUserId`, replacing #81's server-only `departed: true` (decided with the owner).
+  - A departed placeholder takes a stock avatar or photo from the creator, like one added by name (decided with the owner).
+  - `updateUser` ignores an `email` key rather than rejecting it.
+  - The shared consequence copy lives in `@prezentowo/types` (§10.4), the one package both workspaces import.
+  - A retired chat thread records `frozenAt`, so the freeze retry survives a restart.
 
 **Existing data:** there is no production data. The dev database is wiped when the new contract lands (the present contract reset slice). No migration code is written.
 
@@ -539,3 +682,92 @@ The backlog is the sub-issues of [Build Prezentowo v1](https://github.com/ziarno
 - Mobile: `yarn workspace mobile lint`, then `yarn workspace mobile tsc --noEmit`, then an `agent-device` simulator walkthrough of the slice's screens with the backend running.
 - Backend: `yarn workspace backend tsc --noEmit` and `yarn workspace backend test`, with new Mocha tests for every rule the slice enforces (visibility, claim-quietly, creator-only checks, cascades).
 - Any `@prezentowo/types` change: **both** workspaces.
+
+---
+
+## 10. Profile, push and account deletion
+
+Folded in from [Map: Profile page, from wireframe to a real screen](https://github.com/ziarno/prezentowo-rn/issues/78) by [Fold the Profile decisions into the spec, types and issues](https://github.com/ziarno/prezentowo-rn/issues/88). Before it, Profile was mostly a stub: a dead Edit button, hardcoded stats, dead settings rows, and a sign-out that swallowed errors and silently dropped unsynced writes. Every row below is real; nothing is a placeholder value.
+
+### 10.1 Profile screen — [#86](https://github.com/ziarno/prezentowo-rn/issues/86)
+
+Layout B, "Grouped cards", from the prototype on branch [`prototype/profile-86`](https://github.com/ziarno/prezentowo-rn/tree/prototype/profile-86) (`workspaces/mobile/src/ui/screens/ProfilePrototype/`). The prototype's English copy is the spec copy; `pl` comes with the build. Top to bottom:
+
+1. **Identity**, centred. The header has no Edit button.
+   - The avatar, with an "EDIT" badge, opens the avatar sheet (§1.10): take a photo, choose one, a stock avatar, and **Remove photo** when you have a photo of your own. Remove sends `{ photo: null }`, falling back to the stock avatar, like the placeholder sheet (§1.11).
+   - The name, with a pencil. Tapping either turns it into a field in place, with ✕ (cancel) and ✓ (save, `updateUser({ name })`). Name only; an empty name can't be saved.
+   - The email (read-only) and "Joined <month 'yy>".
+2. **Stats**: three tiles, **Events · Wished · Claimed** (§10.3).
+3. **First card**: **Push notifications** (subtitle **On** / **Some** / **Off** from the toggles, or **Off in Settings** whenever the OS isn't delivering, whatever the toggles say; opens §10.2), then **Language** (as today, also in the drawer).
+4. **About card**: **Version** (`expo-application` `nativeApplicationVersion` and `nativeBuildVersion`, not tappable), **Privacy policy** and **Terms of use** (open `https://prezentowo.jarno.pl/privacy` and `/terms` with `?lang=<app language>` in the browser).
+5. **Sign out**, alone in its card.
+6. **"Danger zone"** card: **Delete account**, in berry, with a one-line consequence. It opens the confirm (§10.4).
+
+Removed: Appearance (dark mode is out, §8), Default reminder (out), Sign-in & security (nothing to configure under magic link), and the old Notifications row ("Push, email").
+
+**Offline** (`useOffline()`): the avatar, the name edit and Delete account dim. Push notifications opens (its switches dim, §10.2). Language, About and Sign out stay live. Stats show their saved values (§10.3).
+
+**Sign out**, from Profile or the drawer, always confirms.
+- When the offline queue (§6.3) holds pending or failed writes, the row's subtitle says "N offline changes not synced yet", and the confirm says that N changes will be lost.
+- On confirm: `push.unregister` for this device (§10.5), then logout, then the full wipe (§6.2). An error is shown, never swallowed; if logout itself fails the user stays signed in and can retry.
+
+**Sign-in** ([#87](https://github.com/ziarno/prezentowo-rn/issues/87)): the passive line "By continuing you agree to the Terms and acknowledge the Privacy Policy" links both pages (`?lang=`). No checkbox, nothing stored. The check-email screen says the link works for **1 hour**, the server's setting.
+
+### 10.2 Push notifications screen — [#82](https://github.com/ziarno/prezentowo-rn/issues/82), [#86](https://github.com/ziarno/prezentowo-rn/issues/86)
+
+- **Status card**, by OS permission:
+  - not asked yet: "Pushes aren't on yet" with **Turn on**, which goes straight to the OS prompt (no pre-prompt here);
+  - granted: "Allowed on this phone";
+  - denied: "Notifications are off in Settings" with **Open Settings** (`Linking.openSettings()`).
+- **"Send me a push for"**: five switches in `PUSH_KINDS` order: Invitations (`invited`), New participants (`participant-joined`), Your suggestions claimed (`suggestion-claimed`), Claimed gift removed (`claimed-gift-removed`), Chat messages (`chat`). Each shows `pushPreferences[kind] !== false` and saves with `users.setPushPreference` on toggle.
+- **Disabled** while permission isn't granted, and while offline. They still show their saved values.
+- **Footnote**: turning one off stops the push only, and it still lands in the inbox; the settings follow your account to every phone. Offline it says changes need a connection.
+- Coming back from system Settings re-reads the permission (on app focus) and, if granted, runs `push.register`.
+
+### 10.3 Profile stats — [#83](https://github.com/ziarno/prezentowo-rn/issues/83)
+
+`users.stats()` counts fresh on every call. There are no counters on the user, so a number can drop when an event or gift is deleted. Over the events where the caller is a `real` participant (the `events.mine` set: created or joined, past and upcoming; unaccepted reservations and ignored invites don't count):
+- **Events**: how many.
+- **Wished**: gifts with `createdBy` = caller and `forParticipantId` = the caller's participant id in that event. Suggestions for the caller are left out, since counting them would reveal they exist (own-list visibility rule). Claim state is ignored (claim-quietly rule).
+- **Claimed**: gifts whose `claimedBy` holds the caller, gifts for placeholders and the caller's own suggestions included. Several claimers each count it once.
+
+Profile calls it on each focus. The last result is saved in the encrypted store (§6.2) and shown at once; the call's answer replaces it. With nothing saved, each tile shows "—". A failed call shows no error and keeps what's on screen. Numbers pad to two digits (`04`); three or more show in full. The third label is "Claimed" (`profile.statGiven` is renamed).
+
+### 10.4 Account deletion — [#79](https://github.com/ziarno/prezentowo-rn/issues/79), [#81](https://github.com/ziarno/prezentowo-rn/issues/81), [#84](https://github.com/ziarno/prezentowo-rn/issues/84)
+
+Instant, irreversible, server-side, and the same whether it starts in the app (`users.deleteAccount`, §2.2) or on the web (§3.6). Both stores require full in-app deletion; Play also requires the web page.
+
+**The confirm screen** (`delete-account.tsx`, from Profile's Danger zone): the shared consequence list, "This can't be undone", an email field, and **Delete my account**, enabled once the field matches the account's email case-insensitively. Online-only: dimmed offline, never queued. On success the device is wiped: the SQLCipher cache and stats record, the offline queue (discarded, never replayed), SecureStore and the session; the app lands signed out. `emailMismatch` is shown inline.
+
+**Shared consequence list**, one source in `@prezentowo/types` with `en` and `pl` text, shown by the app's confirm and the web confirm page (§3.6):
+- your name stays on other people's lists;
+- your chat messages show as "Deleted user";
+- gifts you added for others stay;
+- your claims are released;
+- events you created pass to the earliest remaining member, or are deleted if nobody else is in them;
+- backups rotate out within 30 days.
+
+**`deleteAccountFor(userId)`** runs these steps in order. Each is idempotent, and the user document goes last, so a call that dies half-way is simply run again.
+
+1. **Events you created where another real participant remains**: handed over to the earliest-joined remaining real participant (`participants` order). `EventDoc.ownerId` and `InviteDoc.ownerId` move. The new creator gets an `event-handed-over` notification.
+2. **Events you created with nobody else real**: `events.delete`'s hard cascade (§2.2).
+3. **Your claims**: your userId is pulled from every `claimedBy`, silently. No notification.
+4. **Your participant entry in every remaining event** (handed-over ones included) becomes a **departed placeholder** (§1.12): same id, `name` = your profile name, stock `avatar` = your profile's, no `photo`, `color` stable from the id, `departedUserId` = your userId. Gifts, activity and claims keyed on the participant id stay attached. A many-to-one event where you were the beneficiary survives; a placeholder can hold that role.
+5. **Chat**: your secret threads are retired (§2.4); you're removed from every other thread. The Stream user is anonymised (name "Deleted user", image cleared), never deleted, so your messages stay as "Deleted user". Your Stream devices are removed (`removeDevice`), and no token is minted again.
+6. **Reservations for you** in others' events: `invitedUserId` dropped, leaving an ordinary claimable placeholder with its name snapshot.
+7. **Your notifications**: every doc for you deleted.
+8. **Your push tokens**: every `PushTokens` doc for you deleted.
+9. **Your profile photo**: the upload and its `Images` record deleted. Uploads on gifts and events that stay remain; `Images.ownerId` keeps the now-opaque id.
+10. **The `Meteor.users` document**: email, `profile`, `nameTokens`, `pushPreferences`, login tokens, magic-link and deletion-token state. Meteor closes every connection logged in as you.
+
+What stays, and why: gifts on your own list (yours and others' suggestions) stay, since the person still exists and claimers rely on the list; gifts you added for others stay, attributed to "Deleted user"; activity stays, with your participant id as the actor. Deleted data lives in off-site backups until they rotate out (30 days, §3.7).
+
+### 10.5 Push on the device — [#82](https://github.com/ziarno/prezentowo-rn/issues/82), [#85](https://github.com/ziarno/prezentowo-rn/issues/85)
+
+- **Native setup:** the `expo-notifications` config plugin, `android.googleServicesFile`, and `extra.eas.projectId` in `app.json`; then `npx expo prebuild` and a dev-client rebuild (`AGENTS.md`).
+- **Permission:** never asked on cold start or during first login. After the user **creates or joins their first event**, a bottom sheet asks first: a bell, "Hear about it first", one line naming the kinds, "You can choose which ones in Profile → Push notifications", **Turn on** (then the OS prompt) and **Not now** (just closes). "Not now" is never asked again automatically; the push screen (§10.2) is the way back. Whether the sheet has been shown is kept in SecureStore.
+- **Register:** while signed in with permission granted, the app calls `push.register` on each start, after a grant, on token rotation (`addPushTokenListener`), and on a language change. It is an online `call`; offline it waits for the next connection.
+- **Unregister:** sign-out calls `push.unregister` with this device's Expo token. Offline, the token waits in SecureStore and is sent on the next connection, signed in or not. A device that never comes back online is an accepted gap.
+- **Opening a push:** an inbox push routes like its inbox row (§5) from `InboxPushData`, idempotent on `notificationId`; a chat push opens its thread (§7). Read from `trigger.payload` on iOS and `trigger.remoteMessage.data` on Android for Stream's payload. Tapping marks nothing read; opening the inbox stays the only way.
+- **Foreground:** inbox pushes show no banner, since the bell updates live. Chat pushes show unless that thread is on screen (compare the push's `cid`; Stream's pushes carry `sender: "stream.chat"`).
+- **Badge:** the iOS app-icon badge is the inbox unread count only. The server sets it on each push; while the app is open it follows the bell (`setBadgeCountAsync`). On Android, whatever the launcher does.

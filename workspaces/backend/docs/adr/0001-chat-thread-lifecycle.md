@@ -13,5 +13,6 @@ Stream delivers `notification.removed_from_channel` to the removed user. A deriv
 ## Consequences
 
 - Retired threads keep their history and members in Stream, frozen so nobody can post, but drop out of the UI. Stream still lists them in a member's own queries, so the client asks for the published threads by cid.
+- Amended ([#82](https://github.com/ziarno/prezentowo-rn/issues/82), [ADR 0006](../../../../docs/adr/0006-push-via-expo-and-stream.md)): since Stream pushes to channel members, a retired thread is push-safe only once frozen. Retiring first mutes everyone who loses access (channel-member `chat_level: 'none'`), and the freeze is then retried until it succeeds, recorded as `frozenAt`. It stays `updatePartial` with no system message.
 - A beneficiary change starts that recipient's secret conversation from empty.
 - Chat never feeds the activity feed or notifications.

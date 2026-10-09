@@ -4,6 +4,8 @@ On the web, Prezentowo is one unauthenticated page, `GET /e/:code`, served by Me
 
 Amended ([#77](https://github.com/ziarno/prezentowo-rn/issues/77)): `/` and every unknown path also serve a static brand page, which is still unauthenticated and not an app. A fuller marketing page may replace it later.
 
+Amended ([#84](https://github.com/ziarno/prezentowo-rn/issues/84), [#87](https://github.com/ziarno/prezentowo-rn/issues/87)): the site also serves `/privacy`, `/terms` and `/delete-account`. They are server-rendered, never hydrated, and have no JS. `/delete-account` is the web's first state-changing action, because Google Play requires deletion without the app. It is authenticated only by a single-use token emailed to the account's address, never by a session, and its GET pages never change state. It is still not an app: there is no sign-in on the web.
+
 ## Considered Options
 
 - **Full parity via react-native-web.** Rejected. It forks the three most load-bearing subsystems anyway: the chat SDK, the `@meteorrn/core` DDP layer and the `expo-sqlite` cache. NativeWind's build integration is also Metro-only.
@@ -11,6 +13,6 @@ Amended ([#77](https://github.com/ziarno/prezentowo-rn/issues/77)): `/` and ever
 
 ## Consequences
 
-- There is no join-from-web, no web chat, no web offline and no web upload.
+- There is no join-from-web, no web chat, no web offline and no web upload. The one write the web can make is deleting an account.
 - Mobile navigation doesn't need to accommodate a browser layout.
 - The landing page shares no components with mobile.
