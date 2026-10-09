@@ -70,6 +70,10 @@ One device's address for push, bound to at most one account at a time. Registeri
 **Push preference**:
 A user's on/off switch for pushing one kind (or chat messages), stored on the account, so it follows them to every device. Anything they haven't set counts as on: the operating system's permission prompt is the real opt-in. Turning a kind off stops the push only. The notification still lands in the inbox.
 
+**Profile stats**:
+The three counts on a user's own Profile, all counted from what exists now, never kept as running totals, so a number can go down when an event or gift is deleted. **Events**: every event they're a full member of, past and upcoming, which is the list Home shows; an invitation they haven't accepted doesn't count. **Wished**: their **self-added gifts** across those events. Suggested gifts are left out, because counting them would reveal that they exist (the own-list visibility rule). **Claimed**: the gifts they're among the claimers of, across those events.
+_Avoid_: Given (the wireframe's label; a claim doesn't mean it's been given)
+
 **Link-import outcome**:
 The three-way classification a shop-link-import attempt resolves to: **success** (full or partial — some field, such as price, may be structurally unresolvable — both route identically, since the present-creation summary makes every field editable regardless of origin); **unreadable** (the shop refused every request shape, or the URL wasn't a product page at all — one outcome, because the user's next action is the same either way); or an **infra failure** (the fetch itself failed, not the shop refusing it — kept distinct because it's plausibly transient and worth retrying, unlike the other two). Plausible *garbage* — a success that silently returns wrong values — is not a fourth outcome; it's undetectable at the moment it happens, so it's covered by an import review hint applied to every success, not a branch the UI can select on.
 
