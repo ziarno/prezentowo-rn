@@ -411,7 +411,7 @@ Both event publications omit `participants.invitedUserId`: a reserved placeholde
 **Chat pushes** go through **GetStream's built-in push**; our server never sends them.
 - Devices are registered server-side by `push.register` (`addDevice` with the native token), so the app never has to `connectUser` for push (§7). Providers: one APNs `.p8` provider each for sandbox (dev builds) and production, and one Firebase provider for Android.
 - Stream pushes only to channel members, so a recipient never gets a push from their own secret thread. Retired threads are muted, then frozen (§2.4).
-- **Templates** (`message.new`, enabled per provider): the title is localized from the receiver's Stream `language` (`receiver.language` and `equal`); no badge; Android gets an `android.notification` block so it shows; the payload passes `channel.eventId` through. The template content is part of the push setup issue.
+- **Templates** (`message.new`, enabled per provider): the title is localized from the receiver's Stream `language` (`receiver.language` and `equal`); no badge; Android gets an `android.notification` block so it shows; the payload passes `channel.eventId` through. The body is the message text, secret threads included: the OS's own preview setting covers a locked phone. The template content is part of the push setup issue.
 
 **Not pushed:** `invite-deferred` and `event-handed-over` notifications, and anything to a device with no OS permission.
 
