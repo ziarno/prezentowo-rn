@@ -2,8 +2,8 @@
 // `.well-known` files name. The ids match the mobile app's
 // app.json (`ios.bundleIdentifier`, `android.package`).
 
-export const IOS_BUNDLE_ID = 'com.prezentowo.app'
-export const ANDROID_PACKAGE = 'com.prezentowo.app'
+export const IOS_BUNDLE_ID = 'com.prezentowo'
+export const ANDROID_PACKAGE = 'com.prezentowo'
 
 // The numeric App Store id comes with the first App Store Connect
 // submission; until then the button falls back to a store search.

@@ -78,7 +78,7 @@ describe('Universal Links and App Links', function () {
       ).json()) as Aasa
 
       assert.deepStrictEqual(aasa.applinks.details[0].appIDs, [
-        `${TEAM_ID}.com.prezentowo.app`,
+        `${TEAM_ID}.com.prezentowo`,
       ])
     })
 
@@ -122,7 +122,7 @@ describe('Universal Links and App Links', function () {
           relation: ['delegate_permission/common.handle_all_urls'],
           target: {
             namespace: 'android_app',
-            package_name: 'com.prezentowo.app',
+            package_name: 'com.prezentowo',
             sha256_cert_fingerprints: FINGERPRINTS,
           },
         },

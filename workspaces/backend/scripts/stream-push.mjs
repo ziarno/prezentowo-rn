@@ -23,7 +23,7 @@ const PROVIDERS = {
   apnProd: 'apn-prod',
   firebase: 'firebase',
 }
-const BUNDLE_ID = 'com.prezentowo.app'
+const BUNDLE_ID = 'com.prezentowo'
 // The channel types chat.server.ts creates (ChatThreadDoc['streamChannelType']).
 const CHANNEL_TYPES = ['event_thread', 'secret_thread']
 

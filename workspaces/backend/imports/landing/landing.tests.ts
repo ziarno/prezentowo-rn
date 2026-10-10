@@ -175,7 +175,7 @@ describe('invite landing page', function () {
 
         assert.strictEqual(
           stores(page).find(s => s.store === 'play')!.href,
-          `https://play.google.com/store/apps/details?id=com.prezentowo.app&referrer=code%3D${code}`,
+          `https://play.google.com/store/apps/details?id=com.prezentowo&referrer=code%3D${code}`,
         )
       })
     })
@@ -280,7 +280,7 @@ describe('invite landing page', function () {
         // No code to hand over through the install referrer.
         assert.strictEqual(
           stores(page).find(s => s.store === 'play')!.href,
-          'https://play.google.com/store/apps/details?id=com.prezentowo.app',
+          'https://play.google.com/store/apps/details?id=com.prezentowo',
         )
       })
 
@@ -372,7 +372,7 @@ describe('invite landing page', function () {
         {
           store: 'play',
           filled: true,
-          href: 'https://play.google.com/store/apps/details?id=com.prezentowo.app',
+          href: 'https://play.google.com/store/apps/details?id=com.prezentowo',
         },
         {
           store: 'appStore',

@@ -9,14 +9,14 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.prezentowo.app",
+      "bundleIdentifier": "com.prezentowo",
       "infoPlist": {
         "CFBundleAllowMixedLocalizations": true
       },
       "associatedDomains": ["applinks:prezentowo.jarno.pl"]
     },
     "android": {
-      "package": "com.prezentowo.app",
+      "package": "com.prezentowo",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

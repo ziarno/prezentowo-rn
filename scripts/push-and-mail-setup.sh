@@ -194,7 +194,7 @@ cd "$ROOT"
 ENV_FILE=.push-setup.state
 BACKEND_ENV=workspaces/backend/.env
 SECRETS_DIR="$HOME/.secrets/prezentowo"
-BUNDLE_ID=com.prezentowo.app
+BUNDLE_ID=com.prezentowo
 EXPO_PROJECT_URL=https://expo.dev/accounts/ziarno/projects/prezentowo
 
 # default VAR VALUE — fill VAR with VALUE when the human just pressed Enter.
