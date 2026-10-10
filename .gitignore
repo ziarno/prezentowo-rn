@@ -43,3 +43,6 @@ backend/.meteor/local/
 # generated native folders
 mobile/ios
 mobile/android
+
+# Answers kept by scripts/push-and-mail-setup.sh
+.push-setup.state

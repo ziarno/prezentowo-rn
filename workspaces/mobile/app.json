@@ -86,6 +86,12 @@
     },
     "locales": {
       "pl": "./languages/pl.json"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0824cdc0-d059-4f24-af77-57fa4a36beb6"
+      }
+    },
+    "owner": "ziarno"
   }
 }
