@@ -279,7 +279,7 @@ function EditableName({ name, disabled }: { name: string; disabled: boolean }) {
           disabled ? 'opacity-40' : 'active:opacity-70'
         }`}
       >
-        <Text className={`shrink text-center ${NAME_TEXT}`}>{name}.</Text>
+        <Text className={`shrink text-center ${NAME_TEXT}`}>{name}</Text>
         <PencilIcon width={18} height={18} color={garland.ink40} />
       </Pressable>
     )
