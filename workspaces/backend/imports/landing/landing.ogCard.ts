@@ -22,9 +22,10 @@ const PAPER = '#fffaf2'
 /**
  * Where rendered cards are cached, from `ogCardsDir` in settings.json. It's
  * a cache: anything in it can be deleted and is rendered again on request.
- * Superseded cards (an old title, a rotated code) aren't pruned.
+ * Superseded cards (an old title, a rotated code) are pruned daily by
+ * sweepStaleOgCards (docs/spec.md §3.8).
  */
-const ogCardsDir = () => settingsDir('ogCardsDir')
+export const ogCardsDir = () => settingsDir('ogCardsDir')
 
 /**
  * Names the card for what's drawn on it, so a new title (or inviter name) or
@@ -37,6 +38,11 @@ export const cardKey = (invite: LandingInvite) =>
     )
     .digest('hex')
     .slice(0, 32)
+
+// The file names in the cache: the static brand card, and one per invite
+// the card key names.
+export const BRAND_CARD_FILE = `brand-${CARD_VERSION}.png`
+export const cardFile = (invite: LandingInvite) => `${cardKey(invite)}.png`
 
 // The display face, then Inter for whatever it lacks. sharp's own text
 // rendering can't be pointed at a font file on every platform (Pango on
@@ -291,11 +297,9 @@ async function cached(file: string, render: () => Promise<string>) {
  */
 export async function ogCardFor(invite: LandingInvite | null) {
   if (!invite) {
-    return cached(`brand-${CARD_VERSION}.png`, async () =>
-      brandCardSvg(await loadFonts()),
-    )
+    return cached(BRAND_CARD_FILE, async () => brandCardSvg(await loadFonts()))
   }
-  return cached(`${cardKey(invite)}.png`, async () =>
+  return cached(cardFile(invite), async () =>
     inviteCardSvg(invite, await loadFonts()),
   )
 }
