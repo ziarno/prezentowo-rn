@@ -115,7 +115,7 @@ export type SubscriptionMessage =
   | { msg: 'removed'; collection: string; id: string }
 
 /**
- * Runs a registered publication as `userId` (or signed out, with `null`) and
+ * Runs a publication as `userId` (or signed out, with `null`) and
  * records what it would send to a DDP client. `docs(collection)` is the
  * client-side view (merged fields per id); `messages` is every `added` /
  * `changed` / `removed` in order. Resolves once the publication is ready.
@@ -127,11 +127,17 @@ export type SubscriptionMessage =
  */
 export async function subscribeAsUser(
   userId: string | null,
-  name: string,
+  // A publication's name, or the handler itself for an unnamed one.
+  publication: string | ((...args: never[]) => unknown),
   ...args: unknown[]
 ) {
-  const handler = publishHandlers()[name]
-  if (!handler) throw new Error(`No publication registered as "${name}"`)
+  const handler =
+    typeof publication === 'string'
+      ? publishHandlers()[publication]
+      : (publication as PublishHandler)
+  if (!handler) {
+    throw new Error(`No publication registered as "${String(publication)}"`)
+  }
 
   const messages: SubscriptionMessage[] = []
   const store = new Map<string, Map<string, Fields>>()

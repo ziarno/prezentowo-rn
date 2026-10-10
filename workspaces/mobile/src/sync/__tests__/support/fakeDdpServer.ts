@@ -28,7 +28,7 @@ type Options = {
   // universal publication does.
   users?: Record<string, object>
   // Method name → how a logged-in connection's call is answered. Unlisted
-  // methods resolve with `{ ok: name }`.
+  // methods resolve with `{ ok: name }`. A `logout` entry can only fail it.
   methods?: Record<string, (params: unknown[]) => MethodReply>
 }
 
@@ -120,6 +120,8 @@ export async function startFakeDdpServer(
       return reply({ result: { id: userId, token: resume } })
     }
     if (method === 'logout') {
+      const answer = options.methods?.logout?.(params)
+      if (answer?.error) return reply(answer)
       conn.userId = null
       return reply({})
     }

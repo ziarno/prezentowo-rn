@@ -18,13 +18,13 @@ import {
 } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
-import { useAuth } from '@/hooks/useAuth'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
 import { useEventGifts } from '@/hooks/useEventGifts'
 import { useEventInvite } from '@/hooks/useEventInvite'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useOffline } from '@/hooks/useOffline'
+import { useSignOut } from '@/hooks/useSignOut'
 import { useLanguageModal } from '@/localization/LanguageModalProvider'
 import { LOCALES } from '@/localization/provider'
 import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
@@ -72,7 +72,7 @@ type MenuProps = { go: (navigate: () => void) => void }
 
 function HomeMenu({ go }: MenuProps) {
   const { t, i18n } = useTranslation()
-  const { signOut } = useAuth()
+  const { confirmSignOut } = useSignOut()
   const { open: openLanguageModal } = useLanguageModal()
   const user = useCurrentUser()
 
@@ -127,7 +127,7 @@ function HomeMenu({ go }: MenuProps) {
       </MenuSection>
 
       <Pressable
-        onPress={() => go(() => signOut({ onError: () => {} }))}
+        onPress={() => go(confirmSignOut)}
         hitSlop={12}
         accessibilityRole="button"
         className="mt-8 self-start px-[22px]"

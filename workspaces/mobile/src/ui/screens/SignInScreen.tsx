@@ -9,6 +9,7 @@ import * as Yup from 'yup'
 import backArrowAsset from '@/assets/svg/back-arrow.svg'
 import { Text } from '@/components/ui/text'
 import { useAuth } from '@/hooks/useAuth'
+import { useOpenLegalPage } from '@/hooks/useOpenLegalPage'
 import { errorMessage } from '@/localization/errorMessage'
 import { AuthField } from '@/ui/components/AuthField'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
@@ -17,6 +18,7 @@ import { LanguageChangeButton } from '@/ui/components/LanguageChangeButton'
 export function SignInScreen() {
   const { requestMagicLink } = useAuth()
   const { t } = useTranslation()
+  const openLegalPage = useOpenLegalPage()
 
   const validationSchema = Yup.object({
     email: Yup.string()
@@ -132,8 +134,18 @@ export function SignInScreen() {
               <Trans
                 i18nKey="signin.terms"
                 components={[
-                  <Text key="terms" className="font-bold text-garland-ink" />,
-                  <Text key="privacy" className="font-bold text-garland-ink" />,
+                  <Text
+                    key="terms"
+                    onPress={() => openLegalPage('terms')}
+                    accessibilityRole="link"
+                    className="text-xs font-bold text-garland-ink"
+                  />,
+                  <Text
+                    key="privacy"
+                    onPress={() => openLegalPage('privacy')}
+                    accessibilityRole="link"
+                    className="text-xs font-bold text-garland-ink"
+                  />,
                 ]}
               />
             </Text>

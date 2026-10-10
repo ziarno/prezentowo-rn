@@ -91,16 +91,13 @@ export const useAuth = () => {
         onError,
       )
     },
-    // The local session is cleared even when the server call fails.
+    // Signs out locally even when the server can't be reached. When the
+    // server rejects it, the user stays signed in and `onError` hears why.
     signOut: ({ onError }: SignOutParams) => {
-      chatSession.end()
-      logout().then(
-        () => setUserToken(null),
-        err => {
-          setUserToken(null)
-          onError(err)
-        },
-      )
+      logout().then(() => {
+        chatSession.end()
+        setUserToken(null)
+      }, onError)
     },
   }
 }

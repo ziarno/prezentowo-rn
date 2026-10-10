@@ -1,5 +1,7 @@
 import { call } from './calls'
+import { isNetworkError } from './errors'
 import { Data, meteor } from './meteor'
+import { writableDdp } from './session'
 
 // What the `login` DDP method resolves with.
 export type LoginResult = { id: string; token: string }
@@ -71,16 +73,20 @@ export function restoreSession(session: Session) {
   sessionDep.changed()
 }
 
-// Logs out on the server, then always clears the local session — as the
-// library's own `logout` does — even if the server call failed. Unlike it,
-// this goes through `call`, so it times out instead of hanging offline.
+// Logs out on the server, then clears the local session. When the server
+// can't be reached — offline now, or the call times out or is cut off — the
+// local session ends anyway. When the server rejects it, this rejects with
+// its error and the session stays, so the user can retry.
 export async function logout(): Promise<void> {
-  try {
-    await call('logout')
-  } finally {
-    meteor.handleLogout()
-    endSession()
+  if (writableDdp()) {
+    try {
+      await call('logout')
+    } catch (error) {
+      if (!isNetworkError(error)) throw error
+    }
   }
+  meteor.handleLogout()
+  endSession()
 }
 
 function endSession() {

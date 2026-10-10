@@ -392,6 +392,37 @@ describe('the queue', () => {
     await waitFor(() => queue.rows.size === 0)
   })
 
+  it('is wiped by a sign-out offline, which ends the session at once', async () => {
+    await launchOffline()
+    await sync.submit('gifts.claim', { giftId: 'g1' })
+    expect(sync.sessionToken()).not.toBeNull()
+
+    const started = Date.now()
+    await sync.logout()
+
+    expect(Date.now() - started).toBeLessThan(1000)
+    expect(sync.sessionToken()).toBeNull()
+    expect(sync.queuedWrites()).toEqual([])
+    await waitFor(() => queue.rows.size === 0)
+  })
+
+  it('survives a sign-out the server rejects, as does the session', async () => {
+    methods['gifts.claim'] = giftGone
+    methods.logout = () => ({ error: { error: 500, reason: 'boom' } })
+    await launchOffline()
+    await sync.submit('gifts.claim', { giftId: 'g1' })
+    comeBackOnline()
+    await waitFor(() => sync.queuedWrites()[0]?.state === 'failed')
+
+    await expect(sync.logout()).rejects.toEqual(
+      expect.objectContaining({ error: 500 }),
+    )
+
+    expect(sync.sessionToken()).not.toBeNull()
+    expect(sync.queuedWrites()).toHaveLength(1)
+    expect(queue.rows.size).toBe(1)
+  })
+
   it('takes only queueable methods', async () => {
     await launchOffline()
     await expect(sync.submit('gifts.remove', { giftId: 'g1' })).rejects.toThrow(
