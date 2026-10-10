@@ -1,4 +1,9 @@
-import { formatJoined, legalPageUrl, versionLabel } from '@/api/profile'
+import {
+  formatJoined,
+  formatStat,
+  legalPageUrl,
+  versionLabel,
+} from '@/api/profile'
 
 describe('legalPageUrl', () => {
   test.each([
@@ -34,5 +39,21 @@ describe('formatJoined', () => {
 
   test.each([undefined, 'not a date'])('is null for %s', createdAt => {
     expect(formatJoined(createdAt, 'en')).toBeNull()
+  })
+})
+
+describe('formatStat', () => {
+  test.each([
+    [0, '00'],
+    [4, '04'],
+    [17, '17'],
+    [100, '100'],
+    [2048, '2048'],
+  ])('%i is %s', (count, label) => {
+    expect(formatStat(count)).toBe(label)
+  })
+
+  test('is a dash when nothing is known', () => {
+    expect(formatStat(undefined)).toBe('—')
   })
 })

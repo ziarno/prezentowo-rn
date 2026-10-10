@@ -20,6 +20,10 @@ import {
 // snapshots is put straight back, and a cached doc is dropped once the
 // subscription it came from has been re-sent without it.
 
+// Besides snapshots, the store holds small records that no publication backs
+// (`saveRecord`), under `RECORD_PREFIX` keys. They're wiped with everything
+// else.
+
 // One stored snapshot. `data` is EJSON of `{ [collection]: Doc[] }`.
 export type CacheRow = { key: string; eventId: string | null; data: string }
 
@@ -56,11 +60,14 @@ type Snapshot = { eventId: string | null; docs: Docs }
 type Live = { eventId: string | null; select: () => Docs }
 
 const SESSION_KEY = 'session'
+const RECORD_PREFIX = 'record:'
 const FLUSH_DELAY_MS = 100
 
 const mirrors = new Map<string, Mirror>()
 const snapshots = new Map<string, Snapshot>()
 const snapshotsDep = new meteor.Tracker.Dependency()
+// Parsed records, by name.
+const records = new Map<string, unknown>()
 // Snapshots ready on this connection, followed through every change until
 // the subscription stops or the connection drops.
 const live = new Map<string, Live>()
@@ -122,6 +129,24 @@ export function cacheReady(): boolean {
   return loaded
 }
 
+// The record last saved under `name`, once the cache is loaded.
+export function savedRecord<T>(name: string): T | undefined {
+  return records.get(name) as T | undefined
+}
+
+// Keeps `value` (EJSON-able) under `name` for the next launch. Ignored once
+// signed out, so a late answer can't outlive the wipe.
+export function saveRecord(name: string, value: unknown) {
+  if (!sessionUserId()) return
+  records.set(name, value)
+  const row = {
+    key: RECORD_PREFIX + name,
+    eventId: null,
+    data: meteor.EJSON.stringify(value as never),
+  }
+  write(s => s.put(row))
+}
+
 // Reactive. Whether the cache holds data for this subscription, so it can be
 // shown before (or without) the server.
 export function hasSnapshot(key: string): boolean {
@@ -157,6 +182,13 @@ async function load(
   try {
     const rows = await cache.load()
     for (const row of rows) {
+      if (row.key.startsWith(RECORD_PREFIX)) {
+        records.set(
+          row.key.slice(RECORD_PREFIX.length),
+          meteor.EJSON.parse(row.data),
+        )
+        continue
+      }
       snapshots.set(row.key, {
         eventId: row.eventId,
         docs: meteor.EJSON.parse(row.data) as Docs,
@@ -173,12 +205,14 @@ async function load(
       // Signed out without the wipe completing: nothing here is the
       // signed-in user's.
       snapshots.clear()
+      records.clear()
       await cache.clear()
     }
     return false
   } catch (error) {
     console.warn('Offline cache unreadable, starting empty', error)
     snapshots.clear()
+    records.clear()
     await cache.clear().catch(() => {})
     // The token alone may still resume a session; its queue is kept for it.
     return !!(await storage.getItem(TOKEN_KEY).catch(() => null))
@@ -337,6 +371,7 @@ function wipe() {
   if (flushTimer) clearTimeout(flushTimer)
   flushTimer = null
   snapshots.clear()
+  records.clear()
   live.clear()
   replaced.clear()
   stale.clear()

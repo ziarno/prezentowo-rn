@@ -28,3 +28,9 @@ export function formatJoined(
   const year = date.getFullYear().toString().slice(-2)
   return `${month} '${year}`
 }
+
+// A Profile tile's number: two digits (`04`), three or more in full, "—"
+// while nothing is known yet.
+export function formatStat(count: number | undefined): string {
+  return count === undefined ? '—' : String(count).padStart(2, '0')
+}

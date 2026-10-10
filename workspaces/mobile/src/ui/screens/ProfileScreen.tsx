@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { uploadImage, uploadImageUrl } from '@/api/images'
-import { formatJoined, versionLabel } from '@/api/profile'
+import { formatJoined, formatStat, versionLabel } from '@/api/profile'
 import { updateUser } from '@/api/users'
 import {
   CheckIcon,
@@ -30,6 +30,7 @@ import { useOffline } from '@/hooks/useOffline'
 import { useOpenLegalPage } from '@/hooks/useOpenLegalPage'
 import { usePhotoPrompt } from '@/hooks/usePhotoPrompt'
 import { useSignOut } from '@/hooks/useSignOut'
+import { useUserStats } from '@/hooks/useUserStats'
 import { useLanguageModal } from '@/localization/LanguageModalProvider'
 import { errorMessage } from '@/localization/errorMessage'
 import { LOCALES } from '@/localization/provider'
@@ -75,6 +76,7 @@ export function ProfileScreen() {
   const [savingPhoto, setSavingPhoto] = useState(false)
 
   const user = useCurrentUser()
+  const stats = useUserStats()
 
   const avatarKey =
     (override?.kind === 'stock' ? override.key : undefined) ??
@@ -195,9 +197,18 @@ export function ProfileScreen() {
         </View>
 
         <View className="mt-6 flex-row gap-2.5">
-          <Stat value="04" label={t('profile.statEvents')} />
-          <Stat value="17" label={t('profile.statWished')} />
-          <Stat value="09" label={t('profile.statClaimed')} />
+          <Stat
+            value={formatStat(stats?.events)}
+            label={t('profile.statEvents')}
+          />
+          <Stat
+            value={formatStat(stats?.wished)}
+            label={t('profile.statWished')}
+          />
+          <Stat
+            value={formatStat(stats?.claimed)}
+            label={t('profile.statClaimed')}
+          />
         </View>
 
         <Card>

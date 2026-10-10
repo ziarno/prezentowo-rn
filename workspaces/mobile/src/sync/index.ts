@@ -21,6 +21,8 @@ export {
   connect,
   disconnect,
   mirror,
+  savedRecord,
+  saveRecord,
   type CacheRow,
   type CacheStore,
   type ConnectOptions,

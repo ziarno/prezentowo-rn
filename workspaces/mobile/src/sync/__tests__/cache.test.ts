@@ -265,3 +265,67 @@ describe('signing out', () => {
     expect(sync.isSubscriptionReady('gifts.byEvent', ['e2'])).toBe(true)
   })
 })
+
+describe('saved records', () => {
+  const stats = { events: 4, wished: 17, claimed: 9 }
+
+  it('are stored, and read back after a relaunch', async () => {
+    await cacheFirstSession()
+
+    sync.saveRecord('stats', stats)
+    expect(sync.savedRecord('stats')).toEqual(stats)
+    await waitFor(() => store.rows.has('record:stats'), { label: 'stored' })
+
+    server.refuseHandshakes(1000)
+    launch()
+    await waitFor(() => sync.cacheReady())
+    expect(sync.savedRecord('stats')).toEqual(stats)
+  })
+
+  it('are nothing until saved', async () => {
+    await cacheFirstSession()
+
+    expect(sync.savedRecord('stats')).toBeUndefined()
+  })
+
+  it('never pass for a subscription snapshot', async () => {
+    await cacheFirstSession()
+    sync.saveRecord('stats', stats)
+    await waitFor(() => store.rows.has('record:stats'))
+
+    server.refuseHandshakes(1000)
+    launch()
+    await waitFor(() => sync.cacheReady())
+
+    expect(sync.isSubscriptionReady('record:stats', [])).toBe(false)
+    expect(Events().find({}).fetch().length).toBe(1)
+  })
+
+  it('are wiped on sign-out', async () => {
+    await cacheFirstSession()
+    sync.saveRecord('stats', stats)
+    await waitFor(() => store.rows.has('record:stats'))
+
+    await sync.logout()
+
+    await waitFor(() => store.rows.size === 0, { label: 'store cleared' })
+    expect(sync.savedRecord('stats')).toBeUndefined()
+
+    server.refuseHandshakes(1000)
+    launch()
+    await waitFor(() => sync.cacheReady())
+    expect(sync.savedRecord('stats')).toBeUndefined()
+  })
+
+  it('are not saved once signed out', async () => {
+    await cacheFirstSession()
+    await sync.logout()
+    await waitFor(() => store.rows.size === 0)
+
+    sync.saveRecord('stats', stats)
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    expect(sync.savedRecord('stats')).toBeUndefined()
+    expect(store.rows.size).toBe(0)
+  })
+})
