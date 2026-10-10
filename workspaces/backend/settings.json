@@ -9,7 +9,7 @@
       "tokenSequenceLength": 6
     },
     "passwordless": {
-      "from": "Prezentowo <hello@prezentowo.app>",
+      "from": "Prezentowo <no-reply@mail.jarno.pl>",
       "appName": "Prezentowo",
       "magicLinkScheme": "prezentowo://",
       "magicLinkPath": "magic-link"

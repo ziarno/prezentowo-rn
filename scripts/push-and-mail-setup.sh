@@ -367,14 +367,15 @@ ask MAIL_PROVIDER_LOCATION "Where it's hosted (country, EU or US):"
 write_env MAIL_PROVIDER_LOCATION "$MAIL_PROVIDER_LOCATION"
 pause
 
-stage "Mail — sender on jarno.pl (SPF/DKIM)"
-step "In $MAIL_PROVIDER, add the sending domain jarno.pl and copy the DNS records it lists."
-step "At jarno.pl's DNS host add the DKIM record(s) and the SPF include."
-warn "jarno.pl already receives mail (filip@jarno.pl): add the include to the EXISTING"
-warn "SPF TXT record if there is one — two v=spf1 records break SPF for both."
+stage "Mail — sender on mail.jarno.pl (SPF/DKIM)"
+say "Send from a subdomain: jarno.pl is the family's Gmail domain, so its SPF"
+say "record stays untouched and Prezentowo's reputation stays apart from it."
+step "In $MAIL_PROVIDER, add the sending domain mail.jarno.pl and copy the DNS records it lists."
+step "Cloudflare → jarno.pl → DNS: add each record. Names are relative to jarno.pl,"
+step "e.g. 'mail' for SPF and '<selector>._domainkey.mail' for DKIM."
 step "Wait until $MAIL_PROVIDER shows the domain as verified."
-ask MAIL_FROM "Sender [Prezentowo <prezentowo@jarno.pl>]:"
-default MAIL_FROM "Prezentowo <prezentowo@jarno.pl>"
+ask MAIL_FROM "Sender [Prezentowo <no-reply@mail.jarno.pl>]:"
+default MAIL_FROM "Prezentowo <no-reply@mail.jarno.pl>"
 write_env MAIL_FROM "$MAIL_FROM"
 node -e '
   const fs = require("fs"), [file, from] = process.argv.slice(1)
@@ -432,11 +433,11 @@ Setup done. No secrets in here, only where they live.
 - **Expo enhanced push security:** $EXPO_ENHANCED_SECURITY$EXPO_TOKEN_NOTE
 - **Stream providers:** \`apn-dev\` (\`apn_development: true\`, dev builds), \`apn-prod\`, \`firebase\`; \`message.new\` enabled on each with the templates in \`workspaces/backend/scripts/stream-push.mjs\` (re-run it after editing them)
 - **Stream region:** $STREAM_REGION
-- **Mail:** $MAIL_PROVIDER ($MAIL_PROVIDER_LOCATION), sender \`$MAIL_FROM\` (\`accounts.passwordless.from\` in \`settings.json\`), SPF/DKIM on \`jarno.pl\`
+- **Mail:** $MAIL_PROVIDER ($MAIL_PROVIDER_LOCATION), sender \`$MAIL_FROM\` (\`accounts.passwordless.from\` in \`settings.json\`), SPF/DKIM on \`mail.jarno.pl\`
 - **Cloudflare tunnel in production:** $CLOUDFLARE_TUNNEL
 
 **Where the secrets live**
-- APNs \`.p8\` and the FCM service-account JSON: the owner's machine (\`~/.secrets/prezentowo/\`), and uploaded to EAS and Stream
+- APNs \`.p8\`, the FCM service-account JSON and the Android upload keystore: the owner's machine (\`~/.secrets/prezentowo/\`); the first two are also uploaded to EAS and Stream, the keystore to EAS
 - \`STREAM_API_KEY\`/\`STREAM_API_SECRET\`, \`MAIL_URL\`$EXPO_TOKEN_VAR: \`workspaces/backend/.env\` (gitignored) in development, the server's environment in production
 EOF
 say "The closing comment:"
