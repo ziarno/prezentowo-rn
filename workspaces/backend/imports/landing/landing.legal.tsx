@@ -1,12 +1,10 @@
 import type { Request, Response } from 'express'
-import { Meteor } from 'meteor/meteor'
 import { WebApp } from 'meteor/webapp'
 import type { ReactNode } from 'react'
-import { renderToStaticMarkup } from 'react-dom/server'
 
-import { LANDING_CSS } from './landing.css'
-import { type Lang, longDate, pickLanguage } from './landing.i18n'
+import { type Lang, longDate } from './landing.i18n'
 import type { LegalDoc } from './landing.legalParts'
+import { languageOf, plainHtml } from './landing.page'
 import { Footer, TopBar } from './landing.parts'
 import { PRIVACY } from './landing.privacy'
 import { TERMS } from './landing.terms'
@@ -47,46 +45,28 @@ function LegalPage({ doc, lang }: { doc: LegalDoc; lang: Lang }) {
   )
 }
 
-/**
- * The whole document, written here rather than through webapp's boilerplate,
- * so the page carries no client bundle: no JS at all.
- */
-export function legalHtml(
+/** The document `docs` in `lang`, served at `path`. */
+const legalHtml = (
   docs: Record<Lang, LegalDoc>,
   path: string,
   lang: Lang,
-): string {
-  const doc = docs[lang]
-  return `<!DOCTYPE html>${renderToStaticMarkup(
-    <html lang={lang}>
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>{`${doc.title} · Prezentowo`}</title>
-        <meta name="description" content={doc.description} />
-        <link rel="canonical" href={Meteor.absoluteUrl(path)} />
-        <link rel="icon" href="/icon.png" />
-        <style dangerouslySetInnerHTML={{ __html: LANDING_CSS }} />
-      </head>
-      <body>
-        <LegalPage doc={doc} lang={lang} />
-      </body>
-    </html>,
-  )}`
-}
+): string =>
+  plainHtml({
+    title: docs[lang].title,
+    description: docs[lang].description,
+    lang,
+    canonical: path,
+    children: <LegalPage doc={docs[lang]} lang={lang} />,
+  })
 
 const serve =
   (docs: Record<Lang, LegalDoc>, path: string) =>
   (req: Request, res: Response) => {
-    const lang = pickLanguage(
-      req.headers['accept-language'],
-      req.query.lang as string | string[] | undefined,
-    )
     res.set({
       'Content-Type': 'text/html; charset=utf-8',
       Vary: 'Accept-Language',
     })
-    res.send(legalHtml(docs, path, lang))
+    res.send(legalHtml(docs, path, languageOf(req)))
   }
 
 WebApp.handlers.get('/privacy', serve(PRIVACY, 'privacy'))

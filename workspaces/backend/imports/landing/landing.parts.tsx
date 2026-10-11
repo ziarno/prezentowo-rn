@@ -99,7 +99,8 @@ export function StoreButtons({
   )
 }
 
-// Every landing page's footer: the legal pages, in the page's language.
+// Every landing page's footer: the legal pages and account deletion, in the
+// page's language.
 export function Footer({ lang }: { lang: Lang }) {
   const c = COPY[lang]
   return (
@@ -107,6 +108,8 @@ export function Footer({ lang }: { lang: Lang }) {
       <a href={`/privacy?lang=${lang}`}>{c.privacy}</a>
       {' · '}
       <a href={`/terms?lang=${lang}`}>{c.terms}</a>
+      {' · '}
+      <a href={`/delete-account?lang=${lang}`}>{c.deleteAccount}</a>
     </footer>
   )
 }

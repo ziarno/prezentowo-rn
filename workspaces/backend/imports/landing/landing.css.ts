@@ -9,7 +9,7 @@ export const LANDING_CSS = `
 :root {
   --paper: #fffaf2; --paper2: #f5ede0; --ink: #1d1a14;
   --ink60: rgba(29,26,20,.6); --ink15: rgba(29,26,20,.15);
-  --ink08: rgba(29,26,20,.08); --green: #2f5b3a;
+  --ink08: rgba(29,26,20,.08); --green: #2f5b3a; --berry: #9a3a25;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--paper); }
@@ -89,4 +89,16 @@ a { color: var(--green); }
 .legal table { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 14px; }
 .legal th, .legal td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--ink08); text-align: left; vertical-align: top; }
 .legal td:first-child { font-weight: 600; }
+.legal form { margin: 0 0 16px; }
+.legal .ask { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.legal .ask label { width: 100%; font-size: 13px; color: var(--ink60); }
+.legal input {
+  flex: 1 1 220px; padding: 10px 12px; font: inherit;
+  border: 1.5px solid var(--ink15); border-radius: 10px; background: #fff; color: var(--ink);
+}
+.legal button {
+  padding: 10px 16px; font: inherit; font-weight: 600; cursor: pointer;
+  border: 1.5px solid var(--ink); border-radius: 10px; background: var(--ink); color: var(--paper);
+}
+.legal button.danger { border-color: var(--berry); background: var(--berry); }
 `

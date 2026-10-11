@@ -202,6 +202,7 @@ describe('landing footer', function () {
         [
           { href: '/privacy?lang=pl', text: 'Polityka prywatności' },
           { href: '/terms?lang=pl', text: 'Regulamin' },
+          { href: '/delete-account?lang=pl', text: 'Usuń konto' },
         ],
         path,
       )
@@ -210,6 +211,7 @@ describe('landing footer', function () {
         [
           { href: '/privacy?lang=en', text: 'Privacy policy' },
           { href: '/terms?lang=en', text: 'Terms' },
+          { href: '/delete-account?lang=en', text: 'Delete account' },
         ],
         path,
       )

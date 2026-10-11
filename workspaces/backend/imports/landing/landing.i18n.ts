@@ -48,6 +48,7 @@ export const COPY = {
     play: ['Get it on', 'Google Play'],
     privacy: 'Privacy policy',
     terms: 'Terms',
+    deleteAccount: 'Delete account',
   },
   pl: {
     // Present tense on purpose: "zaprosił/a" would need the inviter's gender.
@@ -65,6 +66,7 @@ export const COPY = {
     play: ['Pobierz z', 'Google Play'],
     privacy: 'Polityka prywatności',
     terms: 'Regulamin',
+    deleteAccount: 'Usuń konto',
   },
 } satisfies Record<Lang, Record<string, string | string[]>>
 
