@@ -331,6 +331,7 @@ All methods are `async`, check `this.userId`, and validate arguments. "Member" m
 | `Notifications` | `NotificationDoc` | new | `userId + createdAt`; `userId + eventId + kind` unique partial on `invite-deferred` and `invited` |
 | `ChatThreads` | `ChatThreadDoc` | new | `eventId` |
 | `PushTokens` | `{ _id, userId, expoToken, deviceToken, platform, locale, updatedAt }` | new | `expoToken` unique; `deviceToken` unique; `userId`. Server-only, one per device, never published ([#82](https://github.com/ziarno/prezentowo-rn/issues/82)). |
+| `PushTickets` | `{ _id (Expo ticket id), expoToken, sentAt }` | new | `sentAt`. Server-only, never published: each sent inbox push until its receipt is read (§2.5), so a restart doesn't lose it. |
 | `Images` | `{ _id, ownerId, createdAt, attachedAt? }` | new | — (records who uploaded, and when a document took the upload; used for cleanup) |
 | `Meteor.users` | + `nameTokens: string[]` | changed | `nameTokens` (multikey). Server-only: `profile.name` folded (lower case, diacritics stripped, `ł`→`l`) and split on whitespace and hyphens; rewritten by every write of `profile.name` (registration, `profile.name`, Dev login). Never published ([#68](https://github.com/ziarno/prezentowo-rn/issues/68)). Also + `pushPreferences?: PushPreferences` (§1.13), published to that user only; + `services.accountDeletion?: { hashedToken, createdAt }`, the web deletion token (§3.6), server-only. |
 
@@ -406,7 +407,7 @@ Both event publications omit `participants.invitedUserId`: a reserved placeholde
 - **When:** on each `Notifications` insert of a `PushKind` kind (§2.2), unless the recipient's `pushPreferences[kind]` is `false`. Turning a kind off stops the push only; the notification still lands in the inbox.
 - **Where:** every `PushTokens` doc of the recipient.
 - **What:** text written by the server in each token's `locale`, saying no more than the inbox row does (the claim-quietly rule needs no extra guard). `data` is an `InboxPushData`. `badge` is the recipient's unread notification count after the insert (iOS). Push copy lives with the server's other copy, in `en` and `pl`.
-- **Receipts:** a job fetches Expo receipts about 15 minutes after sending and deletes the token on `DeviceNotRegistered`. Delivery is at-least-once, so the app is idempotent on `notificationId`.
+- **Receipts:** each ticket is kept in `PushTickets`; a job fetches Expo receipts about 15 minutes after sending and deletes the token on `DeviceNotRegistered` (a ticket that already says `DeviceNotRegistered` deletes it at once). Delivery is at-least-once, so the app is idempotent on `notificationId`.
 
 **Chat pushes** go through **GetStream's built-in push**; our server never sends them.
 - Devices are registered server-side by `push.register` (`addDevice` with the native token), so the app never has to `connectUser` for push (§7). Providers: one APNs `.p8` provider each for sandbox (dev builds) and production, and one Firebase provider for Android.

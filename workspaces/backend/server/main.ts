@@ -5,6 +5,7 @@ import '../imports/startup/server/accounts.config'
 import '../imports/startup/server/accounts.devLogin'
 import '../imports/startup/server/accounts.emails'
 import '../imports/startup/server/images.sweep'
+import '../imports/startup/server/push.receipts'
 import '../imports/startup/server/retention'
 
 Meteor.startup(async () => {})

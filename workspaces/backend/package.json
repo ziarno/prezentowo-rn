@@ -14,6 +14,7 @@
     "@prezentowo/types": "*",
     "@swc/helpers": "^0.5.17",
     "busboy": "^1.6.0",
+    "expo-server-sdk": "^7.2.0",
     "lodash": "^4.18.1",
     "meteor-node-stubs": "^1.2.12",
     "open-graph-scraper": "^6.12.0",

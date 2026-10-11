@@ -2,6 +2,7 @@ import type { EventDoc, GiftDoc, NotificationDoc } from '@prezentowo/types'
 
 import { isMemberOf, participantIdOf } from '../events/events.membership'
 import { isRecipient } from '../gifts/gifts.visibility'
+import { queueInboxPush } from '../push/push.inbox'
 import { Notifications } from './notifications.collection'
 
 type GiftSnapshot = Pick<
@@ -9,12 +10,14 @@ type GiftSnapshot = Pick<
   '_id' | 'title' | 'forParticipantId' | 'createdBy'
 >
 
-const insert = (item: Omit<NotificationDoc, '_id' | 'createdAt' | 'read'>) =>
-  Notifications.insertAsync({
-    ...item,
-    createdAt: new Date(),
-    read: false,
-  } as NotificationDoc)
+// Every kind written here pushes too, once it's in (docs/spec.md §2.5).
+const insert = async (
+  item: Omit<NotificationDoc, '_id' | 'createdAt' | 'read'>,
+) => {
+  const doc = { ...item, createdAt: new Date(), read: false }
+  const _id = await Notifications.insertAsync(doc as NotificationDoc)
+  queueInboxPush({ ...doc, _id })
+}
 
 const isDuplicateKeyError = (error: unknown) =>
   (error as { code?: unknown } | null)?.code === 11000
