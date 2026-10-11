@@ -3,6 +3,7 @@ import type { ChatThreadDoc } from '@prezentowo/types'
 import {
   type ChannelType,
   type ChatServer,
+  DELETED_USER_NAME,
   setChatServer,
 } from '../imports/api/chat/chat.server'
 
@@ -12,6 +13,7 @@ export type FakeChatCall =
   | { op: 'addMembers'; cid: string; userIds: string[]; hideHistory: boolean }
   | { op: 'removeMembers'; cid: string; userIds: string[] }
   | { op: 'freezeChannel'; cid: string }
+  | { op: 'anonymiseUser'; userId: string }
   | { op: 'deleteChannels'; cids: string[]; hardDelete: boolean }
 
 type FakeChannel = {
@@ -29,7 +31,7 @@ export class FakeChatServer implements ChatServer {
   apiKey = 'fake-api-key'
   calls: FakeChatCall[] = []
   channels = new Map<string, FakeChannel>()
-  users = new Map<string, { name?: string }>()
+  users = new Map<string, { name?: string; image?: string }>()
   failing = false
 
   reset() {
@@ -136,6 +138,12 @@ export class FakeChatServer implements ChatServer {
     const channel = this.channel(cid)
     this.calls.push({ op: 'freezeChannel', cid })
     channel.frozen = true
+  }
+
+  async anonymiseUser(userId: string) {
+    this.write()
+    this.calls.push({ op: 'anonymiseUser', userId })
+    this.users.set(userId, { name: DELETED_USER_NAME, image: '' })
   }
 
   async deleteChannels(cids: string[], options: { hard_delete: boolean }) {

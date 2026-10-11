@@ -85,6 +85,64 @@ describe('personPresents', function () {
   })
 })
 
+describe('personPresents, a departed recipient', function () {
+  // Ola deleted her account: her place is a departed placeholder.
+  const departedEvent: EventDoc = {
+    ...event,
+    participants: [
+      {
+        id: 'pOla',
+        kind: 'placeholder',
+        name: 'Ola',
+        color: '#9a3a25',
+        departedUserId: 'ola',
+      },
+      { id: 'pBartek', kind: 'real', userId: 'bartek' },
+      {
+        id: 'pDziadek',
+        kind: 'placeholder',
+        name: 'Dziadek',
+        color: '#c7973d',
+      },
+    ],
+    ownerId: 'bartek',
+  }
+
+  it('keeps their own wishes apart from the suggestions', function () {
+    const wish = gift('pOla', 'ola')
+    const suggestion = gift('pOla', 'bartek')
+
+    const list = personPresents(
+      departedEvent,
+      'pOla',
+      [wish, suggestion],
+      'bartek',
+    )
+
+    expect(list).toEqual({
+      kind: 'theirs',
+      ownWishes: [wish],
+      suggested: [suggestion],
+    })
+  })
+
+  it('is no one’s own list, whoever looks', function () {
+    const wish = gift('pOla', 'ola')
+
+    expect(
+      personPresents(departedEvent, 'pOla', [wish], undefined),
+    ).toMatchObject({ kind: 'theirs', ownWishes: [wish] })
+  })
+
+  it('still counts a by-name placeholder’s list as all suggested', function () {
+    const suggestion = gift('pDziadek', 'bartek')
+
+    expect(
+      personPresents(departedEvent, 'pDziadek', [suggestion], 'bartek'),
+    ).toEqual({ kind: 'theirs', ownWishes: [], suggested: [suggestion] })
+  })
+})
+
 describe('claimAction', function () {
   it('offers to buy a present nobody is buying yet', function () {
     expect(claimAction(event, gift('pBartek', 'ola'), 'ola')).toBe('claim')

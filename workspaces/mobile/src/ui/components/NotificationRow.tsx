@@ -240,6 +240,21 @@ export function NotificationRow({
           )}
         </RowFrame>
       )
+    case 'event-handed-over':
+      return (
+        <RowFrame
+          {...frame}
+          avatar={<TileAvatar glyph="🏠" background={garland.green12} />}
+        >
+          <Sentence isNew={isNew}>
+            <Trans
+              i18nKey="notifications.eventHandedOver"
+              values={{ event: event?.title }}
+              components={[bold]}
+            />
+          </Sentence>
+        </RowFrame>
+      )
     case 'claimed-gift-removed':
       return (
         <RowFrame

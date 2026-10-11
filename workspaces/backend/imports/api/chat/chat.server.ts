@@ -4,6 +4,9 @@ import { Meteor } from 'meteor/meteor'
 import { resolve } from 'path'
 import { StreamChat } from 'stream-chat'
 
+// What a deleted account's messages are shown under.
+export const DELETED_USER_NAME = 'Deleted user'
+
 export type ChannelType = ChatThreadDoc['streamChannelType']
 
 // The Stream user every channel is created by. A channel's creator may read
@@ -34,6 +37,9 @@ export interface ChatServer {
   removeMembers(type: ChannelType, id: string, userIds: string[]): Promise<void>
   // Stops new messages; members keep reading the history.
   freezeChannel(type: ChannelType, id: string): Promise<void>
+  // Renames a deleted account's user to "Deleted user" and clears its image.
+  // The user is never deleted, so its messages stay (docs/spec.md §10.4).
+  anonymiseUser(userId: string): Promise<void>
   deleteChannels(
     cids: string[],
     options: { hard_delete: boolean },
@@ -61,6 +67,10 @@ export const streamChatServer = (
       void (await client
         .channel(type, id)
         .updatePartial({ set: { frozen: true } })),
+    anonymiseUser: async userId =>
+      void (await client.upsertUsers([
+        { id: userId, name: DELETED_USER_NAME, image: '' },
+      ])),
     deleteChannels: async (cids, options) =>
       void (await client.deleteChannels(cids, options)),
   }

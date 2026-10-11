@@ -7,8 +7,9 @@ type Profile = { name?: string; avatar?: string; photo?: string }
 
 // Everything `7a` shows before joining. UserIds and gifts never leave the
 // server: real participants go out by name and avatar, and placeholders are
-// listed only while unclaimed. A reserved placeholder is listed only to
-// `viewerId` when it's theirs, marked as such; signed out, none are.
+// listed only while unclaimed, and never a departed one. A reserved
+// placeholder is listed only to `viewerId` when it's theirs, marked as such;
+// signed out, none are.
 export const invitePreview = (
   code: string,
   event: EventDoc,
@@ -34,7 +35,7 @@ export const invitePreview = (
     ]
   }),
   unclaimedPlaceholders: event.participants.flatMap(p => {
-    if (p.kind !== 'placeholder') return []
+    if (p.kind !== 'placeholder' || p.departedUserId) return []
     const reservedForYou = !!p.invitedUserId && p.invitedUserId === viewerId
     if (p.invitedUserId && !reservedForYou) return []
     return [

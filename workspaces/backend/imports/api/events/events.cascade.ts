@@ -55,7 +55,9 @@ export async function cascadeParticipantRemoval(
  * Everything a deleted event owns (docs/spec.md §2.2): its presents, its
  * invite, its activity, its chat threads and their Stream channels, and the
  * uploads the event, its placeholders and its presents point at. Call it
- * once the `Events` doc is gone, so nothing new is added to it meanwhile.
+ * once the `Events` doc is gone, so nothing new is added to it meanwhile —
+ * except `deleteAccountFor`, which runs it first so a run that dies before
+ * the event goes is simply repeated.
  * Every collection keyed by `eventId` is deleted here.
  */
 export async function cascadeEventDeletion(event: EventDoc) {

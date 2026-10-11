@@ -517,6 +517,7 @@
     "joinedMany_other": "<0>{{first}}, {{second}} i {{count}} innej osoby</0> dołączają do: <0>{{event}}</0>",
     "noLongerInEvent": "Nie ma już tej osoby w wydarzeniu",
     "giftRemoved": "Usunięto <1>{{gift}}</1> z: <0>{{event}}</0>",
+    "eventHandedOver": "Zostajesz gospodarzem wydarzenia <0>{{event}}</0>",
     "seeAll": "Pokaż wszystkie ({{count}})",
     "hideAll": "Ukryj",
     "time": {

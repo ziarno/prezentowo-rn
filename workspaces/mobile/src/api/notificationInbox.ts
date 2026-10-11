@@ -156,6 +156,7 @@ export function notificationTarget(
     case 'claimed-gift-removed':
       return recipientList
     case 'participant-joined':
+    case 'event-handed-over':
       return feed
   }
 }

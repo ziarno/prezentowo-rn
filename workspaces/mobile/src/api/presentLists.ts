@@ -5,6 +5,16 @@ const userIdOf = (event: EventDoc, participantId: string) => {
   return participant?.kind === 'real' ? participant.userId : undefined
 }
 
+// Whose list `participantId` is, as a userId: a real participant's, or for
+// a departed placeholder the deleted account's former one, so their own
+// wishes stay apart from suggestions (docs/spec.md §1.12). Only for telling
+// who added a gift: a departed user is never the viewer.
+const ownerUserIdOf = (event: EventDoc, participantId: string) => {
+  const participant = event.participants.find(p => p.id === participantId)
+  if (participant?.kind === 'real') return participant.userId
+  return participant?.departedUserId
+}
+
 // The fields the rules below read: a present from the server or from the
 // offline queue.
 type GiftOwnership = Pick<GiftDoc, 'forParticipantId' | 'createdBy'>
@@ -40,7 +50,7 @@ export function personPresents<G extends GiftOwnership>(
   gifts: G[],
   viewerUserId: string | undefined,
 ): PersonPresents<G> {
-  const recipientUserId = userIdOf(event, participantId)
+  const recipientUserId = ownerUserIdOf(event, participantId)
   const theirGifts = gifts.filter(
     g =>
       g.forParticipantId === participantId &&

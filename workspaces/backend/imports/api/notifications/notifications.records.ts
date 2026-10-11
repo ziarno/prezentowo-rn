@@ -129,3 +129,16 @@ export async function recordClaimedGiftRemoved(
     })
   }
 }
+
+/**
+ * `event-handed-over`, to `userId`, now the creator of `eventId` because its
+ * creator deleted their account (docs/spec.md §1.12). Idempotent, so a
+ * deletion run again after dying half-way doesn't tell them twice.
+ */
+export async function recordEventHandedOver(userId: string, eventId: string) {
+  await Notifications.updateAsync(
+    { userId, eventId, kind: 'event-handed-over' },
+    { $setOnInsert: { createdAt: new Date(), read: false } },
+    { upsert: true },
+  )
+}

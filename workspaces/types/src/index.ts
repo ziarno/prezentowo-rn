@@ -112,6 +112,10 @@ export type EventParticipant =
       // Set = a reserved placeholder: only this user can claim it, by
       // joining. Server-only, never published.
       invitedUserId?: string
+      // Set = a departed placeholder: what a deleted account's place in the
+      // event became, holding the account's former userId (docs/spec.md
+      // §1.12). Published. Nobody can claim it.
+      departedUserId?: string
     }
 
 export type ImageRef =
@@ -378,6 +382,9 @@ export type NotificationDoc = {
     | 'suggestion-claimed'
     | 'participant-joined'
     | 'claimed-gift-removed'
+    // You're now the creator of an event whose creator deleted their
+    // account (docs/spec.md §1.12). Never pushes.
+    | 'event-handed-over'
   createdAt: Date
   read: boolean
   eventId: string

@@ -421,7 +421,13 @@ function claimTarget(
   if (!participantId) return undefined
 
   const target = event.participants.find(p => p.id === participantId)
-  if (!target || (target.kind === 'placeholder' && target.invitedUserId)) {
+  // Someone else's reservation and a departed placeholder (§1.12) are
+  // nobody's to claim, and answer like a missing one.
+  if (
+    !target ||
+    (target.kind === 'placeholder' &&
+      (target.invitedUserId || target.departedUserId))
+  ) {
     throw new Meteor.Error('notFound', 'placeholderNotFound')
   }
   if (target.kind !== 'placeholder') {

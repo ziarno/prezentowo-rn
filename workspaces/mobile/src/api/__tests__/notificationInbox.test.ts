@@ -212,4 +212,13 @@ describe('notificationTarget', function () {
       notificationTarget(n, { ...known, recipientInEvent: false }),
     ).toEqual({ pathname: '/event/[eventId]', params: { eventId: 'e1' } })
   })
+
+  it('opens the event feed for an event handed over to the viewer', function () {
+    const n = notification({ kind: 'event-handed-over' })
+
+    expect(notificationTarget(n, known)).toEqual({
+      pathname: '/event/[eventId]',
+      params: { eventId: 'e1' },
+    })
+  })
 })
