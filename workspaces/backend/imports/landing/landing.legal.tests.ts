@@ -146,7 +146,7 @@ describe('legal pages', function () {
         assert.match(html, /Filip Jarno/)
         assert.match(
           html,
-          /<a href="mailto:filip@jarno.pl">filip@jarno.pl<\/a>/,
+          /<a href="mailto:prezentowo@jarno.pl">prezentowo@jarno.pl<\/a>/,
         )
       }
     })

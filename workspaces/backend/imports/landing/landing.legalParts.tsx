@@ -11,7 +11,7 @@ export type LegalDoc = {
   body: ReactNode
 }
 
-export const CONTACT = 'filip@jarno.pl'
+export const CONTACT = 'prezentowo@jarno.pl'
 
 export const Contact = () => <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
 

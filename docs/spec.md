@@ -476,7 +476,7 @@ Google Play needs a public page where someone can delete their account without t
 - **`GET /delete-account`** (indexed):
   - first the in-app path, "Profile → Delete account";
   - then a form with one email field, a plain HTML POST;
-  - then the fallback, the privacy contact `filip@jarno.pl`.
+  - then the fallback, the privacy contact `prezentowo@jarno.pl`.
 - **`POST /delete-account`** with `email` always answers the same page: "If an account exists for this address, we've sent a link."
   - **Unknown address:** no email, and **no user is created** (the opposite of `requestMagicLink`).
   - **Known address:** issues a **deletion token**: random, stored hashed as `services.accountDeletion` on the user, valid 1 h, single-use, separate from sign-in tokens. A new one replaces the old, so there is one live token per user.
@@ -486,13 +486,13 @@ Google Play needs a public page where someone can delete their account without t
 - **`POST /delete-account/:token`** runs `deleteAccountFor(userId)` (§10.4), then shows "Account deleted". The token is spent only when the deletion finishes, so a POST that dies half-way can be retried: that run answers HTTP 500 with "We couldn't finish" and the same button. Token pages send `Cache-Control: no-store` and `Referrer-Policy: no-referrer`, and are `noindex`.
 - An expired, spent or unknown token gets "This link has expired" with the request form again, with HTTP 410.
 - Devices still signed in lose their login tokens with the user, so Meteor closes their connections; the app's rejected-resume path (`onSessionEnd`) wipes the cache and queue. Their unsynced writes are lost without a prompt.
-- **Emailed requests** to `filip@jarno.pl` are answered within one month (GDPR Art. 12(3)): with the self-service link, or by deleting by hand when the person can't use email links.
+- **Emailed requests** to `prezentowo@jarno.pl` are answered within one month (GDPR Art. 12(3)): with the self-service link, or by deleting by hand when the person can't use email links.
 
 ### 3.7 Privacy policy and terms — [#87](https://github.com/ziarno/prezentowo-rn/issues/87)
 
 - **`GET /privacy`** and **`GET /terms`**: server-rendered plain HTML, no JS, indexed, titled "Polityka prywatności" / "Privacy policy" and "Regulamin" / "Terms of use". Language from `pickLanguage`; the app links with `?lang=<app language>`.
 - **Polish is binding**; each English page says it is a translation. Each page starts with "Last updated: <date>" and links to the other two legal pages.
-- The text is source in `imports/landing/`, next to the landing copy: no CMS, no PDF. The prose is drafted from the outline in [Privacy policy and terms: content and URLs](https://github.com/ziarno/prezentowo-rn/issues/87), which fixes every fact and period: controller Filip Jarno at `filip@jarno.pl`; legal bases (contract, legitimate interest, consent for push only); named processors (mail provider, GetStream, Expo, APNs/FCM, Cloudflare); retention (until deletion; never-signed-in accounts 7 days; logs 14 days; unattached uploads 24 h; backups 30 days); 16+; no analytics, ads or cookies.
+- The text is source in `imports/landing/`, next to the landing copy: no CMS, no PDF. The prose is drafted from the outline in [Privacy policy and terms: content and URLs](https://github.com/ziarno/prezentowo-rn/issues/87), which fixes every fact and period: controller Filip Jarno at `prezentowo@jarno.pl`; legal bases (contract, legitimate interest, consent for push only); named processors (mail provider, GetStream, Expo, APNs/FCM, Cloudflare); retention (until deletion; never-signed-in accounts 7 days; logs 14 days; unattached uploads 24 h; backups 30 days); 16+; no analytics, ads or cookies.
 - **Not live until** the mail provider is named and the owner has reviewed both documents (a `ready-for-human` issue).
 - A material change (a new processor, a new kind of data) is announced in-app, before it takes effect for anything consent-based. No re-acceptance flow.
 - If the domain moves, `/privacy`, `/terms` and `/delete-account` 301 to the new one, so the store consoles keep working.

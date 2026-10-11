@@ -137,7 +137,7 @@ describe('web account deletion', function () {
       const text = textOf(page.html)
       const inApp = text.indexOf('Profil → Usuń konto')
       const form = page.html.indexOf('<form')
-      const contact = page.html.indexOf('mailto:filip@jarno.pl')
+      const contact = page.html.indexOf('mailto:prezentowo@jarno.pl')
       assert.ok(inApp >= 0, 'names the in-app path')
       assert.ok(
         page.html.indexOf('Profil → Usuń konto') < form && form < contact,
