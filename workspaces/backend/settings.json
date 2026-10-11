@@ -15,6 +15,9 @@
       "magicLinkPath": "magic-link"
     }
   },
+  "stream": {
+    "pushProviders": { "apn": "apn-dev", "firebase": "firebase" }
+  },
   "imagesDir": ".images",
   "ogCardsDir": ".og-cards",
   "appLinks": {

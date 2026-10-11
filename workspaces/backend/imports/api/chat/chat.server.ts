@@ -1,4 +1,4 @@
-import type { ChatThreadDoc } from '@prezentowo/types'
+import type { AppLanguage, ChatThreadDoc } from '@prezentowo/types'
 import { existsSync } from 'fs'
 import { Meteor } from 'meteor/meteor'
 import { resolve } from 'path'
@@ -13,6 +13,13 @@ export type ChannelType = ChatThreadDoc['streamChannelType']
 // it, so it's never a participant; the hyphen keeps it apart from Meteor ids.
 export const CHAT_SERVER_USER_ID = 'prezentowo-server'
 
+// A Stream user as we upsert it. Stream replaces the whole user on an upsert,
+// so every upsert carries all of it (docs/spec.md §2.4).
+export type StreamUser = { id: string; name?: string; language?: AppLanguage }
+
+// Stream's push provider types: APNs for iOS, Firebase for Android.
+export type PushProviderType = 'apn' | 'firebase'
+
 /**
  * The slice of Stream's server-side client the chat lifecycle uses. Kept
  * close to Stream's own calls so tests can check what reaches Stream, e.g.
@@ -22,11 +29,12 @@ export interface ChatServer {
   // The app's public key, which the client needs alongside its token.
   apiKey: string
   createToken(userId: string, exp: number, iat: number): string
-  upsertUsers(users: { id: string; name?: string }[]): Promise<void>
+  upsertUsers(users: StreamUser[]): Promise<void>
   createChannel(
     type: ChannelType,
     id: string,
-    data: { members: string[]; created_by_id: string },
+    // `eventId` is custom data, so a chat push can open its thread (§2.5).
+    data: { members: string[]; created_by_id: string; eventId: string },
   ): Promise<void>
   addMembers(
     type: ChannelType,
@@ -43,6 +51,19 @@ export interface ChatServer {
   deleteChannels(
     cids: string[],
     options: { hard_delete: boolean },
+  ): Promise<void>
+  // Registers a device's native token for `userId`, so Stream's chat pushes
+  // reach it without the app ever connecting (docs/spec.md §2.5).
+  addDevice(
+    deviceToken: string,
+    provider: PushProviderType,
+    userId: string,
+    providerName: string,
+  ): Promise<void>
+  // A device Stream doesn't have is no error.
+  removeDevice(deviceToken: string, userId: string): Promise<void>
+  setPushPreferences(
+    preferences: { user_id: string; chat_level: 'all' | 'none' }[],
   ): Promise<void>
 }
 
@@ -73,6 +94,24 @@ export const streamChatServer = (
       ])),
     deleteChannels: async (cids, options) =>
       void (await client.deleteChannels(cids, options)),
+    addDevice: async (deviceToken, provider, userId, providerName) =>
+      void (await client.addDevice(
+        deviceToken,
+        provider,
+        userId,
+        providerName,
+      )),
+    removeDevice: async (deviceToken, userId) => {
+      try {
+        await client.removeDevice(deviceToken, userId)
+      } catch (error) {
+        // A device Stream doesn't have is already removed, e.g. one whose
+        // `addDevice` failed; otherwise its token could never be deleted.
+        if ((error as { status?: number }).status !== 404) throw error
+      }
+    },
+    setPushPreferences: async preferences =>
+      void (await client.setPushPreferences(preferences)),
   }
 }
 

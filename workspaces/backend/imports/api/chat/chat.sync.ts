@@ -1,10 +1,10 @@
 import type { EventDoc } from '@prezentowo/types'
-import { Meteor } from 'meteor/meteor'
 import { Random } from 'meteor/random'
 
 import { Events } from '../events/events.collection'
 import { type ChatThreadRecord, ChatThreads } from './chat.collection'
 import { CHAT_SERVER_USER_ID, type ChatServer, chatServer } from './chat.server'
+import { streamUsers } from './chat.users'
 
 type WantedThread = Pick<
   ChatThreadRecord,
@@ -54,14 +54,11 @@ const recipientUserId = (event: EventDoc, thread: ChatThreadRecord) => {
   return recipient?.kind === 'real' ? recipient.userId : undefined
 }
 
-// Upserts `userIds` with their names, and the channel creator.
-async function upsertNamedUsers(server: ChatServer, userIds: string[]) {
-  const users = await Meteor.users
-    .find({ _id: { $in: userIds } }, { fields: { 'profile.name': 1 } })
-    .fetchAsync()
+// Upserts the channel members `userIds`, and the channel creator.
+async function upsertMembersAndCreator(server: ChatServer, userIds: string[]) {
   await server.upsertUsers([
     { id: CHAT_SERVER_USER_ID, name: 'Prezentowo' },
-    ...users.map(u => ({ id: u._id, name: u.profile?.name })),
+    ...(await streamUsers(userIds)),
   ])
 }
 
@@ -116,7 +113,7 @@ async function syncEvent(server: ChatServer, eventId: string) {
     changes.flatMap(c => (c.thread ? c.added : c.want.memberIds)),
   )
   if (newcomers.size > 0 || changes.some(c => !c.thread)) {
-    await upsertNamedUsers(server, [...newcomers])
+    await upsertMembersAndCreator(server, [...newcomers])
   }
 
   for (const { want, thread, added, removed } of changes) {
@@ -125,6 +122,7 @@ async function syncEvent(server: ChatServer, eventId: string) {
       await server.createChannel(want.streamChannelType, streamChannelId, {
         members: want.memberIds,
         created_by_id: CHAT_SERVER_USER_ID,
+        eventId,
       })
       await ChatThreads.insertAsync({ eventId, ...want, streamChannelId })
       continue

@@ -2,6 +2,7 @@ import type { StreamToken } from '@prezentowo/types'
 import { Meteor } from 'meteor/meteor'
 
 import { chatServer } from './chat.server'
+import { upsertStreamUsers } from './chat.users'
 
 // How long a token lives; the client SDK asks for a new one when it expires.
 const TOKEN_TTL_SECONDS = 60 * 60
@@ -18,10 +19,7 @@ const streamToken = async function (
   }
 
   // Chat shows the name the user has now.
-  const user = await Meteor.users.findOneAsync(this.userId, {
-    fields: { 'profile.name': 1 },
-  })
-  await server.upsertUsers([{ id: this.userId, name: user?.profile?.name }])
+  await upsertStreamUsers(server, [this.userId])
 
   // `iat` is what lets Stream revoke tokens issued before a given time.
   const iat = Math.floor(Date.now() / 1000)

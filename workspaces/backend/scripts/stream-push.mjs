@@ -18,6 +18,8 @@ import { resolve } from 'path'
 import { StreamChat } from 'stream-chat'
 import { parseArgs } from 'util'
 
+// settings.json's `stream.pushProviders` picks which of these `push.register`
+// adds devices to: `apn-dev` for dev builds, `apn-prod` for store builds.
 const PROVIDERS = {
   apnDev: 'apn-dev', // sandbox tokens, from dev builds
   apnProd: 'apn-prod',

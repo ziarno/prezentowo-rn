@@ -1,25 +1,50 @@
-import type { ChatThreadDoc } from '@prezentowo/types'
+import type { AppLanguage, ChatThreadDoc } from '@prezentowo/types'
+import { Meteor } from 'meteor/meteor'
 
 import {
   type ChannelType,
   type ChatServer,
   DELETED_USER_NAME,
+  type PushProviderType,
+  type StreamUser,
   setChatServer,
 } from '../imports/api/chat/chat.server'
 
 export type FakeChatCall =
   | { op: 'upsertUsers'; userIds: string[] }
-  | { op: 'createChannel'; cid: string; members: string[]; createdById: string }
+  | {
+      op: 'createChannel'
+      cid: string
+      members: string[]
+      createdById: string
+      eventId: string
+    }
   | { op: 'addMembers'; cid: string; userIds: string[]; hideHistory: boolean }
   | { op: 'removeMembers'; cid: string; userIds: string[] }
   | { op: 'freezeChannel'; cid: string }
   | { op: 'anonymiseUser'; userId: string }
   | { op: 'deleteChannels'; cids: string[]; hardDelete: boolean }
+  | {
+      op: 'addDevice'
+      deviceToken: string
+      provider: PushProviderType
+      userId: string
+      providerName: string
+    }
+  | { op: 'removeDevice'; deviceToken: string; userId: string }
+  | { op: 'setPushPreferences'; userId: string; chatLevel: 'all' | 'none' }
 
 type FakeChannel = {
   createdById: string
   members: Set<string>
+  eventId: string
   frozen?: boolean
+}
+
+type FakeDevice = {
+  userId: string
+  provider: PushProviderType
+  providerName: string
 }
 
 /**
@@ -31,14 +56,30 @@ export class FakeChatServer implements ChatServer {
   apiKey = 'fake-api-key'
   calls: FakeChatCall[] = []
   channels = new Map<string, FakeChannel>()
-  users = new Map<string, { name?: string; image?: string }>()
+  users = new Map<
+    string,
+    { name?: string; image?: string; language?: AppLanguage }
+  >()
+  // By native token: a token belongs to one user at a time.
+  devices = new Map<string, FakeDevice>()
+  chatLevels = new Map<string, 'all' | 'none'>()
   failing = false
 
   reset() {
     this.calls = []
     this.channels.clear()
     this.users.clear()
+    this.devices.clear()
+    this.chatLevels.clear()
     this.failing = false
+  }
+
+  /** The native tokens Stream holds for `userId`. */
+  devicesOf(userId: string) {
+    return [...this.devices]
+      .filter(([, device]) => device.userId === userId)
+      .map(([token]) => token)
+      .sort()
   }
 
   /** The members of the channel backing `thread`. */
@@ -78,16 +119,19 @@ export class FakeChatServer implements ChatServer {
     return channel
   }
 
-  async upsertUsers(users: { id: string; name?: string }[]) {
+  // Replaces each user whole, as Stream does.
+  async upsertUsers(users: StreamUser[]) {
     this.write()
     this.calls.push({ op: 'upsertUsers', userIds: users.map(u => u.id) })
-    for (const { id, name } of users) this.users.set(id, { name })
+    for (const { id, name, language } of users) {
+      this.users.set(id, { name, ...(language ? { language } : {}) })
+    }
   }
 
   async createChannel(
     type: ChannelType,
     id: string,
-    data: { members: string[]; created_by_id: string },
+    data: { members: string[]; created_by_id: string; eventId: string },
   ) {
     this.write()
     const cid = `${type}:${id}`
@@ -98,10 +142,12 @@ export class FakeChatServer implements ChatServer {
       cid,
       members: [...data.members],
       createdById: data.created_by_id,
+      eventId: data.eventId,
     })
     this.channels.set(cid, {
       createdById: data.created_by_id,
       members: new Set(data.members),
+      eventId: data.eventId,
     })
   }
 
@@ -155,6 +201,66 @@ export class FakeChatServer implements ChatServer {
     })
     for (const cid of cids) this.channels.delete(cid)
   }
+
+  async addDevice(
+    deviceToken: string,
+    provider: PushProviderType,
+    userId: string,
+    providerName: string,
+  ) {
+    this.write()
+    this.assertUsers([userId])
+    this.calls.push({
+      op: 'addDevice',
+      deviceToken,
+      provider,
+      userId,
+      providerName,
+    })
+    this.devices.set(deviceToken, { userId, provider, providerName })
+  }
+
+  // A device that isn't there is no error.
+  async removeDevice(deviceToken: string, userId: string) {
+    this.write()
+    this.calls.push({ op: 'removeDevice', deviceToken, userId })
+    if (this.devices.get(deviceToken)?.userId === userId) {
+      this.devices.delete(deviceToken)
+    }
+  }
+
+  async setPushPreferences(
+    preferences: { user_id: string; chat_level: 'all' | 'none' }[],
+  ) {
+    this.write()
+    this.assertUsers(preferences.map(p => p.user_id))
+    for (const { user_id, chat_level } of preferences) {
+      this.calls.push({
+        op: 'setPushPreferences',
+        userId: user_id,
+        chatLevel: chat_level,
+      })
+      this.chatLevels.set(user_id, chat_level)
+    }
+  }
+}
+
+// What a dev build's settings.json names the providers.
+export const FAKE_PUSH_PROVIDERS = { apn: 'apn-dev', firebase: 'firebase' }
+
+/**
+ * Names Stream's push providers in `Meteor.settings` for the enclosing
+ * `describe`, as settings.json does.
+ */
+export function useStreamPushProviders() {
+  let saved: unknown
+  before(function () {
+    saved = Meteor.settings.stream
+    Meteor.settings.stream = { pushProviders: FAKE_PUSH_PROVIDERS }
+  })
+  after(function () {
+    Meteor.settings.stream = saved
+  })
 }
 
 /**

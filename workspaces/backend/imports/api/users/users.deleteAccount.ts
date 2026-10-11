@@ -17,6 +17,7 @@ import { asUpload, releaseImage } from '../images/images.refs'
 import { Invites } from '../invites/invites.collection'
 import { Notifications } from '../notifications/notifications.collection'
 import { recordEventHandedOver } from '../notifications/notifications.records'
+import { removePushTokensOf } from '../push/push.tokens'
 
 // The brand's berry, amber and green, as on the app's placeholder swatches.
 const DEPARTED_COLORS = ['#9a3a25', '#c7973d', '#2f5b3a'] as const
@@ -165,8 +166,8 @@ export async function deleteAccountFor(userId: string): Promise<void> {
   // 7. Your notifications.
   await Notifications.removeAsync({ userId })
 
-  // 8. Your push tokens, and your Stream devices: with the push backend
-  // slice (docs/spec.md §10.4 step 8), which has no `PushTokens` yet.
+  // 8. Your push tokens, each after its Stream device.
+  await removePushTokensOf(userId)
 
   // 9. Your profile photo, upload and `Images` record.
   await releaseImage(asUpload(user.profile?.photo))

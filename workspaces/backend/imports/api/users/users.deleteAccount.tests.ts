@@ -9,7 +9,7 @@ import { DDP } from 'meteor/ddp'
 import { Meteor } from 'meteor/meteor'
 import { Random } from 'meteor/random'
 
-import { useFakeChatServer } from '../../../tests/chat'
+import { useFakeChatServer, useStreamPushProviders } from '../../../tests/chat'
 import {
   addGiftAs,
   createEventWithMembers,
@@ -40,6 +40,8 @@ import {
   Notifications,
   createNotificationIndexes,
 } from '../notifications/notifications.collection'
+import { PushTokens, createPushTokenIndexes } from '../push/push.collection'
+import '../push/push.methods'
 import { deleteAccountFor, departedColor } from './users.deleteAccount'
 
 type Placeholder = Extract<EventParticipant, { kind: 'placeholder' }>
@@ -64,6 +66,7 @@ const notificationsOf = (userId: string, kind?: NotificationDoc['kind']) =>
 
 describe('users.deleteAccount', function () {
   const stream = useFakeChatServer()
+  useStreamPushProviders()
   useImagesSandbox()
 
   let family: Awaited<ReturnType<typeof createFamilyEvent>>
@@ -75,6 +78,7 @@ describe('users.deleteAccount', function () {
     await createInviteIndexes()
     await createNotificationIndexes()
     await createGiftIndexes()
+    await createPushTokenIndexes()
   })
 
   beforeEach(async function () {
@@ -732,6 +736,55 @@ describe('users.deleteAccount', function () {
 
       assert.strictEqual((await notificationsOf(bartek)).length, 0)
       assert.strictEqual((await notificationsOf(ola)).length, 1)
+    })
+
+    it('removes their Stream devices, then deletes their push tokens', async function () {
+      const { ola, bartek } = family.users
+      const device = (n: number, platform: 'ios' | 'android') => ({
+        expoToken: `ExponentPushToken[${n}]`,
+        deviceToken: `device-${n}`,
+        platform,
+        locale: 'pl',
+      })
+      await callAsUser(bartek, 'push.register', device(1, 'ios'))
+      await callAsUser(bartek, 'push.register', device(2, 'android'))
+      await callAsUser(ola, 'push.register', device(3, 'ios'))
+
+      await deleteAccount(bartek, 'bartek@example.com')
+
+      assert.strictEqual(
+        await PushTokens.find({ userId: bartek }).countAsync(),
+        0,
+      )
+      assert.deepStrictEqual(stream.devicesOf(bartek), [])
+      assert.strictEqual(await PushTokens.find({ userId: ola }).countAsync(), 1)
+      assert.deepStrictEqual(stream.devicesOf(ola), ['device-3'])
+    })
+
+    it('keeps the push tokens, and the account, while Stream can’t remove a device', async function () {
+      const { bartek } = family.users
+      await callAsUser(bartek, 'push.register', {
+        expoToken: 'ExponentPushToken[1]',
+        deviceToken: 'device-1',
+        platform: 'ios',
+        locale: 'pl',
+      })
+
+      await whileFailing(stream, 'removeDevice', () =>
+        assert.rejects(deleteAccount(bartek, 'bartek@example.com')),
+      )
+      assert.strictEqual(
+        await PushTokens.find({ userId: bartek }).countAsync(),
+        1,
+      )
+      assert.ok(await userExists(bartek))
+
+      await deleteAccount(bartek, 'bartek@example.com')
+      assert.strictEqual(
+        await PushTokens.find({ userId: bartek }).countAsync(),
+        0,
+      )
+      assert.deepStrictEqual(stream.devicesOf(bartek), [])
     })
 
     it('deletes the profile photo and its Images record', async function () {

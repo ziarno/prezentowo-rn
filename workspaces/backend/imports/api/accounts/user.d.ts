@@ -1,3 +1,4 @@
+import type { PushPreferences } from '@prezentowo/types'
 import 'meteor/meteor'
 
 // @types/meteor leaves UserProfile empty for apps to fill in.
@@ -14,6 +15,8 @@ declare module 'meteor/meteor' {
       // `profile.name` folded and split, for `users.search`. Server-only:
       // no publication sends it.
       nameTokens?: string[]
+      // Published to the user alone (docs/spec.md §1.13); missing = on.
+      pushPreferences?: PushPreferences
     }
   }
 }

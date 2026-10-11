@@ -108,6 +108,14 @@ describe('chat threads', function () {
       )
     })
 
+    it('puts the event id in every channel’s custom data', async function () {
+      const created = stream.calls.filter(c => c.op === 'createChannel')
+      assert.strictEqual(created.length, (await liveThreads()).length)
+      for (const call of created) {
+        assert.strictEqual(call.eventId, family.eventId)
+      }
+    })
+
     it('mints random channel ids, created by a user who is never a member', async function () {
       const threads = await liveThreads()
       const ids = threads.map(t => t.streamChannelId)
