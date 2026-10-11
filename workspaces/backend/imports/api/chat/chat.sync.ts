@@ -1,4 +1,5 @@
 import type { EventDoc } from '@prezentowo/types'
+import { Meteor } from 'meteor/meteor'
 import { Random } from 'meteor/random'
 
 import { Events } from '../events/events.collection'
@@ -62,7 +63,89 @@ async function upsertMembersAndCreator(server: ChatServer, userIds: string[]) {
   ])
 }
 
-async function syncEvent(server: ChatServer, eventId: string) {
+const errorName = (error: unknown) =>
+  error instanceof Error ? error.name : typeof error
+
+// Mutes everyone on a thread about to be retired, as they all lose it. A
+// retired channel keeps its members, so until the freeze lands Stream would
+// still push its messages to them. Never throws: the freeze, retried until it
+// lands, is what makes the thread push-safe for good.
+async function muteMembers(server: ChatServer, thread: ChatThreadRecord) {
+  if (thread.memberIds.length === 0) return
+  try {
+    await server.setPushPreferences(
+      thread.memberIds.map(userId => ({
+        user_id: userId,
+        channel_cid: cidOf(thread),
+        chat_level: 'none',
+      })),
+    )
+  } catch (error) {
+    console.error('chat', 'mute failed', thread._id, errorName(error))
+  }
+}
+
+/** The freeze retry's delays: doubling from `firstMs`, up to `maxMs`. */
+export const freezeBackoff = { firstMs: 1000, maxMs: 10 * 60 * 1000 }
+
+/** How long the freeze waits after its `attempt`th failure (from 0). */
+export const freezeRetryDelay = (attempt: number) =>
+  Math.min(freezeBackoff.firstMs * 2 ** attempt, freezeBackoff.maxMs)
+
+// Retired threads with a freeze attempt pending, so each has one retry loop.
+const freezing = new Set<string>()
+
+async function freezeAttempt(threadId: string, attempt: number) {
+  try {
+    const server = chatServer()
+    const thread = await ChatThreads.findOneAsync(threadId)
+    // Deleted with its event, already frozen, or chat is off: nothing to do.
+    if (!server || !thread || thread.frozenAt) {
+      freezing.delete(threadId)
+      return
+    }
+    await server.freezeChannel(thread.streamChannelType, thread.streamChannelId)
+    await ChatThreads.updateAsync(threadId, { $set: { frozenAt: new Date() } })
+    freezing.delete(threadId)
+  } catch (error) {
+    console.error('chat', 'freeze failed', threadId, errorName(error))
+    Meteor.setTimeout(
+      () => void freezeAttempt(threadId, attempt + 1),
+      freezeRetryDelay(attempt),
+    )
+  }
+}
+
+/**
+ * Freezes a retired thread's channel: history stays readable, nobody can
+ * post, so nothing more is pushed (docs/spec.md §2.4). `updatePartial`, so
+ * there's no system message. Retried with backoff until it lands, then
+ * records `frozenAt`. Resolves after the first attempt; never throws.
+ */
+function freezeWithRetry(threadId: string) {
+  if (freezing.has(threadId)) return Promise.resolve()
+  freezing.add(threadId)
+  return freezeAttempt(threadId, 0)
+}
+
+/**
+ * Freezes every retired thread whose freeze never landed, e.g. one whose
+ * retry the last server run didn't live to finish. Run at startup.
+ */
+export async function freezeRetiredThreads() {
+  const pending = await ChatThreads.find(
+    { retiredAt: { $exists: true }, frozenAt: { $exists: false } },
+    { fields: { _id: 1 } },
+  ).fetchAsync()
+  for (const { _id } of pending) await freezeWithRetry(_id)
+}
+
+// Pushes each thread it retires onto `retired`, even if it throws later.
+async function syncEvent(
+  server: ChatServer,
+  eventId: string,
+  retired: ChatThreadRecord[],
+) {
   const event = await Events.findOneAsync(eventId)
   if (!event) return
   const wanted = wantedThreads(event)
@@ -71,11 +154,11 @@ async function syncEvent(server: ChatServer, eventId: string) {
     retiredAt: { $exists: false },
   }).fetchAsync()
 
-  // Retire first, and in Mongo alone, so a Stream failure later never leaves
-  // a thread live for someone who must lose it. A thread is never edited to
-  // drop the person it's about (backend ADR 0001).
+  // Retire first, so a Stream failure later never leaves a thread live for
+  // someone who must lose it: mute it, then retire it in Mongo even if the
+  // mute failed. A thread is never edited to drop the person it's about
+  // (backend ADR 0001).
   const kept: ChatThreadRecord[] = []
-  const retired: ChatThreadRecord[] = []
   for (const thread of live) {
     const stillWanted =
       thread.kind === 'event' ||
@@ -86,6 +169,7 @@ async function syncEvent(server: ChatServer, eventId: string) {
     if (stillWanted && !(recipient && thread.memberIds.includes(recipient))) {
       kept.push(thread)
     } else {
+      await muteMembers(server, thread)
       await ChatThreads.updateAsync(thread._id, {
         $set: { retiredAt: new Date() },
       })
@@ -149,13 +233,6 @@ async function syncEvent(server: ChatServer, eventId: string) {
       })
     }
   }
-
-  // Last, as it only tidies up: a retired thread keeps its history, but a
-  // client still holding it can't post there. Not retried if it fails; the
-  // client only shows the threads chatThreads.byEvent publishes anyway.
-  for (const thread of retired) {
-    await server.freezeChannel(thread.streamChannelType, thread.streamChannelId)
-  }
 }
 
 // The rows go whatever Stream says: the event is gone, so no later sync
@@ -170,9 +247,6 @@ async function deleteEventThreads(server: ChatServer | null, eventId: string) {
     await ChatThreads.removeAsync({ eventId })
   }
 }
-
-const errorName = (error: unknown) =>
-  error instanceof Error ? error.name : typeof error
 
 // One chat change at a time per event, so two joins can't each miss the
 // other's thread.
@@ -206,7 +280,14 @@ function enqueue(eventId: string, what: string, run: () => Promise<void>) {
 export const syncChatThreads = (eventId: string) =>
   enqueue(eventId, 'sync', async () => {
     const server = chatServer()
-    if (server) await syncEvent(server, eventId)
+    if (!server) return
+    const retired: ChatThreadRecord[] = []
+    try {
+      await syncEvent(server, eventId, retired)
+    } finally {
+      // Last, as the replacement comes first, and whatever Stream said.
+      for (const thread of retired) await freezeWithRetry(thread._id)
+    }
   })
 
 /**

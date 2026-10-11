@@ -9,6 +9,7 @@ import {
   resetDatabase,
   subscribeAsUser,
   waitFor,
+  whileFailing,
 } from '../../../tests/helpers'
 import { Events } from '../events/events.collection'
 import '../events/events.methods'
@@ -17,6 +18,11 @@ import { ChatThreads } from './chat.collection'
 import './chat.methods'
 import './chat.publications'
 import { CHAT_SERVER_USER_ID, setChatServer } from './chat.server'
+import {
+  freezeBackoff,
+  freezeRetiredThreads,
+  freezeRetryDelay,
+} from './chat.sync'
 
 const cidOf = (t: ChatThreadDoc) =>
   `${t.streamChannelType}:${t.streamChannelId}`
@@ -365,6 +371,180 @@ describe('chat threads', function () {
     it('makes no Stream calls for a placeholder', async function () {
       const calls = await callsDuring(() => remove(family.participants.dziadek))
       assert.deepStrictEqual(calls, [])
+    })
+  })
+
+  describe('retiring a thread', function () {
+    const removeCelina = () =>
+      callAsUser(family.users.ola, 'events.removeParticipant', {
+        eventId: family.eventId,
+        participantId: family.participants.celina,
+      })
+
+    const record = async (id: string) => (await ChatThreads.findOneAsync(id))!
+
+    let savedBackoff: typeof freezeBackoff
+    beforeEach(function () {
+      savedBackoff = { ...freezeBackoff }
+      freezeBackoff.firstMs = 10
+    })
+    afterEach(function () {
+      Object.assign(freezeBackoff, savedBackoff)
+    })
+
+    it('mutes every member on the retired channel, then replaces it, then freezes it', async function () {
+      const { participants } = family
+      await callAsUser(family.users.ola, 'events.update', {
+        eventId: family.eventId,
+        kind: {
+          type: 'many-to-one',
+          beneficiaryParticipantId: participants.bartek,
+        },
+      })
+      const bartekThread = (await secretThreadFor(participants.bartek))!
+
+      const calls = await callsDuring(() =>
+        callAsUser(family.users.ola, 'events.update', {
+          eventId: family.eventId,
+          kind: {
+            type: 'many-to-one',
+            beneficiaryParticipantId: participants.celina,
+          },
+        }),
+      )
+
+      const cid = cidOf(bartekThread)
+      const mutes = calls.flatMap((c, i) =>
+        c.op === 'setPushPreferences' && c.cid === cid ? [i] : [],
+      )
+      assert.deepStrictEqual(
+        sorted(
+          calls.flatMap(c =>
+            c.op === 'setPushPreferences' && c.cid === cid ? [c.userId] : [],
+          ),
+        ),
+        sorted(bartekThread.memberIds),
+      )
+      for (const userId of bartekThread.memberIds) {
+        assert.strictEqual(stream.chatLevelIn(bartekThread, userId), 'none')
+      }
+      const replaced = calls.findIndex(c => c.op === 'createChannel')
+      const frozen = calls.findIndex(
+        c => c.op === 'freezeChannel' && c.cid === cid,
+      )
+      assert.ok(replaced >= 0 && frozen >= 0)
+      assert.ok(Math.max(...mutes) < replaced, 'muted before the replacement')
+      assert.ok(replaced < frozen, 'frozen last')
+      // The members' own chat switch is left alone.
+      assert.ok(!calls.some(c => c.op === 'setPushPreferences' && !c.cid))
+    })
+
+    it('records frozenAt once the freeze lands', async function () {
+      const celinaThread = (await secretThreadFor(family.participants.celina))!
+
+      await removeCelina()
+
+      assert.ok(stream.isFrozen(celinaThread))
+      assert.ok((await record(celinaThread._id)).frozenAt instanceof Date)
+    })
+
+    it('retries a failing freeze until it lands, and records frozenAt only then', async function () {
+      const celinaThread = (await secretThreadFor(family.participants.celina))!
+      const freeze = stream.freezeChannel.bind(stream)
+      let attempts = 0
+      let reachable = false
+      stream.freezeChannel = async (type, id) => {
+        attempts++
+        if (!reachable) throw new Error('Stream is unreachable')
+        await freeze(type, id)
+      }
+
+      try {
+        await removeCelina()
+        await waitFor(() => attempts >= 3)
+
+        assert.ok((await record(celinaThread._id)).retiredAt)
+        assert.strictEqual((await record(celinaThread._id)).frozenAt, undefined)
+        assert.ok(!stream.isFrozen(celinaThread))
+
+        reachable = true
+        await waitFor(
+          async () => (await record(celinaThread._id)).frozenAt instanceof Date,
+        )
+      } finally {
+        delete (stream as Partial<typeof stream>).freezeChannel
+      }
+      assert.ok(stream.isFrozen(celinaThread))
+    })
+
+    it('backs off, doubling each time up to a cap', function () {
+      Object.assign(freezeBackoff, { firstMs: 1000, maxMs: 8000 })
+      assert.deepStrictEqual(
+        [0, 1, 2, 3, 4, 30].map(freezeRetryDelay),
+        [1000, 2000, 4000, 8000, 8000, 8000],
+      )
+    })
+
+    it('still retires and freezes the thread when the mute fails', async function () {
+      const celinaThread = (await secretThreadFor(family.participants.celina))!
+
+      await whileFailing(stream, 'setPushPreferences', removeCelina)
+
+      assert.ok((await record(celinaThread._id)).retiredAt)
+      assert.ok(stream.isFrozen(celinaThread))
+      assert.ok((await record(celinaThread._id)).frozenAt instanceof Date)
+    })
+
+    it('stops retrying once the event is deleted', async function () {
+      const celinaThread = (await secretThreadFor(family.participants.celina))!
+      let attempts = 0
+      stream.freezeChannel = async () => {
+        attempts++
+        throw new Error('Stream is unreachable')
+      }
+      try {
+        await removeCelina()
+        await callAsUser(family.users.ola, 'events.delete', {
+          eventId: family.eventId,
+        })
+        const after = attempts
+        await new Promise(resolve => setTimeout(resolve, 100))
+        assert.ok(attempts <= after + 1, 'no retries once the thread is gone')
+      } finally {
+        delete (stream as Partial<typeof stream>).freezeChannel
+      }
+      assert.strictEqual(
+        await ChatThreads.findOneAsync(celinaThread._id),
+        undefined,
+      )
+    })
+
+    it('at startup, freezes every retired thread without frozenAt, and only those', async function () {
+      const { participants } = family
+      const celinaThread = (await secretThreadFor(participants.celina))!
+      const bartekThread = (await secretThreadFor(participants.bartek))!
+      await removeCelina()
+      await callAsUser(family.users.ola, 'events.update', {
+        eventId: family.eventId,
+        kind: {
+          type: 'many-to-one',
+          beneficiaryParticipantId: participants.ola,
+        },
+      })
+      // As if the server stopped before Celina's freeze landed.
+      await ChatThreads.updateAsync(celinaThread._id, {
+        $unset: { frozenAt: 1 },
+      })
+      stream.channels.get(cidOf(celinaThread))!.frozen = false
+
+      const calls = await callsDuring(freezeRetiredThreads)
+
+      assert.deepStrictEqual(calls, [
+        { op: 'freezeChannel', cid: cidOf(celinaThread) },
+      ])
+      assert.ok(stream.isFrozen(celinaThread))
+      assert.ok((await record(celinaThread._id)).frozenAt instanceof Date)
+      assert.ok((await record(bartekThread._id)).frozenAt instanceof Date)
     })
   })
 

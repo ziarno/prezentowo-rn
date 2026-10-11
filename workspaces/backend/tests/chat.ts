@@ -32,7 +32,13 @@ export type FakeChatCall =
       providerName: string
     }
   | { op: 'removeDevice'; deviceToken: string; userId: string }
-  | { op: 'setPushPreferences'; userId: string; chatLevel: 'all' | 'none' }
+  | {
+      op: 'setPushPreferences'
+      userId: string
+      chatLevel: 'all' | 'none'
+      // A channel-member preference; a user-level one has none.
+      cid?: string
+    }
 
 type FakeChannel = {
   createdById: string
@@ -63,6 +69,8 @@ export class FakeChatServer implements ChatServer {
   // By native token: a token belongs to one user at a time.
   devices = new Map<string, FakeDevice>()
   chatLevels = new Map<string, 'all' | 'none'>()
+  // By cid, then user id.
+  channelChatLevels = new Map<string, Map<string, 'all' | 'none'>>()
   failing = false
 
   reset() {
@@ -71,6 +79,7 @@ export class FakeChatServer implements ChatServer {
     this.users.clear()
     this.devices.clear()
     this.chatLevels.clear()
+    this.channelChatLevels.clear()
     this.failing = false
   }
 
@@ -98,6 +107,15 @@ export class FakeChatServer implements ChatServer {
   ) {
     const cid = `${thread.streamChannelType}:${thread.streamChannelId}`
     return this.channel(cid).frozen === true
+  }
+
+  /** `userId`'s chat push level on the channel backing `thread`, if set. */
+  chatLevelIn(
+    thread: Pick<ChatThreadDoc, 'streamChannelType' | 'streamChannelId'>,
+    userId: string,
+  ) {
+    const cid = `${thread.streamChannelType}:${thread.streamChannelId}`
+    return this.channelChatLevels.get(cid)?.get(userId)
   }
 
   createToken(userId: string, exp: number, iat: number) {
@@ -230,17 +248,31 @@ export class FakeChatServer implements ChatServer {
   }
 
   async setPushPreferences(
-    preferences: { user_id: string; chat_level: 'all' | 'none' }[],
+    preferences: {
+      user_id: string
+      channel_cid?: string
+      chat_level: 'all' | 'none'
+    }[],
   ) {
     this.write()
     this.assertUsers(preferences.map(p => p.user_id))
-    for (const { user_id, chat_level } of preferences) {
+    for (const { channel_cid } of preferences) {
+      if (channel_cid) this.channel(channel_cid)
+    }
+    for (const { user_id, channel_cid, chat_level } of preferences) {
       this.calls.push({
         op: 'setPushPreferences',
         userId: user_id,
         chatLevel: chat_level,
+        ...(channel_cid ? { cid: channel_cid } : {}),
       })
-      this.chatLevels.set(user_id, chat_level)
+      if (!channel_cid) {
+        this.chatLevels.set(user_id, chat_level)
+        continue
+      }
+      const levels = this.channelChatLevels.get(channel_cid) ?? new Map()
+      levels.set(user_id, chat_level)
+      this.channelChatLevels.set(channel_cid, levels)
     }
   }
 }

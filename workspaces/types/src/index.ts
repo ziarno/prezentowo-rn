@@ -471,6 +471,9 @@ export type ChatThreadDoc = {
   streamChannelId: string
   // Set once the thread is replaced; a retired thread is never published.
   retiredAt?: Date
+  // Server-only: set once the Stream freeze of a retired thread succeeds, so
+  // the freeze retry survives a restart.
+  frozenAt?: Date
 }
 
 // `4d`'s people search (`users.search`). Never carries an email.

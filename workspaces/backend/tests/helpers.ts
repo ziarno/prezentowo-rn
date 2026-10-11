@@ -220,11 +220,14 @@ export async function subscribeAsUser(
 
 /**
  * Polls `predicate` until it returns true, for waiting on live publication
- * updates that arrive asynchronously after a write.
+ * updates, or background writes, that land asynchronously after a write.
  */
-export async function waitFor(predicate: () => boolean, timeoutMs = 5000) {
+export async function waitFor(
+  predicate: () => boolean | Promise<boolean>,
+  timeoutMs = 5000,
+) {
   const deadline = Date.now() + timeoutMs
-  while (!predicate()) {
+  while (!(await predicate())) {
     if (Date.now() > deadline) throw new Error('waitFor() timed out')
     await new Promise(resolve => setTimeout(resolve, 20))
   }

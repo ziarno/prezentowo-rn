@@ -21,6 +21,6 @@ Meteor.publish('chatThreads.byEvent', async function (eventId: string) {
       memberIds: this.userId,
       recipientParticipantId: { $ne: participantIdOf(event, this.userId) },
     },
-    { fields: { memberIds: 0 } },
+    { fields: { memberIds: 0, frozenAt: 0 } },
   )
 })

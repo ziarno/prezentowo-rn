@@ -62,8 +62,13 @@ export interface ChatServer {
   ): Promise<void>
   // A device Stream doesn't have is no error.
   removeDevice(deviceToken: string, userId: string): Promise<void>
+  // With `channel_cid`, a channel-member preference; without, the user's own.
   setPushPreferences(
-    preferences: { user_id: string; chat_level: 'all' | 'none' }[],
+    preferences: {
+      user_id: string
+      channel_cid?: string
+      chat_level: 'all' | 'none'
+    }[],
   ): Promise<void>
 }
 
