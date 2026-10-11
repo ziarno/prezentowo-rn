@@ -3,6 +3,7 @@ import type {
   EventDoc,
   EventParticipant,
 } from '@prezentowo/types'
+import { Accounts } from 'meteor/accounts-base'
 import { check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 
@@ -175,6 +176,17 @@ export async function deleteAccountFor(userId: string): Promise<void> {
   await Meteor.users.removeAsync(userId)
 }
 
+// accounts-base 3.3.1 has these; @types/meteor doesn't declare them. Tokens
+// are hashed.
+type AccountsInternals = {
+  _getLoginToken: (connectionId: string) => string | null
+  _setLoginToken: (
+    userId: string,
+    connection: Meteor.Connection,
+    hashedToken: string | null,
+  ) => void
+}
+
 const deleteAccount = async function (
   this: Meteor.MethodThisType,
   options: DeleteAccountArgs,
@@ -201,7 +213,22 @@ const deleteAccount = async function (
     throw new Meteor.Error('notAuthorized', 'emailMismatch')
   }
 
-  await deleteAccountFor(userId)
+  // Removing the user closes every connection logged in as them, this one
+  // too, possibly before the answer is sent; the client would then resend
+  // the call signed out. So detach this connection from its login token
+  // first, as `logout` does, and only the account's other connections close.
+  // A run that fails part-way reattaches it, so the user can retry.
+  const connection = this.connection
+  const accounts = Accounts as unknown as AccountsInternals
+  const token = connection ? accounts._getLoginToken(connection.id) : null
+  if (connection) accounts._setLoginToken(userId, connection, null)
+  try {
+    await deleteAccountFor(userId)
+  } catch (error) {
+    if (connection) accounts._setLoginToken(userId, connection, token)
+    throw error
+  }
+  if (connection) await this.setUserId(null)
 }
 
 Meteor.methods({ 'users.deleteAccount': deleteAccount })

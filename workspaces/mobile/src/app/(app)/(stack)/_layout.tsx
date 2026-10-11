@@ -17,6 +17,7 @@ export default function StackLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="create-event" options={modal} />
+      <Stack.Screen name="delete-account" options={modal} />
       <Stack.Screen name="event/[eventId]/add-gift" options={modal} />
     </Stack>
   )

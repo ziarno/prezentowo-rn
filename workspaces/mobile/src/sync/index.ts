@@ -11,6 +11,7 @@ export {
   completeLogin,
   currentUser,
   findUser,
+  forgetSession,
   loggingIn,
   logout,
   sessionToken,

@@ -85,6 +85,13 @@ export async function logout(): Promise<void> {
       if (!isNetworkError(error)) throw error
     }
   }
+  forgetSession()
+}
+
+// Ends the session on this device without telling the server, for when the
+// server has already ended it: after the account was deleted. The same wipe
+// as a sign-out follows.
+export function forgetSession() {
   meteor.handleLogout()
   endSession()
 }

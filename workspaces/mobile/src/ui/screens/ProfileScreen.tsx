@@ -1,4 +1,5 @@
 import * as Application from 'expo-application'
+import { router } from 'expo-router'
 import type { ComponentType, ReactNode } from 'react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -250,6 +251,17 @@ export function ProfileScreen() {
             last
           />
         </Card>
+
+        <Card title={t('profile.dangerZone')}>
+          <SettingsRow
+            label={t('profile.deleteAccount')}
+            sublabel={t('profile.deleteAccountNote')}
+            tone="berry"
+            onPress={() => router.push('/delete-account')}
+            disabled={offline}
+            last
+          />
+        </Card>
       </ScrollView>
 
       <AvatarPickerModal
@@ -399,6 +411,7 @@ function SettingsRow({
   last,
   tone = 'ink',
   chevron = !!onPress,
+  disabled = false,
 }: {
   Icon?: IconComponent
   label: string
@@ -407,15 +420,18 @@ function SettingsRow({
   last?: boolean
   tone?: 'ink' | 'berry'
   chevron?: boolean
+  // Dims the row and stops presses, e.g. an online-only action offline.
+  disabled?: boolean
 }) {
   return (
     <Pressable
       onPress={onPress}
-      disabled={!onPress}
+      disabled={!onPress || disabled}
       accessibilityRole={onPress ? 'button' : undefined}
-      className={`flex-row items-center gap-3 py-3.5 active:opacity-60 ${
-        last ? '' : 'border-b border-garland-ink-08'
-      }`}
+      accessibilityState={onPress ? { disabled } : undefined}
+      className={`flex-row items-center gap-3 py-3.5 ${
+        disabled ? 'opacity-40' : 'active:opacity-60'
+      } ${last ? '' : 'border-b border-garland-ink-08'}`}
     >
       {Icon ? (
         <View className="size-9 items-center justify-center">

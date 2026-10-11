@@ -5,6 +5,7 @@ import type {
   NotificationDoc,
 } from '@prezentowo/types'
 import assert from 'assert'
+import { DDP } from 'meteor/ddp'
 import { Meteor } from 'meteor/meteor'
 import { Random } from 'meteor/random'
 
@@ -17,9 +18,11 @@ import {
 } from '../../../tests/fixtures'
 import {
   callAsUser,
+  createLoginToken,
   rejectsWithReason,
   resetDatabase,
   subscribeAsUser,
+  waitFor,
   whileFailing,
 } from '../../../tests/helpers'
 import { isStored, uploadAs, useImagesSandbox } from '../../../tests/images'
@@ -121,6 +124,68 @@ describe('users.deleteAccount', function () {
         callAsUser(family.users.ola, 'users.deleteAccount', { email: 7 }),
       )
       assert.ok(await userExists(family.users.ola))
+    })
+  })
+
+  describe('over DDP', function () {
+    type Client = {
+      callAsync: (name: string, ...args: unknown[]) => Promise<unknown>
+      status: () => { connected: boolean }
+      disconnect: () => void
+      // The server's id for the current DDP session; a reconnect gets a new
+      // one.
+      _lastSessionId: string | null
+    }
+    const clients: Client[] = []
+
+    afterEach(function () {
+      clients.splice(0).forEach(c => c.disconnect())
+    })
+
+    // A client reconnects at once, so a closed connection shows as a new
+    // session.
+    const sessions = new Map<Client, string | null>()
+    const connectAs = async (userId: string) => {
+      const client = DDP.connect(Meteor.absoluteUrl()) as unknown as Client
+      clients.push(client)
+      await client.callAsync('login', {
+        resume: await createLoginToken(userId),
+      })
+      sessions.set(client, client._lastSessionId)
+      return client
+    }
+
+    const dropped = (client: Client) =>
+      !client.status().connected ||
+      client._lastSessionId !== sessions.get(client)
+
+    // Removing the user closes every connection logged in as them; the
+    // caller's must not close before its answer is sent.
+    it('answers the caller, and closes only its other connections', async function () {
+      const caller = await connectAs(family.users.ola)
+      const other = await connectAs(family.users.ola)
+
+      await caller.callAsync('users.deleteAccount', {
+        email: 'ola@example.com',
+      })
+
+      await waitFor(() => dropped(other))
+      assert.strictEqual(dropped(caller), false)
+      assert.strictEqual(await userExists(family.users.ola), false)
+    })
+
+    it('keeps the caller logged in when it fails part-way', async function () {
+      const caller = await connectAs(family.users.ola)
+
+      await whileFailing(Meteor.users, 'removeAsync', () =>
+        assert.rejects(
+          caller.callAsync('users.deleteAccount', { email: 'ola@example.com' }),
+        ),
+      )
+
+      // Still tied to its token: removing the user closes it, as before.
+      await Meteor.users.removeAsync(family.users.ola)
+      await waitFor(() => dropped(caller))
     })
   })
 

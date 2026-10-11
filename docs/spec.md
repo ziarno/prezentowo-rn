@@ -737,7 +737,7 @@ Profile calls it on each focus. The last result is saved in the encrypted store 
 
 Instant, irreversible, server-side, and the same whether it starts in the app (`users.deleteAccount`, §2.2) or on the web (§3.6). Both stores require full in-app deletion; Play also requires the web page.
 
-**The confirm screen** (`delete-account.tsx`, from Profile's Danger zone): the shared consequence list, "This can't be undone", an email field, and **Delete my account**, enabled once the field matches the account's email case-insensitively. Online-only: dimmed offline, never queued. On success the device is wiped: the SQLCipher cache and stats record, the offline queue (discarded, never replayed), SecureStore and the session; the app lands signed out. `emailMismatch` is shown inline.
+**The confirm screen** (`delete-account.tsx`, from Profile's Danger zone): the shared consequence list, "This can't be undone", an email field, and **Delete my account**, enabled once the field matches the account's email case-insensitively. Online-only: dimmed offline, never queued. On success the device is wiped: the SQLCipher cache and stats record, the offline queue (discarded, never replayed), and the session with its SecureStore login token; the app lands signed out. Device-level SecureStore keys stay: the onboarding and install-referrer flags, and the cache key (its rows are gone). `emailMismatch` is shown inline.
 
 **Shared consequence list**, one source in `@prezentowo/types` with `en` and `pl` text, shown by the app's confirm and the web confirm page (§3.6):
 - your name stays on other people's lists;
@@ -758,7 +758,7 @@ Instant, irreversible, server-side, and the same whether it starts in the app (`
 7. **Your notifications**: every doc for you deleted.
 8. **Your push tokens**: every `PushTokens` doc for you deleted.
 9. **Your profile photo**: the upload and its `Images` record deleted. Uploads on gifts and events that stay remain; `Images.ownerId` keeps the now-opaque id.
-10. **The `Meteor.users` document**: email, `profile`, `nameTokens`, `pushPreferences`, login tokens, magic-link and deletion-token state. Meteor closes every connection logged in as you.
+10. **The `Meteor.users` document**: email, `profile`, `nameTokens`, `pushPreferences`, login tokens, magic-link and deletion-token state. Meteor closes every connection logged in as you. `users.deleteAccount` logs its own connection out first, so that one stays open to get the answer (else the client resends the call signed out); a run that fails part-way logs it back in for the retry.
 
 What stays, and why: gifts on your own list (yours and others' suggestions) stay, since the person still exists and claimers rely on the list; gifts you added for others stay, attributed to "Deleted user"; activity stays, with your participant id as the actor. Deleted data lives in off-site backups until they rotate out (30 days, §3.7).
 

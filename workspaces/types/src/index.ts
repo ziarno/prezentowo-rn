@@ -33,6 +33,30 @@ export type UserStats = {
 // The app's languages, as the Language row sets them.
 export type AppLanguage = 'en' | 'pl'
 
+// What deleting an account does, in the order shown (docs/spec.md §10.4).
+// One source for the app's confirm and the web confirm page (§3.6).
+export const ACCOUNT_DELETION_CONSEQUENCES: Record<
+  AppLanguage,
+  readonly string[]
+> = {
+  en: [
+    'Your name stays on other people’s lists, so their plans still make sense.',
+    'Your chat messages stay, shown as “Deleted user”.',
+    'Gifts you added for others stay.',
+    'Gifts you claimed are released.',
+    'Events you created pass to their earliest remaining member, or are deleted if no one else is in them.',
+    'Backups rotate out within 30 days.',
+  ],
+  pl: [
+    'Twoje imię zostaje na listach innych osób, żeby ich plany nadal miały sens.',
+    'Twoje wiadomości na czacie zostają, podpisane jako „Deleted user”.',
+    'Prezenty dodane przez Ciebie dla innych zostają.',
+    'Prezenty, które kupujesz, znów będą wolne do kupienia przez innych.',
+    'Wydarzenia utworzone przez Ciebie przechodzą na osobę, która dołączyła do nich najwcześniej, albo zostają usunięte, jeśli nikogo innego w nich nie ma.',
+    'Kopie zapasowe znikają w ciągu 30 dni.',
+  ],
+}
+
 // What can push (docs/spec.md §1.13): every notification kind except
 // `invite-deferred` and `event-handed-over`, plus chat messages.
 export const PUSH_KINDS = [

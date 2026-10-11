@@ -113,7 +113,10 @@
     "unsynced_one": "{{count}} zmiana offline jeszcze niezsynchronizowana",
     "unsynced_few": "{{count}} zmiany offline jeszcze niezsynchronizowane",
     "unsynced_many": "{{count}} zmian offline jeszcze niezsynchronizowanych",
-    "unsynced_other": "{{count}} zmiany offline jeszcze niezsynchronizowane"
+    "unsynced_other": "{{count}} zmiany offline jeszcze niezsynchronizowane",
+    "dangerZone": "Strefa zagrożenia",
+    "deleteAccount": "Usuń konto",
+    "deleteAccountNote": "Usuwa Twoje konto i rezerwacje na dobre."
   },
   "signOut": {
     "title": "Wylogować się?",
@@ -126,6 +129,16 @@
     "confirm": "Wyloguj się",
     "confirmLose": "Wyloguj i utrać {{count}}",
     "failed": "Nie udało się wylogować"
+  },
+  "deleteAccount": {
+    "title": "Usuń konto",
+    "heading": "Usunąć konto?",
+    "cantUndo": "Dzieje się to od razu i nie da się tego cofnąć.",
+    "emailLabel": "Twój e-mail",
+    "typeEmail": "Wpisz {{email}}, aby potwierdzić.",
+    "emailMismatch": "To nie jest e-mail Twojego konta.",
+    "offline": "Jesteś offline. Usunięcie konta wymaga połączenia.",
+    "confirm": "Usuń moje konto"
   },
   "shell": {
     "home": "Prezentowo",

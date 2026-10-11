@@ -111,7 +111,10 @@
     "terms": "Terms of use",
     "signOut": "Sign out",
     "unsynced_one": "{{count}} offline change not synced yet",
-    "unsynced_other": "{{count}} offline changes not synced yet"
+    "unsynced_other": "{{count}} offline changes not synced yet",
+    "dangerZone": "Danger zone",
+    "deleteAccount": "Delete account",
+    "deleteAccountNote": "Removes your account and claims for good."
   },
   "signOut": {
     "title": "Sign out?",
@@ -122,6 +125,16 @@
     "confirm": "Sign out",
     "confirmLose": "Sign out and lose {{count}}",
     "failed": "Couldn't sign out"
+  },
+  "deleteAccount": {
+    "title": "Delete account",
+    "heading": "Delete your account?",
+    "cantUndo": "This happens straight away and can't be undone.",
+    "emailLabel": "Your email",
+    "typeEmail": "Type {{email}} to confirm.",
+    "emailMismatch": "That isn't your account's email.",
+    "offline": "You're offline. Deleting needs a connection.",
+    "confirm": "Delete my account"
   },
   "shell": {
     "home": "Prezentowo",

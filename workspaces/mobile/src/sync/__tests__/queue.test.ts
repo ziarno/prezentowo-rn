@@ -423,6 +423,26 @@ describe('the queue', () => {
     expect(queue.rows.size).toBe(1)
   })
 
+  it('is discarded, never replayed, when the session is forgotten', async () => {
+    methods['gifts.claim'] = giftGone
+    await launchOffline()
+    await sync.submit('gifts.claim', { giftId: 'g1' })
+    comeBackOnline()
+    await waitFor(() => sync.queuedWrites()[0]?.state === 'failed')
+
+    sync.forgetSession()
+
+    expect(sync.sessionToken()).toBeNull()
+    expect(sync.queuedWrites()).toEqual([])
+    await waitFor(() => queue.rows.size === 0, { label: 'store emptied' })
+    expect(storage.items.has('reactnativemeteor_usertoken')).toBe(false)
+
+    await relaunch()
+    await waitFor(() => sync.status() === 'connected')
+    await sleep(100)
+    expect(sent()).toEqual([['gifts.claim', { giftId: 'g1' }]])
+  })
+
   it('takes only queueable methods', async () => {
     await launchOffline()
     await expect(sync.submit('gifts.remove', { giftId: 'g1' })).rejects.toThrow(

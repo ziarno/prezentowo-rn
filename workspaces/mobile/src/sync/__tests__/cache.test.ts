@@ -251,6 +251,21 @@ describe('signing out', () => {
     expect(sync.sessionToken()).toBeNull()
   })
 
+  it('is the same wipe when the session is forgotten, with nothing sent', async () => {
+    await cacheFirstSession()
+    sync.saveRecord('stats', { events: 4, wished: 17, claimed: 9 })
+    await waitFor(() => store.rows.has('record:stats'))
+
+    sync.forgetSession()
+
+    expect(sync.sessionToken()).toBeNull()
+    await waitFor(() => store.rows.size === 0, { label: 'store cleared' })
+    expect(sync.savedRecord('stats')).toBeUndefined()
+    expect(Gifts().find({}).fetch()).toEqual([])
+    expect(server.arrivals(0)).not.toContain('logout')
+    expect(storage.items.has('reactnativemeteor_usertoken')).toBe(false)
+  })
+
   it('caches nothing that comes ready after it', async () => {
     await cacheFirstSession()
     await sync.logout()

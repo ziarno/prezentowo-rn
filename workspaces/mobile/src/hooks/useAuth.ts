@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 
+import { deleteAccount as deleteAccountOnServer } from '@/api/accountDeletion'
 import { chatSession } from '@/chat'
 import { useAuthStore } from '@/store/useAuthStore'
 import {
@@ -8,6 +9,7 @@ import {
   type NetworkError,
   call,
   completeLogin,
+  forgetSession,
   loggingIn,
   logout,
   sessionToken,
@@ -39,6 +41,11 @@ type SignOutParams = {
   onError: (err: AuthError) => void
 }
 
+type DeleteAccountParams = {
+  email: string
+  onError: (err: AuthError) => void
+}
+
 const normalizeEmail = (email: string) => email.trim().toLowerCase()
 const normalizeToken = (token: string) => token.trim().toUpperCase()
 
@@ -52,6 +59,12 @@ export const useAuth = () => {
   const token = useTracker(() => sessionToken())
 
   useEffect(() => setUserToken(token), [token, setUserToken])
+
+  // What the app holds outside the sync layer, which wipes its own.
+  const clearAppSession = () => {
+    chatSession.end()
+    setUserToken(null)
+  }
 
   return {
     isLoading,
@@ -94,9 +107,15 @@ export const useAuth = () => {
     // Signs out locally even when the server can't be reached. When the
     // server rejects it, the user stays signed in and `onError` hears why.
     signOut: ({ onError }: SignOutParams) => {
-      logout().then(() => {
-        chatSession.end()
-        setUserToken(null)
+      logout().then(clearAppSession, onError)
+    },
+    // The server deletes the account and drops its logins, so the session
+    // ends here without a `logout`; the wipe (cache, stats, queue, stored
+    // token) follows it (docs/spec.md §10.4). A failure keeps the session.
+    deleteAccount: ({ email, onError }: DeleteAccountParams) => {
+      deleteAccountOnServer(email).then(() => {
+        forgetSession()
+        clearAppSession()
       }, onError)
     },
   }
