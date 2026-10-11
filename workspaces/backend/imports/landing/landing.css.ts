@@ -76,4 +76,17 @@ a { color: var(--green); }
 .invalid h1 { margin: 6px 0 10px; font-size: 38px; }
 .invalid p { margin: 0 auto 10px; max-width: 360px; line-height: 1.5; }
 .invalid .badsub { margin-top: 26px; margin-bottom: 12px; }
+.foot { margin-top: auto; padding-top: 36px; font-size: 13px; }
+.foot a { color: var(--ink60); }
+.legal { width: 100%; max-width: 720px; margin-top: 26px; font-size: 15px; line-height: 1.6; }
+.legal h1 { margin: 0 0 6px; font-size: 40px; line-height: 1.1; color: var(--green); }
+.legal h2 { margin: 30px 0 8px; font-size: 18px; }
+.legal p, .legal ul { margin: 0 0 12px; }
+.legal ul { padding-left: 22px; }
+.legal li { margin-bottom: 6px; }
+.legal .note { padding: 10px 14px; border-radius: 10px; background: var(--paper2); }
+.legal .table { overflow-x: auto; margin: 0 0 12px; }
+.legal table { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 14px; }
+.legal th, .legal td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--ink08); text-align: left; vertical-align: top; }
+.legal td:first-child { font-weight: 600; }
 `

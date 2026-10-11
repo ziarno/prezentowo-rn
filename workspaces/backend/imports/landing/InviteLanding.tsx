@@ -1,7 +1,7 @@
 import type { InvitePreview } from '@prezentowo/types'
 
 import { COPY, type Lang, dateChip } from './landing.i18n'
-import { Garland, StoreButtons, TopBar } from './landing.parts'
+import { Footer, Garland, StoreButtons, TopBar } from './landing.parts'
 import { type Platform } from './landing.stores'
 
 // What the page shows of an `InvitePreview`: no participants, no background.
@@ -87,6 +87,7 @@ export function InviteLanding(props: LandingProps) {
       ) : (
         <Invalid {...props} />
       )}
+      <Footer lang={props.lang} />
     </main>
   )
 }

@@ -98,3 +98,15 @@ export function StoreButtons({
     </div>
   )
 }
+
+// Every landing page's footer: the legal pages, in the page's language.
+export function Footer({ lang }: { lang: Lang }) {
+  const c = COPY[lang]
+  return (
+    <footer className="foot muted">
+      <a href={`/privacy?lang=${lang}`}>{c.privacy}</a>
+      {' · '}
+      <a href={`/terms?lang=${lang}`}>{c.terms}</a>
+    </footer>
+  )
+}

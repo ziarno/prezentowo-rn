@@ -1,5 +1,5 @@
 import { COPY, type Lang } from './landing.i18n'
-import { Garland, StoreButtons, TopBar } from './landing.parts'
+import { Footer, Garland, StoreButtons, TopBar } from './landing.parts'
 import { type Platform } from './landing.stores'
 
 export type BrandProps = { lang: Lang; platform: Platform }
@@ -22,6 +22,7 @@ export function BrandLanding({ lang, platform }: BrandProps) {
         <StoreButtons lang={lang} platform={platform} />
       </section>
       <p className="what muted">{c.what}</p>
+      <Footer lang={lang} />
     </main>
   )
 }

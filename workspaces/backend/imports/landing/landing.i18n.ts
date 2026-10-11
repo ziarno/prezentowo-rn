@@ -46,6 +46,8 @@ export const COPY = {
     tagline: 'A shared gift list for family and friends.',
     appStore: ['Download on the', 'App Store'],
     play: ['Get it on', 'Google Play'],
+    privacy: 'Privacy policy',
+    terms: 'Terms',
   },
   pl: {
     // Present tense on purpose: "zaprosił/a" would need the inviter's gender.
@@ -61,6 +63,8 @@ export const COPY = {
     tagline: 'Wspólna lista prezentów dla rodziny i znajomych.',
     appStore: ['Pobierz z', 'App Store'],
     play: ['Pobierz z', 'Google Play'],
+    privacy: 'Polityka prywatności',
+    terms: 'Regulamin',
   },
 } satisfies Record<Lang, Record<string, string | string[]>>
 
@@ -124,6 +128,12 @@ const utcDay = (isoDate: string) => {
   return new Date(Date.UTC(year, month - 1, day))
 }
 
+/** `YYYY-MM-DD` spelled out: "24 December 2026", "24 grudnia 2026". */
+export function longDate(date: string, lang: Lang): string {
+  const day = utcDay(date)
+  return `${day.getUTCDate()} ${MONTHS[lang][day.getUTCMonth()]} ${day.getUTCFullYear()}`
+}
+
 /**
  * The date chip's text for an event on `date`, seen on `today` (both
  * `YYYY-MM-DD`): "Thu, 24 December 2026 · in 88 days". A past date has no
@@ -131,9 +141,7 @@ const utcDay = (isoDate: string) => {
  */
 export function dateChip(date: string, today: string, lang: Lang): string {
   const day = utcDay(date)
-  const weekday = WEEKDAYS[lang][day.getUTCDay()]
-  const month = MONTHS[lang][day.getUTCMonth()]
-  const label = `${weekday}, ${day.getUTCDate()} ${month} ${day.getUTCFullYear()}`
+  const label = `${WEEKDAYS[lang][day.getUTCDay()]}, ${longDate(date, lang)}`
   const days = Math.round(
     (day.getTime() - utcDay(today).getTime()) / 86_400_000,
   )

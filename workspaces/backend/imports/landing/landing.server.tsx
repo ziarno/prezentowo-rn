@@ -16,6 +16,7 @@ import {
 import './landing.appLinks'
 import { LANDING_CSS } from './landing.css'
 import { OG_COPY, pickLanguage, todayInWarsaw } from './landing.i18n'
+import './landing.legal'
 import { CARD_HEIGHT, CARD_WIDTH, cardKey } from './landing.ogCard'
 import './landing.routes'
 import { platformOf } from './landing.stores'
