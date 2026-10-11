@@ -1,6 +1,7 @@
 import { Drawer } from 'expo-router/drawer'
 
 import { garland } from '@/constants/colors'
+import { useAppBadge } from '@/hooks/useAppBadge'
 import { OfflineBanner } from '@/ui/components/OfflineBanner'
 import { AppDrawerContent } from '@/ui/drawer/AppDrawerContent'
 
@@ -10,6 +11,7 @@ import { AppDrawerContent } from '@/ui/drawer/AppDrawerContent'
 // off so it never fights the stack's swipe-back gesture. The offline banner
 // sits above it all.
 export default function AppLayout() {
+  useAppBadge()
   return (
     <OfflineBanner>
       <Drawer

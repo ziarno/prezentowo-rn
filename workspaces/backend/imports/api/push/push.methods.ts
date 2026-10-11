@@ -22,12 +22,15 @@ const register = async function (
     deviceToken: nonEmptyString,
     platform: Match.OneOf('ios', 'android'),
     locale: Match.OneOf('en', 'pl'),
+    apnsEnvironment: Match.Optional(Match.OneOf('development', 'production')),
   })
   if (!this.userId) {
     throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
   }
   const userId = this.userId
   const { expoToken, deviceToken, platform, locale } = args
+  // The app sends it from iOS; a device without one is taken for a store build.
+  const apnsEnvironment = args.apnsEnvironment ?? 'production'
   // Either token may already be held: by another account on this device, or
   // by this one before a token rotated. Every such doc goes but this
   // device's own as it stands.
@@ -57,7 +60,7 @@ const register = async function (
     deviceToken,
     provider,
     userId,
-    pushProviderName(provider),
+    pushProviderName(provider, apnsEnvironment),
   )
 }
 

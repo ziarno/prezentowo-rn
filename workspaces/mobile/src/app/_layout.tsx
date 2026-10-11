@@ -8,6 +8,8 @@ import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider'
 import { useAccountStage } from '@/hooks/useAccountStage'
 import { useMagicLinkDeepLink } from '@/hooks/useMagicLinkDeepLink'
 import { usePendingInvite } from '@/hooks/usePendingInvite'
+import { usePushOpening } from '@/hooks/usePushOpening'
+import { usePushRegistration } from '@/hooks/usePushRegistration'
 import { LanguageModalProvider } from '@/localization/LanguageModalProvider'
 import { LocalizationProvider } from '@/localization/provider'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -54,6 +56,8 @@ function RootNavigator() {
   const showFirstLogin = stage === 'firstLogin'
   const showApp = stage === 'app'
   usePendingInvite(showApp)
+  usePushRegistration()
+  usePushOpening(showApp)
 
   return (
     <Stack

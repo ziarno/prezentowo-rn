@@ -17,6 +17,7 @@
     },
     "android": {
       "package": "com.prezentowo",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -78,6 +79,7 @@
         }
       ],
       ["expo-sqlite", { "useSQLCipher": true }],
+      "expo-notifications",
       "@react-native-community/datetimepicker"
     ],
     "experiments": {

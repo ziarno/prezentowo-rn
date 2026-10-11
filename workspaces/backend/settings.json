@@ -16,7 +16,10 @@
     }
   },
   "stream": {
-    "pushProviders": { "apn": "apn-dev", "firebase": "firebase" }
+    "pushProviders": {
+      "apn": { "development": "apn-dev", "production": "apn-prod" },
+      "firebase": "firebase"
+    }
   },
   "imagesDir": ".images",
   "ogCardsDir": ".og-cards",

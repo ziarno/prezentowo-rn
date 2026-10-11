@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 
 import { deleteAccount as deleteAccountOnServer } from '@/api/accountDeletion'
 import { chatSession } from '@/chat'
+import { pushDevice } from '@/push'
 import { useAuthStore } from '@/store/useAuthStore'
 import {
   type LoginResult,
@@ -104,16 +105,19 @@ export const useAuth = () => {
         onError,
       )
     },
-    // Signs out locally even when the server can't be reached. When the
-    // server rejects it, the user stays signed in and `onError` hears why.
+    // Unregisters this device from pushes first (offline, that waits for
+    // the next connection), then signs out locally even when the server
+    // can't be reached. When the server rejects the logout, the user stays
+    // signed in and `onError` hears why.
     signOut: ({ onError }: SignOutParams) => {
-      logout().then(clearAppSession, onError)
+      pushDevice.signOut().then(logout).then(clearAppSession, onError)
     },
     // The server deletes the account and drops its logins, so the session
     // ends here without a `logout`; the wipe (cache, stats, queue, stored
     // token) follows it (docs/spec.md §10.4). A failure keeps the session.
     deleteAccount: ({ email, onError }: DeleteAccountParams) => {
       deleteAccountOnServer(email).then(() => {
+        void pushDevice.forget()
         forgetSession()
         clearAppSession()
       }, onError)

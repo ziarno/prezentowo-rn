@@ -1,5 +1,6 @@
 import type { ChatThreadDoc } from '@prezentowo/types'
-import { type ReactNode, useEffect, useState } from 'react'
+import { useFocusEffect } from 'expo-router'
+import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -27,6 +28,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useOffline } from '@/hooks/useOffline'
+import { showChatOnScreen } from '@/push'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LockNote } from '@/ui/components/LockNote'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
@@ -98,6 +100,8 @@ function ThreadView({ thread }: { thread: ChatThreadDoc }) {
 
   const cid = cidOf(thread)
   const { streamChannelType: type, streamChannelId: id } = thread
+  // Its pushes don't show while it's on screen (docs/spec.md §10.5).
+  useFocusEffect(useCallback(() => showChatOnScreen(cid), [cid]))
   useEffect(() => {
     if (!client) return
     let current = true

@@ -292,7 +292,9 @@ export type RegisterPushArgs = {
   deviceToken: string  // getDevicePushTokenAsync(): APNs hex on iOS, FCM on Android; the server registers it with Stream
   platform: 'ios' | 'android'
   locale: AppLanguage  // the app's language on this device
+  apnsEnvironment?: ApnsEnvironment // iOS only: getIosPushNotificationServiceEnvironmentAsync(), see §10.5; missing = production
 }
+export type ApnsEnvironment = 'development' | 'production'
 export type UnregisterPushArgs = { expoToken: string }
 
 export type InboxPushData = {          // an Expo push's `data`
@@ -359,7 +361,7 @@ All methods are `async`, check `this.userId`, and validate arguments. "Member" m
 | `users.deleteAccount(DeleteAccountArgs)` | signed in | `email` must match the account's email case-insensitively, else `notAuthorized` / `emailMismatch`. Then `deleteAccountFor(this.userId)` (§10.4). Online-only `call`, never queued. No magic-link re-auth: the session came from one, and the typed email is the deliberate-action check. | Per §10.4. |
 | `users.stats()` | signed in | Returns `UserStats`, counted fresh (§10.3). Online-only `call`, never queued, never mirrored, no rate limit. | — |
 | `users.setPushPreference(SetPushPreferenceArgs)` | signed in | Sets `pushPreferences.<kind>`. For `chat` it writes through to Stream: `setPushPreferences([{ user_id, chat_level: enabled ? 'all' : 'none' }])`. Stream can't be read back, so Mongo holds the truth. Online-only `call`, never queued. | — |
-| `push.register(RegisterPushArgs)` | signed in | Upserts this device's `PushTokens` doc (matched on either token) for the caller, with `locale` and `updatedAt`. Takes the same tokens from any other account first: deletes their docs and calls Stream `removeDevice` for them. Then calls Stream `addDevice(deviceToken, 'apn' \| 'firebase', userId, providerName)` and sets `language: locale` on the Stream user. Idempotent; the app calls it often (§10.5). | — |
+| `push.register(RegisterPushArgs)` | signed in | Upserts this device's `PushTokens` doc (matched on either token) for the caller, with `locale` and `updatedAt`. Takes the same tokens from any other account first: deletes their docs and calls Stream `removeDevice` for them. Then calls Stream `addDevice(deviceToken, 'apn' \| 'firebase', userId, providerName)` and sets `language: locale` on the Stream user. `providerName` comes from settings.json's `stream.pushProviders`: `firebase` for Android, and for iOS `apn.development` or `apn.production` by the device's `apnsEnvironment` (missing = production). Idempotent; the app calls it often (§10.5). | — |
 | `push.unregister(UnregisterPushArgs)` | **anyone**, signed out included | Deletes the `PushTokens` doc with that `expoToken` and calls Stream `removeDevice` for its `deviceToken`. An unknown token is a no-op. The token is the proof of the device, so there is no user check. | — |
 
 **Push** ([#82](https://github.com/ziarno/prezentowo-rn/issues/82)): every `Notifications` insert of a `PushKind` kind, from any method above, also queues one inbox push to the recipient's devices (§2.5). The push is sent after the insert succeeds and never fails the method.
@@ -410,7 +412,7 @@ Both event publications omit `participants.invitedUserId`: a reserved placeholde
 - **Receipts:** each ticket is kept in `PushTickets`; a job fetches Expo receipts about 15 minutes after sending and deletes the token on `DeviceNotRegistered` (a ticket that already says `DeviceNotRegistered` deletes it at once). Delivery is at-least-once, so the app is idempotent on `notificationId`.
 
 **Chat pushes** go through **GetStream's built-in push**; our server never sends them.
-- Devices are registered server-side by `push.register` (`addDevice` with the native token), so the app never has to `connectUser` for push (§7). Providers: one APNs `.p8` provider each for sandbox (dev builds) and production, and one Firebase provider for Android.
+- Devices are registered server-side by `push.register` (`addDevice` with the native token), so the app never has to `connectUser` for push (§7). Providers: one APNs `.p8` provider each for sandbox (dev builds) and production, and one Firebase provider for Android. Each iOS device says which APNs environment its build uses (`apnsEnvironment`), and settings.json's `stream.pushProviders.apn` maps both (`{ "development": "apn-dev", "production": "apn-prod" }`), so one settings file serves dev and store builds alike.
 - Stream pushes only to channel members, so a recipient never gets a push from their own secret thread. Retired threads are muted, then frozen (§2.4).
 - **Templates** (`message.new`, enabled per provider): the title is localized from the receiver's Stream `language` (`receiver.language` and `equal`); no badge; Android gets an `android.notification` block so it shows; the payload passes `channel.eventId` through. The body is the message text, secret threads included: the OS's own preview setting covers a locked phone. The template content is part of the push setup issue.
 
@@ -767,7 +769,7 @@ What stays, and why: gifts on your own list (yours and others' suggestions) stay
 
 - **Native setup:** the `expo-notifications` config plugin, `android.googleServicesFile`, and `extra.eas.projectId` in `app.json`; then `npx expo prebuild` and a dev-client rebuild (`AGENTS.md`).
 - **Permission:** never asked on cold start or during first login. After the user **creates or joins their first event**, a bottom sheet asks first: a bell, "Hear about it first", one line naming the kinds, "You can choose which ones in Profile → Push notifications", **Turn on** (then the OS prompt) and **Not now** (just closes). "Not now" is never asked again automatically; the push screen (§10.2) is the way back. Whether the sheet has been shown is kept in SecureStore.
-- **Register:** while signed in with permission granted, the app calls `push.register` on each start, after a grant, on token rotation (`addPushTokenListener`), and on a language change. It is an online `call`; offline it waits for the next connection.
+- **Register:** while signed in with permission granted, the app calls `push.register` on each start, after a grant, on token rotation (`addPushTokenListener`), and on a language change. It is an online `call`; offline it waits for the next connection, and a failed one is tried again on the next. On iOS it sends `apnsEnvironment` from `expo-application`'s `getIosPushNotificationServiceEnvironmentAsync()`; when that is `null` (no provisioning profile), a simulator build sends `development` and an App Store build `production`.
 - **Unregister:** sign-out calls `push.unregister` with this device's Expo token. Offline, the token waits in SecureStore and is sent on the next connection, signed in or not. A device that never comes back online is an accepted gap.
 - **Opening a push:** an inbox push routes like its inbox row (§5) from `InboxPushData`, idempotent on `notificationId`; a chat push opens its thread (§7). Read from `trigger.payload` on iOS and `trigger.remoteMessage.data` on Android for Stream's payload. Tapping marks nothing read; opening the inbox stays the only way.
 - **Foreground:** inbox pushes show no banner, since the bell updates live. Chat pushes show unless that thread is on screen (compare the push's `cid`; Stream's pushes carry `sender: "stream.chat"`).

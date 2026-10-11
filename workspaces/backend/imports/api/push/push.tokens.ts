@@ -1,17 +1,26 @@
+import type { ApnsEnvironment } from '@prezentowo/types'
 import { Meteor } from 'meteor/meteor'
 
 import { type PushProviderType, chatServer } from '../chat/chat.server'
 import { type PushTokenDoc, PushTokens } from './push.collection'
 
 /**
- * The Stream push provider that devices of `type` are registered with, as
- * settings.json names it: a dev build's APNs tokens are sandbox ones, so it
- * needs the sandbox provider (docs/spec.md §2.5). Throws when it isn't set.
+ * The Stream push provider that a device registers with, as settings.json
+ * names it: `stream.pushProviders.firebase` for Android, and for iOS the
+ * `stream.pushProviders.apn` entry for the build's APNs environment, since a
+ * dev build's tokens are sandbox ones (docs/spec.md §2.5). Throws when it
+ * isn't set.
  */
-export function pushProviderName(type: PushProviderType): string {
-  const name: unknown = Meteor.settings.stream?.pushProviders?.[type]
+export function pushProviderName(
+  type: PushProviderType,
+  apnsEnvironment: ApnsEnvironment,
+): string {
+  const providers = Meteor.settings.stream?.pushProviders
+  const name: unknown =
+    type === 'apn' ? providers?.apn?.[apnsEnvironment] : providers?.firebase
   if (typeof name !== 'string' || !name) {
-    throw new Error(`Meteor.settings.stream.pushProviders.${type} is not set`)
+    const key = type === 'apn' ? `apn.${apnsEnvironment}` : type
+    throw new Error(`Meteor.settings.stream.pushProviders.${key} is not set`)
   }
   return name
 }

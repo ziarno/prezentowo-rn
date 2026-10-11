@@ -82,7 +82,12 @@ export type RegisterPushArgs = {
   platform: 'ios' | 'android'
   // The app's language on this device; inbox push text is written in it.
   locale: AppLanguage
+  // iOS only: which APNs environment the build's tokens belong to, so the
+  // server picks the matching Stream provider. Missing means production.
+  apnsEnvironment?: ApnsEnvironment
 }
+
+export type ApnsEnvironment = 'development' | 'production'
 
 // `push.unregister` takes no login: the token is the proof of the device.
 export type UnregisterPushArgs = { expoToken: string }

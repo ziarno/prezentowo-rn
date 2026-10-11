@@ -277,8 +277,11 @@ export class FakeChatServer implements ChatServer {
   }
 }
 
-// What a dev build's settings.json names the providers.
-export const FAKE_PUSH_PROVIDERS = { apn: 'apn-dev', firebase: 'firebase' }
+// What settings.json names the providers.
+export const FAKE_PUSH_PROVIDERS = {
+  apn: { development: 'apn-dev', production: 'apn-prod' },
+  firebase: 'firebase',
+}
 
 /**
  * Names Stream's push providers in `Meteor.settings` for the enclosing

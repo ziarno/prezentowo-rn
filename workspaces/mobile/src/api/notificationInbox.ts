@@ -6,7 +6,7 @@ import { timeAgo } from './activityFeed'
 
 // An invitation waiting in the inbox, set aside with Ignore or sent from
 // `4d`: the viewer isn't in its event, so it opens `7a`.
-export const isInvite = (notification: NotificationDoc) =>
+export const isInvite = (notification: Pick<NotificationDoc, 'kind'>) =>
   notification.kind === 'invite-deferred' || notification.kind === 'invited'
 
 export type InboxRow =
@@ -121,7 +121,11 @@ export type NotificationTarget =
  * and the event's feed once the recipient is gone too.
  */
 export function notificationTarget(
-  notification: NotificationDoc,
+  // A notification, or the inbox push that mirrors one.
+  notification: Pick<
+    NotificationDoc,
+    'kind' | 'eventId' | 'giftId' | 'recipientParticipantId'
+  >,
   context: {
     // The event's current invite code, for `invite-deferred` and `invited`.
     inviteCode?: string

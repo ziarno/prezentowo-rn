@@ -29,6 +29,7 @@ const iosDevice = (
   deviceToken: 'a1b2c3',
   platform: 'ios',
   locale: 'pl',
+  apnsEnvironment: 'development',
   ...extra,
 })
 
@@ -102,8 +103,42 @@ describe('push', function () {
       assert.deepStrictEqual(stream.devices.get('a1b2c3'), {
         userId: ola,
         provider: 'apn',
-        providerName: FAKE_PUSH_PROVIDERS.apn,
+        providerName: FAKE_PUSH_PROVIDERS.apn.development,
       })
+    })
+
+    it('registers a production build’s iOS device with the production APNs provider', async function () {
+      await register(ola, iosDevice({ apnsEnvironment: 'production' }))
+      assert.deepStrictEqual(stream.devices.get('a1b2c3'), {
+        userId: ola,
+        provider: 'apn',
+        providerName: FAKE_PUSH_PROVIDERS.apn.production,
+      })
+    })
+
+    it('takes an iOS device without an environment for a production one', async function () {
+      const { apnsEnvironment: _, ...older } = iosDevice()
+      await register(ola, older)
+      assert.strictEqual(
+        stream.devices.get('a1b2c3')?.providerName,
+        FAKE_PUSH_PROVIDERS.apn.production,
+      )
+    })
+
+    it('moves a device to the other APNs provider when its environment changes', async function () {
+      await register(ola, iosDevice({ apnsEnvironment: 'development' }))
+      await register(ola, iosDevice({ apnsEnvironment: 'production' }))
+      assert.strictEqual(
+        stream.devices.get('a1b2c3')?.providerName,
+        FAKE_PUSH_PROVIDERS.apn.production,
+      )
+    })
+
+    it('rejects an APNs environment it doesn’t know', async function () {
+      await assert.rejects(
+        register(ola, iosDevice({ apnsEnvironment: 'staging' as never })),
+      )
+      assert.strictEqual(await PushTokens.find().countAsync(), 0)
     })
 
     it('registers an Android device with Stream’s Firebase provider', async function () {
@@ -170,7 +205,7 @@ describe('push', function () {
           deviceToken: 'a1b2c3',
           provider: 'apn',
           userId: bartek,
-          providerName: FAKE_PUSH_PROVIDERS.apn,
+          providerName: FAKE_PUSH_PROVIDERS.apn.development,
         },
       ])
     })
