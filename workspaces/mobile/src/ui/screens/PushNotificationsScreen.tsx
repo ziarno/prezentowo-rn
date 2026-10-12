@@ -1,9 +1,14 @@
 import { PUSH_KINDS, type PushKind } from '@prezentowo/types'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Linking, ScrollView, Switch, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import {
+  type PushToggles,
+  pushPreferenceOn,
+  unconfirmedToggles,
+} from '@/api/pushPreferences'
 import { setPushPreference } from '@/api/users'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
@@ -22,23 +27,30 @@ export function PushNotificationsScreen() {
   const offline = useOffline()
   const permission = usePushPermission()
   const user = useCurrentUser()
-  // A switch shows its new value from the toggle until the save settles.
-  const [saving, setSaving] = useState<Partial<Record<PushKind, boolean>>>({})
+  // A flipped switch shows its new value until the user document does.
+  const [toggled, setToggled] = useState<PushToggles>({})
+  const preferences = user?.pushPreferences
+
+  useEffect(() => {
+    setToggled(current => unconfirmedToggles(current, preferences))
+  }, [preferences])
 
   const allowed = permission === 'granted'
   const disabled = !allowed || offline
 
   const toggle = async (kind: PushKind, enabled: boolean) => {
-    setSaving(current => ({ ...current, [kind]: enabled }))
+    setToggled(current => ({ ...current, [kind]: enabled }))
     try {
       await setPushPreference({ kind, enabled })
     } catch (err) {
+      // Back to the saved value, unless it was flipped again meanwhile.
+      setToggled(({ [kind]: shown, ...rest }) =>
+        shown === enabled ? rest : { ...rest, [kind]: shown },
+      )
       Alert.alert(
         t('pushSettings.saveFailed'),
         errorMessage(err, t('common.somethingWentWrong')),
       )
-    } finally {
-      setSaving(({ [kind]: _, ...rest }) => rest)
     }
   }
 
@@ -75,8 +87,8 @@ export function PushNotificationsScreen() {
                 </Text>
               </View>
               <Switch
-                value={saving[kind] ?? user?.pushPreferences?.[kind] !== false}
-                disabled={disabled || saving[kind] !== undefined}
+                value={toggled[kind] ?? pushPreferenceOn(preferences, kind)}
+                disabled={disabled}
                 trackColor={{ true: garland.green, false: garland.ink15 }}
                 onValueChange={enabled => void toggle(kind, enabled)}
                 accessibilityLabel={t(`pushSettings.kinds.${kind}.label`)}
