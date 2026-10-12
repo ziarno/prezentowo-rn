@@ -596,8 +596,9 @@ Link-import outcomes on `5a`–`5d`:
 - It fixes the four confirmed defects ([#22](https://github.com/ziarno/prezentowo-rn/issues/22)):
   - **(A)** No method call is dropped when the socket closes; unsent calls are retained and resent.
   - **(B)** Nothing is sent or replayed before the resume-token login completes.
-  - **(C)** Every call has a timeout (default 15 s) and rejects with a typed `NetworkError`, so nothing hangs forever.
+  - **(C)** Every call has a timeout (default 15 s) and rejects with a typed `NetworkError`, so nothing hangs forever. A call whose result is already in when the timeout passes or the connection drops settles with that result instead, since the method ran.
   - **(D)** Reconnect wipes the collections. The layer re-subscribes and exposes each subscription's `ready` state so the UI doesn't flash empty. Once the cache exists (§6.2), it replaces rather than merges.
+- A call settles only once both its result and the server's `updated` message listing it have arrived, as in Meteor's own client: by then the method's writes are in the collections and every tracker has re-run on them, so a screen that reads a document after awaiting a call sees the new value.
 - It exposes `status: 'connected' | 'offline'` for the banner.
 
 ### 6.2 Encrypted cache (after the features)

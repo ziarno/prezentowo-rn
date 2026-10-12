@@ -207,6 +207,157 @@ describe('(C) every call settles', () => {
   })
 })
 
+describe('a call settles once its writes are visible', () => {
+  const withUser = {
+    ...withToken,
+    users: { 'user-1': { profile: { name: 'Old' } } },
+    methods: {
+      'users.update': () => ({
+        result: 'saved',
+        changed: [
+          {
+            collection: 'users',
+            id: 'user-1',
+            fields: { profile: { name: 'New' } },
+          },
+        ],
+      }),
+    },
+  }
+  const name = () =>
+    (sync.findUser('user-1') as { profile?: { name?: string } } | undefined)
+      ?.profile?.name
+
+  it('resolves with the published change already applied', async () => {
+    await start(withUser)
+    await waitFor(() => sync.status() === 'connected')
+    expect(name()).toBe('Old')
+
+    await expect(sync.call('users.update')).resolves.toBe('saved')
+    expect(name()).toBe('New')
+  })
+
+  it('does not resolve on the result alone', async () => {
+    await start(withUser)
+    await waitFor(() => sync.status() === 'connected')
+    server.holdUpdated('users.update')
+
+    let settled = false
+    const result = sync.call('users.update').finally(() => {
+      settled = true
+    })
+    await waitFor(() => server.arrivals(0).includes('users.update'))
+    await sleep(50)
+    expect(settled).toBe(false)
+
+    server.releaseUpdated('users.update')
+    await expect(result).resolves.toBe('saved')
+    expect(name()).toBe('New')
+  })
+
+  it('resolves with trackers already re-run on the change', async () => {
+    await start(withUser)
+    await waitFor(() => sync.status() === 'connected')
+    let tracked: string | undefined
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { Tracker } = require('@meteorrn/core').default
+    const computation = Tracker.autorun(() => {
+      tracked = name()
+    })
+    // The writes and `updated` arrive together, before the library's own
+    // flush timer can run.
+    server.holdUpdated('users.update')
+    const result = sync.call('users.update')
+    await waitFor(() => server.arrivals(0).includes('users.update'))
+    await sleep(50)
+    expect(tracked).toBe('Old')
+
+    server.releaseUpdated('users.update')
+    await result
+    expect(tracked).toBe('New')
+    computation.stop()
+  })
+
+  it('also settles when `updated` comes before the result', async () => {
+    await start({
+      ...withToken,
+      methods: {
+        'gifts.claim': () => ({ result: 'claimed', updatedFirst: true }),
+      },
+    })
+    await waitFor(() => sync.status() === 'connected')
+
+    await expect(sync.call('gifts.claim')).resolves.toBe('claimed')
+  })
+
+  it('rejects with the server error only once `updated` arrives', async () => {
+    await start({
+      ...withToken,
+      methods: { 'gifts.claim': () => ({ error: { error: 'taken' } }) },
+    })
+    await waitFor(() => sync.status() === 'connected')
+    server.holdUpdated('gifts.claim')
+
+    let settled = false
+    const result = sync
+      .call('gifts.claim')
+      .catch(e => e)
+      .finally(() => {
+        settled = true
+      })
+    await waitFor(() => server.arrivals(0).includes('gifts.claim'))
+    await sleep(50)
+    expect(settled).toBe(false)
+
+    server.releaseUpdated('gifts.claim')
+    expect(await result).toEqual(expect.objectContaining({ error: 'taken' }))
+  })
+
+  it('times out with no result and no `updated`', async () => {
+    await start(withUser)
+    await waitFor(() => sync.status() === 'connected')
+    server.holdMethod('users.update')
+
+    const error = await sync
+      .call('users.update', undefined, { timeoutMs: 100 })
+      .catch(e => e)
+
+    expect(sync.isNetworkError(error)).toBe(true)
+    expect(error.kind).toBe('timeout')
+  })
+
+  // The method ran: a NetworkError would have the queue send it again.
+  it('settles with the result at the timeout if `updated` never comes', async () => {
+    await start(withUser)
+    await waitFor(() => sync.status() === 'connected')
+    server.holdUpdated('users.update')
+
+    const started = Date.now()
+    await expect(
+      sync.call('users.update', undefined, { timeoutMs: 150 }),
+    ).resolves.toBe('saved')
+    expect(Date.now() - started).toBeGreaterThanOrEqual(140)
+    expect(name()).toBe('Old')
+  })
+
+  it('settles with the result when the connection drops before `updated`', async () => {
+    await start(withUser)
+    await waitFor(() => sync.status() === 'connected')
+    server.holdUpdated('users.update')
+
+    const result = sync.call('users.update').catch(e => e)
+    await waitFor(() => server.arrivals(0).includes('users.update'))
+    await sleep(50)
+    server.dropAll()
+
+    expect(await result).toBe('saved')
+    await waitFor(() => sync.status() === 'connected')
+    // Not resent.
+    expect(server.arrivals(1)).toEqual(['login'])
+    expect(library().calls).toEqual([])
+  })
+})
+
 describe('(D) subscriptions come back after a reconnect', () => {
   it('re-subscribes and is not ready until the data is back', async () => {
     await start({ ...withToken, publications })

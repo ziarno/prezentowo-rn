@@ -13,7 +13,7 @@ type SessionListener = {
   ready?: () => void
   offline?: () => void
   // `ready`, `nosub`, `added`, `changed` and `removed`, before the library's
-  // own handlers see them.
+  // own handlers see them, and `updated`, which the library ignores.
   message?: (msg: DdpMessage) => void
 }
 
@@ -134,6 +134,7 @@ function attach(ddp: Ddp) {
   on('added', emitMessage)
   on('changed', emitMessage)
   on('removed', emitMessage)
+  on('updated', emitMessage)
   // The library registers its handlers (the wipe among them) right after
   // handing over the instance, so a listener added a tick later runs after
   // them. No socket can open before then.

@@ -8,6 +8,8 @@ export type DdpMessage = {
   msg: string
   id?: string
   subs?: string[]
+  // `updated`: the calls whose writes have all been sent
+  methods?: string[]
   error?: unknown
   // `added` / `changed` / `removed`
   collection?: string
@@ -21,6 +23,7 @@ type DdpEvent =
   | 'added'
   | 'changed'
   | 'removed'
+  | 'updated'
 
 export type Ddp = {
   status: 'connected' | 'disconnected'
@@ -86,7 +89,13 @@ type Internals = {
     clone<T>(value: T): T
   }
   users: { findOne(selector: string): unknown }
-  Tracker: { Dependency: new () => Dependency }
+  Tracker: {
+    Dependency: new () => Dependency
+    // Re-runs every invalidated computation now. The library otherwise does it
+    // on a timer.
+    flush(): void
+    inFlush(): boolean
+  }
   useTracker<T>(fn: () => T, deps?: readonly unknown[]): T
   _handleLoginCallback(error: null, result: { id: string; token: string }): void
   // Clears the stored token and the logged-in user, locally only.

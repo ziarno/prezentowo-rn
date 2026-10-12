@@ -32,7 +32,15 @@ type Options = {
   methods?: Record<string, (params: unknown[]) => MethodReply>
 }
 
-export type MethodReply = { result?: unknown; error?: object }
+export type MethodReply = {
+  result?: unknown
+  error?: object
+  // Writes the method made, sent as `changed` after `result` and before
+  // `updated` — the order in which a real server's writes can land.
+  changed?: PublishedDoc[]
+  // Send `updated` (and the writes) before `result`, which Meteor also does.
+  updatedFirst?: boolean
+}
 
 export type FakeDdpServer = {
   url: string
@@ -48,6 +56,10 @@ export type FakeDdpServer = {
   // Receive calls to this method but don't answer them until released.
   holdMethod: (name: string) => void
   releaseMethod: (name: string) => void
+  // Answer calls to this method with `result`, but hold back their writes and
+  // `updated` until released.
+  holdUpdated: (name: string) => void
+  releaseUpdated: (name: string) => void
   close: () => Promise<void>
 }
 
@@ -61,6 +73,7 @@ export async function startFakeDdpServer(
   const connections: Connection[] = []
   const log: FakeDdpServer['log'] = []
   const held = new Map<string, { conn: Connection; msg: DdpMessage }[]>()
+  const heldUpdates = new Map<string, (() => void)[]>()
   let refusals = 0
 
   const send = (conn: Connection, msg: object) => {
@@ -101,9 +114,23 @@ export async function startFakeDdpServer(
       return
     }
 
-    const reply = (result: { result?: unknown; error?: object }) => {
-      send(conn, { msg: 'result', id: msg.id, ...result })
-      send(conn, { msg: 'updated', methods: [msg.id] })
+    const reply = ({ changed = [], updatedFirst, ...result }: MethodReply) => {
+      const sendResult = () =>
+        send(conn, { msg: 'result', id: msg.id, ...result })
+      const sendUpdated = () => {
+        for (const doc of changed) send(conn, { msg: 'changed', ...doc })
+        send(conn, { msg: 'updated', methods: [msg.id] })
+      }
+      if (updatedFirst) {
+        sendUpdated()
+        return sendResult()
+      }
+      sendResult()
+      const waiting = heldUpdates.get(method)
+      if (waiting) waiting.push(sendUpdated)
+      // A tick later, so they don't reach the client in the result's chunk.
+      else if (changed.length > 0) setTimeout(sendUpdated, 0)
+      else sendUpdated()
     }
 
     if (method === 'login') {
@@ -187,6 +214,14 @@ export async function startFakeDdpServer(
       const waiting = held.get(name) ?? []
       held.delete(name)
       for (const { conn, msg } of waiting) handleMethod(conn, msg)
+    },
+    holdUpdated: name => {
+      heldUpdates.set(name, [])
+    },
+    releaseUpdated: name => {
+      const waiting = heldUpdates.get(name) ?? []
+      heldUpdates.delete(name)
+      for (const sendUpdated of waiting) sendUpdated()
     },
     close: () =>
       new Promise(resolve => {
