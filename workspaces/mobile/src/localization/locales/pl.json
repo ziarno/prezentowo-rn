@@ -105,6 +105,11 @@
     "statEvents": "Wydarzenia",
     "statWished": "Zapragnięte",
     "statClaimed": "Zarezerwowane",
+    "pushNotifications": "Powiadomienia push",
+    "pushOn": "Włączone",
+    "pushSome": "Niektóre",
+    "pushOff": "Wyłączone",
+    "pushOffInSettings": "Wyłączone w Ustawieniach",
     "about": "O aplikacji",
     "version": "Wersja",
     "privacy": "Polityka prywatności",
@@ -139,6 +144,50 @@
     "emailMismatch": "To nie jest e-mail Twojego konta.",
     "offline": "Jesteś offline. Usunięcie konta wymaga połączenia.",
     "confirm": "Usuń moje konto"
+  },
+  "pushSettings": {
+    "title": "Powiadomienia push",
+    "notAsked": "Powiadomienia nie są jeszcze włączone",
+    "notAskedNote": "Telefon zapyta, czy na nie pozwolić.",
+    "turnOn": "Włącz",
+    "granted": "Dozwolone na tym telefonie",
+    "grantedNote": "Wybierz poniżej, o czym chcesz dostawać powiadomienia.",
+    "denied": "Powiadomienia są wyłączone w Ustawieniach",
+    "deniedNote": "Telefon blokuje powiadomienia z Prezentowo. Włącz je w Ustawieniach i wróć tutaj.",
+    "openSettings": "Otwórz Ustawienia",
+    "sendMeFor": "Wysyłaj mi powiadomienia o",
+    "kinds": {
+      "invited": {
+        "label": "Zaproszeniach",
+        "note": "Ktoś dodaje cię do wydarzenia"
+      },
+      "participant-joined": {
+        "label": "Nowych uczestnikach",
+        "note": "Ktoś dołącza do twojego wydarzenia"
+      },
+      "suggestion-claimed": {
+        "label": "Zarezerwowanych sugestiach",
+        "note": "Ktoś rezerwuje twoją sugestię prezentu"
+      },
+      "claimed-gift-removed": {
+        "label": "Usuniętych prezentach",
+        "note": "Twój zarezerwowany prezent został usunięty"
+      },
+      "chat": {
+        "label": "Wiadomościach na czacie",
+        "note": "Nowe wiadomości w czatach wydarzeń"
+      }
+    },
+    "footnote": "Wyłączenie zatrzymuje tylko powiadomienie push; nadal zobaczysz je w skrzynce. Te ustawienia obowiązują na każdym telefonie, na którym się zalogujesz.",
+    "footnoteOffline": "Jesteś offline — zmiany wymagają połączenia.",
+    "saveFailed": "Nie udało się zapisać ustawienia",
+    "prePrompt": {
+      "title": "Bądź na bieżąco",
+      "body": "Dostaniesz powiadomienie, gdy ktoś cię zaprosi, dołączy do twojego wydarzenia, zarezerwuje twoją sugestię albo napisze na czacie.",
+      "hint": "Wybierzesz, które, w {{path}}.",
+      "turnOn": "Włącz",
+      "notNow": "Nie teraz"
+    }
   },
   "shell": {
     "home": "Prezentowo",

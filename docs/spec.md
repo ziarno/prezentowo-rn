@@ -740,7 +740,7 @@ Profile calls it on each focus. The last result is saved in the encrypted store 
 
 Instant, irreversible, server-side, and the same whether it starts in the app (`users.deleteAccount`, §2.2) or on the web (§3.6). Both stores require full in-app deletion; Play also requires the web page.
 
-**The confirm screen** (`delete-account.tsx`, from Profile's Danger zone): the shared consequence list, "This can't be undone", an email field, and **Delete my account**, enabled once the field matches the account's email case-insensitively. Online-only: dimmed offline, never queued. On success the device is wiped: the SQLCipher cache and stats record, the offline queue (discarded, never replayed), and the session with its SecureStore login token; the app lands signed out. Device-level SecureStore keys stay: the onboarding and install-referrer flags, and the cache key (its rows are gone). `emailMismatch` is shown inline.
+**The confirm screen** (`delete-account.tsx`, from Profile's Danger zone): the shared consequence list, "This can't be undone", an email field, and **Delete my account**, enabled once the field matches the account's email case-insensitively. Online-only: dimmed offline, never queued. On success the device is wiped: the SQLCipher cache and stats record, the offline queue (discarded, never replayed), and the session with its SecureStore login token; the app lands signed out. Device-level SecureStore keys stay: the onboarding, install-referrer and push pre-prompt flags, and the cache key (its rows are gone). `emailMismatch` is shown inline.
 
 **Shared consequence list**, one source in `@prezentowo/types` with `en` and `pl` text, shown by the app's confirm and the web confirm page (§3.6):
 - your name stays on other people's lists;

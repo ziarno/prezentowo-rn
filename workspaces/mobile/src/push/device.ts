@@ -12,6 +12,8 @@ import { Platform } from 'react-native'
 import i18n from '@/localization/i18n'
 import { call } from '@/sync'
 
+import { type PushPermission, createPushPermission } from './permission'
+import { createPushPrePrompt } from './prePrompt'
 import { createPushDevice } from './registration'
 
 // A sign-out waits for its unregister; past this the token is kept for later.
@@ -29,10 +31,21 @@ async function apnsEnvironment(): Promise<ApnsEnvironment> {
     : 'production'
 }
 
+// Android 13+ shows no prompt, and hands out no token, until the app has a
+// channel. Expo pushes without a channelId land in `default`.
+const androidChannel =
+  Platform.OS === 'android'
+    ? Notifications.setNotificationChannelAsync('default', {
+        name: 'Prezentowo',
+        importance: Notifications.AndroidImportance.HIGH,
+      }).catch(() => null)
+    : Promise.resolve(null)
+
 export const pushDevice = createPushDevice({
   permissionGranted: async () =>
     (await Notifications.getPermissionsAsync()).granted,
   device: async () => {
+    await androidChannel
     const projectId: string | undefined =
       Constants.expoConfig?.extra?.eas?.projectId
     const [expo, native] = await Promise.all([
@@ -62,6 +75,29 @@ export const pushDevice = createPushDevice({
     set: SecureStore.setItemAsync,
     remove: SecureStore.deleteItemAsync,
   },
+})
+
+const toPushPermission = (
+  status: Notifications.NotificationPermissionsStatus,
+): PushPermission =>
+  status.granted ? 'granted' : status.canAskAgain ? 'undetermined' : 'denied'
+
+export const pushPermission = createPushPermission({
+  read: async () => toPushPermission(await Notifications.getPermissionsAsync()),
+  request: async () => {
+    await androidChannel
+    return toPushPermission(await Notifications.requestPermissionsAsync())
+  },
+  onGranted: () => pushDevice.register(),
+})
+
+export const pushPrePrompt = createPushPrePrompt({
+  // An unreadable permission counts as answered: the sheet stays shut.
+  permission: async () => {
+    await pushPermission.refresh()
+    return pushPermission.get() ?? 'denied'
+  },
+  store: { get: SecureStore.getItemAsync, set: SecureStore.setItemAsync },
 })
 
 // A new native token, or the app's language changed: the server's copy is

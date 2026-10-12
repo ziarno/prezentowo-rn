@@ -2,6 +2,7 @@ import { router } from 'expo-router'
 import { useEffect, useRef } from 'react'
 
 import { joinEvent } from '@/api/events'
+import { pushPrePrompt } from '@/push'
 import { claimInstallReferrerInvite } from '@/store/installReferrer'
 import { takePendingInvite } from '@/store/pendingInvite'
 
@@ -23,11 +24,13 @@ export function usePendingInvite(appOpen: boolean) {
       .then(invite => {
         if (!invite) return
         return joinEvent(invite).then(
-          ({ eventId }) =>
+          ({ eventId }) => {
             router.replace({
               pathname: '/event/[eventId]',
               params: { eventId },
-            }),
+            })
+            void pushPrePrompt.offer()
+          },
           () =>
             router.push({
               pathname: '/e/[code]',

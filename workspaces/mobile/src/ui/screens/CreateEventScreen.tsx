@@ -43,6 +43,7 @@ import { useOffline } from '@/hooks/useOffline'
 import { usePhotoPrompt } from '@/hooks/usePhotoPrompt'
 import { type UserSearch, useUserSearch } from '@/hooks/useUserSearch'
 import { errorMessage } from '@/localization/errorMessage'
+import { pushPrePrompt } from '@/push'
 import type { MeteorError } from '@/sync'
 import {
   AvatarPickerModal,
@@ -143,6 +144,7 @@ function CreateEvent({ start }: { start: WizardStep }) {
           pathname: '/event/[eventId]',
           params: { eventId: _id },
         })
+        void pushPrePrompt.offer()
       }}
     />
   )

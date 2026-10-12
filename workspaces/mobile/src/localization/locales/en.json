@@ -105,6 +105,11 @@
     "statEvents": "Events",
     "statWished": "Wished",
     "statClaimed": "Claimed",
+    "pushNotifications": "Push notifications",
+    "pushOn": "On",
+    "pushSome": "Some",
+    "pushOff": "Off",
+    "pushOffInSettings": "Off in Settings",
     "about": "About",
     "version": "Version",
     "privacy": "Privacy policy",
@@ -135,6 +140,50 @@
     "emailMismatch": "That isn't your account's email.",
     "offline": "You're offline. Deleting needs a connection.",
     "confirm": "Delete my account"
+  },
+  "pushSettings": {
+    "title": "Push notifications",
+    "notAsked": "Pushes aren't on yet",
+    "notAskedNote": "Your phone will ask you to allow them.",
+    "turnOn": "Turn on",
+    "granted": "Allowed on this phone",
+    "grantedNote": "Choose below what's worth a push.",
+    "denied": "Notifications are off in Settings",
+    "deniedNote": "Your phone blocks pushes from Prezentowo. Turn them on in Settings, then come back.",
+    "openSettings": "Open Settings",
+    "sendMeFor": "Send me a push for",
+    "kinds": {
+      "invited": {
+        "label": "Invitations",
+        "note": "Someone adds you to an event"
+      },
+      "participant-joined": {
+        "label": "New participants",
+        "note": "Someone joins an event you're in"
+      },
+      "suggestion-claimed": {
+        "label": "Your suggestions claimed",
+        "note": "Someone claims a gift you suggested"
+      },
+      "claimed-gift-removed": {
+        "label": "Claimed gift removed",
+        "note": "A gift you claimed is deleted"
+      },
+      "chat": {
+        "label": "Chat messages",
+        "note": "New messages in event chats"
+      }
+    },
+    "footnote": "Turning one off stops the push only; it still shows in your inbox. These follow your account to every phone you sign in on.",
+    "footnoteOffline": "You're offline — changes need a connection.",
+    "saveFailed": "Couldn't save that setting",
+    "prePrompt": {
+      "title": "Hear about it first",
+      "body": "Get a push when you're invited, when someone joins your event, claims a gift you suggested, or writes in chat.",
+      "hint": "You can choose which ones in {{path}}.",
+      "turnOn": "Turn on",
+      "notNow": "Not now"
+    }
   },
   "shell": {
     "home": "Prezentowo",

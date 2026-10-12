@@ -1,4 +1,9 @@
-import type { UpdateUserArgs, UserStats } from '@prezentowo/types'
+import type {
+  PushPreferences,
+  SetPushPreferenceArgs,
+  UpdateUserArgs,
+  UserStats,
+} from '@prezentowo/types'
 
 import { call, currentUser, findUser, saveRecord, savedRecord } from '@/sync'
 
@@ -11,6 +16,8 @@ export type CurrentUser = {
   createdAt?: Date | string
   emails?: { address: string; verified: boolean }[]
   profile?: Profile
+  // Which pushes the user wants; a missing kind is on (docs/spec.md §1.13).
+  pushPreferences?: PushPreferences
 }
 
 export type PublicUser = {
@@ -30,6 +37,11 @@ export function findUserById(userId: string): PublicUser | undefined {
 
 export function updateUser(args: UpdateUserArgs): Promise<void> {
   return call('updateUser', args)
+}
+
+// Follows the account to every phone. Online-only, never queued.
+export function setPushPreference(args: SetPushPreferenceArgs): Promise<void> {
+  return call('users.setPushPreference', args)
 }
 
 const STATS_RECORD = 'stats'

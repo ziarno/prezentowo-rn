@@ -16,6 +16,7 @@ import { useOffline } from '@/hooks/useOffline'
 import { errorMessage } from '@/localization/errorMessage'
 import { eventWhen } from '@/localization/eventDates'
 import i18n from '@/localization/i18n'
+import { pushPrePrompt } from '@/push'
 import { savePendingInvite } from '@/store/pendingInvite'
 import { useAuthStore } from '@/store/useAuthStore'
 import { type MeteorError, useSubscription, useTracker } from '@/sync'
@@ -135,6 +136,7 @@ function InviteBody({
     try {
       await joinEvent(invite)
       openEvent(eventId)
+      void pushPrePrompt.offer()
     } catch (e) {
       // Already in (e.g. their events hadn't loaded yet): just go there.
       if ((e as Partial<MeteorError>).reason === 'alreadyAParticipant') {

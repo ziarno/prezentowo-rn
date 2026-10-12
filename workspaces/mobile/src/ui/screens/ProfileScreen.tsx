@@ -17,6 +17,7 @@ import { uploadImage, uploadImageUrl } from '@/api/images'
 import { formatJoined, formatStat, versionLabel } from '@/api/profile'
 import { updateUser } from '@/api/users'
 import {
+  BellIcon,
   CheckIcon,
   ChevronIcon,
   CloseIcon,
@@ -30,11 +31,13 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useOffline } from '@/hooks/useOffline'
 import { useOpenLegalPage } from '@/hooks/useOpenLegalPage'
 import { usePhotoPrompt } from '@/hooks/usePhotoPrompt'
+import { usePushPermission } from '@/hooks/usePushPermission'
 import { useSignOut } from '@/hooks/useSignOut'
 import { useUserStats } from '@/hooks/useUserStats'
 import { useLanguageModal } from '@/localization/LanguageModalProvider'
 import { errorMessage } from '@/localization/errorMessage'
 import { LOCALES } from '@/localization/provider'
+import { type PushSummary, pushSummary } from '@/push'
 import { Avatar } from '@/ui/components/Avatar'
 import {
   AvatarPickerModal,
@@ -54,6 +57,13 @@ type IconComponent = ComponentType<{
   height?: number
   color?: string
 }>
+
+const PUSH_SUMMARY_KEY = {
+  on: 'profile.pushOn',
+  some: 'profile.pushSome',
+  off: 'profile.pushOff',
+  offInSettings: 'profile.pushOffInSettings',
+} as const satisfies Record<PushSummary, string>
 
 const VERSION = versionLabel(
   Application.nativeApplicationVersion,
@@ -78,6 +88,7 @@ export function ProfileScreen() {
 
   const user = useCurrentUser()
   const stats = useUserStats()
+  const permission = usePushPermission()
 
   const avatarKey =
     (override?.kind === 'stock' ? override.key : undefined) ??
@@ -139,6 +150,12 @@ export function ProfileScreen() {
   const displayName = user?.profile?.name ?? t('profile.friend')
   const email = user?.emails?.[0]?.address
   const joinedLabel = formatJoined(user?.createdAt, i18n.language)
+  // Nothing until the OS and the user document have answered, rather than a
+  // wrong guess.
+  const pushLabel =
+    permission && user
+      ? t(PUSH_SUMMARY_KEY[pushSummary(permission, user.pushPreferences ?? {})])
+      : undefined
   const localeLabel =
     LOCALES.find(l => l.code === i18n.language)?.label ?? 'English'
 
@@ -213,6 +230,12 @@ export function ProfileScreen() {
         </View>
 
         <Card>
+          <SettingsRow
+            Icon={BellIcon}
+            label={t('profile.pushNotifications')}
+            sublabel={pushLabel}
+            onPress={() => router.push('/push-notifications')}
+          />
           <SettingsRow
             Icon={GlobeIcon}
             label={t('common.language')}
