@@ -153,15 +153,14 @@ function ThreadView({ thread }: { thread: ChatThreadDoc }) {
           <WithComponents overrides={chatAvatarOverrides}>
             <Channel
               channel={shown}
-              // It measures itself within this screen, which starts at the top
-              // of the window, so nothing sits above it to offset for.
-              keyboardVerticalOffset={0}
+              // Both measure from the window's top while the chat starts under
+              // our header: without the offset the keyboard covers the
+              // composer, and the attachment picker opens below the screen.
+              keyboardVerticalOffset={top}
+              topInset={top}
               // Its wrapper has no flex of its own, and its content is 100%
               // tall: under our header that pushes the composer off screen.
               additionalKeyboardAvoidingViewProps={{ style: { flex: 1 } }}
-              // The attachment picker places itself from the window's top, so
-              // without this it opens below the screen, leaving a blank gap.
-              topInset={top}
             >
               <MessageList />
               <MessageComposer />
