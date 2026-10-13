@@ -14,6 +14,7 @@ import {
   Alert,
   FlatList,
   Modal,
+  Platform,
   Pressable,
   Text as RNText,
   TextInput,
@@ -240,6 +241,14 @@ const mentionRules = (giftIds: string[]) =>
     },
   }) as unknown as MessageTextProps['markdownRules']
 
+// A tag sits in a line of message text (20px). On iOS a taller one only
+// grows the line; Android clips the line's descenders instead, so there it
+// fits inside the line. Both sit an inline view's bottom on the baseline,
+// so it's nudged down onto the text.
+const TAG =
+  'flex-row items-center gap-1 rounded-full ios:translate-y-1 ios:py-0.5 android:translate-y-1'
+const TAG_TILE = Platform.OS === 'android' ? 16 : 20
+
 function MentionTag({ giftId }: { giftId?: string }) {
   const { t } = useTranslation()
   const presents = useChatPresents()
@@ -250,9 +259,11 @@ function MentionTag({ giftId }: { giftId?: string }) {
   if (!gift && !presents?.giftsReady) return <Text>{MENTION_ICON}</Text>
   if (!gift) {
     return (
-      <View className="translate-y-1 flex-row items-center gap-1 rounded-full bg-garland-ink-08 py-0.5 pl-1 pr-2">
-        <Text className="text-[13px] opacity-50">{MENTION_ICON}</Text>
-        <Text className="text-[13px] italic text-garland-ink-60">
+      <View className={`${TAG} bg-garland-ink-08 pl-1 pr-2`}>
+        <Text className="text-[13px] opacity-50 android:leading-[18px]">
+          {MENTION_ICON}
+        </Text>
+        <Text className="text-[13px] italic text-garland-ink-60 android:leading-[18px]">
           {t('chat.mentionUnavailable')}
         </Text>
       </View>
@@ -267,11 +278,11 @@ function MentionTag({ giftId }: { giftId?: string }) {
         })
       }
       accessibilityRole="link"
-      className="translate-y-1 flex-row items-center gap-1 rounded-full bg-garland-paper2 py-0.5 pl-0.5 pr-2 active:opacity-70"
+      className={`${TAG} bg-garland-paper2 pl-0.5 pr-2 active:opacity-70`}
     >
-      <PresentTile gift={gift} size={20} radius={10} />
+      <PresentTile gift={gift} size={TAG_TILE} radius={TAG_TILE / 2} />
       <Text
-        className="max-w-[180px] text-[14px] font-bold text-garland-ink"
+        className="max-w-[180px] text-[14px] font-bold text-garland-ink android:leading-[18px]"
         numberOfLines={1}
       >
         {gift.title}
