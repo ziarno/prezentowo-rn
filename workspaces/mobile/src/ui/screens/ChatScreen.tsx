@@ -180,6 +180,8 @@ function ThreadView({ thread }: { thread: ChatThreadDoc }) {
             // Its wrapper has no flex of its own, and its content is 100%
             // tall: under our header that pushes the composer off screen.
             additionalKeyboardAvoidingViewProps={{ style: { flex: 1 } }}
+            // Voice messages: hold the composer's mic to record (expo-audio).
+            audioRecordingEnabled
             // A present mention's titles reach the push, not history.
             doSendMessageRequest={(_, message, options) =>
               sendWithPushText(shown, message, options)

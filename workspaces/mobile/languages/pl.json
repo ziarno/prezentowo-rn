@@ -1,6 +1,7 @@
 {
   "ios": {
     "NSCameraUsageDescription": "Prezentowo używa aparatu do robienia zdjęć profilowych, zdjęć dodawanych osób, zdjęć tła wydarzeń i prezentów oraz zdjęć wysyłanych na czacie.",
-    "NSPhotoLibraryUsageDescription": "Prezentowo używa Twoich zdjęć jako zdjęć profilowych, zdjęć dodawanych osób, tła wydarzeń, zdjęć prezentów i zdjęć wysyłanych na czacie."
+    "NSPhotoLibraryUsageDescription": "Prezentowo używa Twoich zdjęć jako zdjęć profilowych, zdjęć dodawanych osób, tła wydarzeń, zdjęć prezentów i zdjęć wysyłanych na czacie.",
+    "NSMicrophoneUsageDescription": "Prezentowo używa mikrofonu do nagrywania wiadomości głosowych i filmów wysyłanych na czacie."
   }
 }

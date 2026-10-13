@@ -65,7 +65,7 @@
         {
           "photosPermission": "Prezentowo uses your photos for profile pictures, photos of people you add, event backgrounds, present photos and photos you send in chat.",
           "cameraPermission": "Prezentowo uses the camera to take profile pictures, photos of people you add, event backgrounds, present photos and photos you send in chat.",
-          "microphonePermission": false
+          "microphonePermission": "Prezentowo uses the microphone to record voice messages and videos you send in chat."
         }
       ],
       "expo-status-bar",
@@ -80,7 +80,15 @@
       ],
       ["expo-sqlite", { "useSQLCipher": true }],
       "expo-notifications",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Prezentowo uses the microphone to record voice messages and videos you send in chat.",
+          "enableBackgroundPlayback": false
+        }
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,
