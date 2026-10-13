@@ -20,6 +20,7 @@ import {
   cidOf,
   eventThreadOf,
   secretThreadOf,
+  sendWithPushText,
   useChatConnection,
 } from '@/chat'
 import { Text } from '@/components/ui/text'
@@ -27,6 +28,7 @@ import { garland } from '@/constants/colors'
 import { useChatThreads } from '@/hooks/useChatThreads'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
+import { useEventGifts } from '@/hooks/useEventGifts'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useOffline } from '@/hooks/useOffline'
 import { showChatOnScreen } from '@/push'
@@ -34,6 +36,10 @@ import {
   ChatParticipantsProvider,
   chatAvatarOverrides,
 } from '@/ui/components/ChatAvatars'
+import {
+  ChatPresentsProvider,
+  chatPresentOverrides,
+} from '@/ui/components/ChatPresents'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LockNote } from '@/ui/components/LockNote'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
@@ -49,9 +55,11 @@ export function ChatScreen(props: ChatScreenProps) {
   const { eventId } = props
   const { t } = useTranslation()
   // For the person's name: participants resolve against the event.
-  useEventById(eventId)
+  const { event } = useEventById(eventId)
   const { threads, ready } = useChatThreads(eventId)
   const { participants, resolve } = useEventParticipants(eventId)
+  // For present mentions: only what the viewer may see (docs/spec.md §7).
+  const { gifts, ready: giftsReady } = useEventGifts(eventId)
 
   const person = props.kind === 'secret' ? resolve(props.participantId) : null
   const thread =
@@ -75,9 +83,17 @@ export function ChatScreen(props: ChatScreenProps) {
       <SafeAreaView edges={['top']} className="flex-1 bg-garland-paper">
         <ScreenHeader title={title} />
         <LockNote className="mx-[22px] mb-2">{note}</LockNote>
-        {thread ? (
+        {thread && event ? (
           <ChatParticipantsProvider participants={participants}>
-            <ThreadView thread={thread} />
+            <ChatPresentsProvider
+              event={event}
+              thread={thread}
+              gifts={gifts}
+              giftsReady={giftsReady}
+              participants={participants}
+            >
+              <ThreadView thread={thread} />
+            </ChatPresentsProvider>
           </ChatParticipantsProvider>
         ) : (
           <Centered>
@@ -153,7 +169,7 @@ function ThreadView({ thread }: { thread: ChatThreadDoc }) {
       onLayout={() => frame.current?.measureInWindow((_, y) => setTop(y))}
     >
       <Chat client={client} i18nInstance={chatI18n}>
-        <WithComponents overrides={chatAvatarOverrides}>
+        <WithComponents overrides={chatOverrides}>
           <Channel
             channel={shown}
             // Both measure from the window's top while the chat starts under
@@ -164,6 +180,10 @@ function ThreadView({ thread }: { thread: ChatThreadDoc }) {
             // Its wrapper has no flex of its own, and its content is 100%
             // tall: under our header that pushes the composer off screen.
             additionalKeyboardAvoidingViewProps={{ style: { flex: 1 } }}
+            // A present mention's titles reach the push, not history.
+            doSendMessageRequest={(_, message, options) =>
+              sendWithPushText(shown, message, options)
+            }
           >
             <MessageList />
             <MessageComposer />
@@ -173,6 +193,8 @@ function ThreadView({ thread }: { thread: ChatThreadDoc }) {
     </View>
   )
 }
+
+const chatOverrides = { ...chatAvatarOverrides, ...chatPresentOverrides }
 
 // Stream is unreachable (docs/spec.md §7).
 function CantLoad({ onRetry }: { onRetry?: () => void }) {

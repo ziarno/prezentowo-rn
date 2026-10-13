@@ -598,6 +598,12 @@
     "attachment": "📎 Attachment",
     "notFound": "This chat isn't available.",
     "cantLoad": "Can't load messages.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "mention": "Mention a present",
+    "mentionNone": "No presents in this event yet.",
+    "mentionClose": "Close",
+    "mentionBlockedTitle": "You can't mention this present",
+    "mentionBlocked": "{{name}} is in this chat and mustn't know about this present.",
+    "mentionUnavailable": "Unavailable present"
   }
 }

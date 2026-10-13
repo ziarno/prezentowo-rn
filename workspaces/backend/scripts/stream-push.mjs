@@ -34,12 +34,16 @@ const CHANNEL_TYPES = ['event_thread', 'secret_thread']
 // Handlebars renders the template text first; only the result has to be JSON,
 // so the quotes inside {{ }} stay as they are. The receiver's Stream user
 // carries `language` ('en' | 'pl'); a user without one gets English.
+// A message that mentions presents stores a bare 🎁 per mention in `text`;
+// its sender sets `pushText`, the text with the titles, for the push only,
+// and clears it right after the send (docs/spec.md §7).
 const title =
   '{{#equal receiver.language "pl"}}Nowa wiadomość od {{ sender.name }}' +
   '{{else}}New message from {{ sender.name }}{{/equal}}'
 const body =
-  '{{#if message.text}}{{ truncate message.text 150 }}' +
-  '{{else}}{{#equal receiver.language "pl"}}Zdjęcie{{else}}Photo{{/equal}}{{/if}}'
+  '{{#if message.pushText}}{{ truncate message.pushText 150 }}' +
+  '{{else}}{{#if message.text}}{{ truncate message.text 150 }}' +
+  '{{else}}{{#equal receiver.language "pl"}}Zdjęcie{{else}}Photo{{/equal}}{{/if}}{{/if}}'
 
 // No badge anywhere: the app-icon badge is the inbox's (ADR 0006).
 // `eventId` is the channel's custom field, so a tap can find its thread.

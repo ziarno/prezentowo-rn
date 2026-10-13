@@ -634,6 +634,12 @@
     "attachment": "📎 Załącznik",
     "notFound": "Ten czat jest niedostępny.",
     "cantLoad": "Nie można wczytać wiadomości.",
-    "retry": "Spróbuj ponownie"
+    "retry": "Spróbuj ponownie",
+    "mention": "Wspomnij prezent",
+    "mentionNone": "W tym wydarzeniu nie ma jeszcze prezentów.",
+    "mentionClose": "Zamknij",
+    "mentionBlockedTitle": "Nie możesz wspomnieć tego prezentu",
+    "mentionBlocked": "{{name}} jest w tym czacie i nie może wiedzieć o tym prezencie.",
+    "mentionUnavailable": "Niedostępny prezent"
   }
 }

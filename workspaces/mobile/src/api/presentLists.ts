@@ -1,6 +1,9 @@
 import type { EventDoc, GiftDoc } from '@prezentowo/types'
 
-const userIdOf = (event: EventDoc, participantId: string) => {
+// What the rules below read of an event.
+type EventParticipants = Pick<EventDoc, 'participants'>
+
+const userIdOf = (event: EventParticipants, participantId: string) => {
   const participant = event.participants.find(p => p.id === participantId)
   return participant?.kind === 'real' ? participant.userId : undefined
 }
@@ -20,7 +23,7 @@ const ownerUserIdOf = (event: EventDoc, participantId: string) => {
 type GiftOwnership = Pick<GiftDoc, 'forParticipantId' | 'createdBy'>
 
 const isRecipient = (
-  event: EventDoc,
+  event: EventParticipants,
   gift: GiftOwnership,
   viewerUserId: string | undefined,
 ) => !!viewerUserId && userIdOf(event, gift.forParticipantId) === viewerUserId
@@ -29,7 +32,7 @@ const isRecipient = (
 // publication already withholds these; checking again keeps a stale local
 // copy from ever surfacing one.
 export const isHiddenFrom = (
-  event: EventDoc,
+  event: EventParticipants,
   gift: GiftOwnership,
   viewerUserId: string | undefined,
 ): boolean =>
