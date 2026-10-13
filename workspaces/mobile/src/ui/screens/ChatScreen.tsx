@@ -11,6 +11,7 @@ import {
   MessageComposer,
   MessageList,
   OverlayProvider,
+  WithComponents,
 } from 'stream-chat-expo'
 
 import {
@@ -29,6 +30,10 @@ import { useEventById } from '@/hooks/useEventById'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useOffline } from '@/hooks/useOffline'
 import { showChatOnScreen } from '@/push'
+import {
+  ChatParticipantsProvider,
+  chatAvatarOverrides,
+} from '@/ui/components/ChatAvatars'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LockNote } from '@/ui/components/LockNote'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
@@ -46,7 +51,7 @@ export function ChatScreen(props: ChatScreenProps) {
   // For the person's name: participants resolve against the event.
   useEventById(eventId)
   const { threads, ready } = useChatThreads(eventId)
-  const { resolve } = useEventParticipants(eventId)
+  const { participants, resolve } = useEventParticipants(eventId)
 
   const person = props.kind === 'secret' ? resolve(props.participantId) : null
   const thread =
@@ -68,7 +73,9 @@ export function ChatScreen(props: ChatScreenProps) {
       <ScreenHeader title={title} />
       <LockNote className="mx-[22px] mb-2">{note}</LockNote>
       {thread ? (
-        <ThreadView thread={thread} />
+        <ChatParticipantsProvider participants={participants}>
+          <ThreadView thread={thread} />
+        </ChatParticipantsProvider>
       ) : (
         <Centered>
           {ready ? (
@@ -135,18 +142,20 @@ function ThreadView({ thread }: { thread: ChatThreadDoc }) {
   return (
     <OverlayProvider i18nInstance={chatI18n}>
       <Chat client={client} i18nInstance={chatI18n}>
-        <Channel
-          channel={shown}
-          // It measures itself within this screen, which starts at the top
-          // of the window, so nothing sits above it to offset for.
-          keyboardVerticalOffset={0}
-          // Its wrapper has no flex of its own, and its content is 100% tall:
-          // under our header that pushes the composer off screen.
-          additionalKeyboardAvoidingViewProps={{ style: { flex: 1 } }}
-        >
-          <MessageList />
-          <MessageComposer />
-        </Channel>
+        <WithComponents overrides={chatAvatarOverrides}>
+          <Channel
+            channel={shown}
+            // It measures itself within this screen, which starts at the top
+            // of the window, so nothing sits above it to offset for.
+            keyboardVerticalOffset={0}
+            // Its wrapper has no flex of its own, and its content is 100%
+            // tall: under our header that pushes the composer off screen.
+            additionalKeyboardAvoidingViewProps={{ style: { flex: 1 } }}
+          >
+            <MessageList />
+            <MessageComposer />
+          </Channel>
+        </WithComponents>
       </Chat>
     </OverlayProvider>
   )

@@ -400,7 +400,7 @@ Both event publications omit `participants.invitedUserId`: a reserved placeholde
   2. Set `retiredAt` and mint the replacement.
   3. **Freeze** the Stream channel (history stays readable, nobody can post) with `updatePartial` and no system message. The freeze is **retried** until it succeeds, then `frozenAt` is set: with backoff, and again at server startup for every retired thread without `frozenAt`, since a retired thread is push-safe only once frozen.
 - Every channel is created with `eventId` in its custom data, so a chat push can open its thread (§2.5).
-- The Stream user is upserted as `{ id, name, image, language }`; `language` is set by `push.register` (§2.2).
+- The Stream user is upserted as `{ id, name, language }`; `language` is set by `push.register` (§2.2). It never gets an `image`: chat draws avatars from the app's own data (§7).
 - No webhook ingestion into Mongo, ever. Chat is online-only.
 
 ### 2.5 Push delivery — [#80](https://github.com/ziarno/prezentowo-rn/issues/80), [#82](https://github.com/ziarno/prezentowo-rn/issues/82), [#85](https://github.com/ziarno/prezentowo-rn/issues/85), [ADR 0006](adr/0006-push-via-expo-and-stream.md)
@@ -633,6 +633,7 @@ Link-import outcomes on `5a`–`5d`:
 - Chat only ever shows the threads `chatThreads.byEvent` publishes, looked up by their cids. A member-based query would also return retired channels, which keep their members ([#60](https://github.com/ziarno/prezentowo-rn/issues/60)).
 - Recap boxes (`3f`, `1e`) call `queryChannels({ cid: { $in: publishedCids } }, …, { state: false, watch: false, message_limit: 3 })` without `connectUser` where the SDK allows it. If it doesn't, the recap box is hidden until the viewer has opened chat once in the session. This is a build-time fallback, not a product change.
 - When Stream is unreachable, show a plain "can't load messages" state.
+- **Avatars** in chat come from the app's own participant data, never from Stream ([#103](https://github.com/ziarno/prezentowo-rn/issues/103)). `ChatScreen` overrides every stream-chat-expo component that draws a user's picture (message author, thread-reply and reaction avatars, typing indicator, `@` suggestions) to look the Stream user id up among the event's participants and render `ParticipantAvatar`: a real participant's profile `photo`/`avatar` from `users.inEvent`, a deleted account's departed placeholder by `departedUserId` (§1.12), anyone else an initial. So pictures follow profile changes live and come from the offline cache. Names stay Stream's.
 - **Chat push** (§2.5, §10.5): tapping one opens that thread, found from the push's `eventId` and `cid` among `chatThreads.byEvent`. In the foreground a chat push shows a banner unless that thread is on screen.
 
 ---

@@ -16,6 +16,9 @@ export type ResolvedParticipant = {
   isYou: boolean
   isPlaceholder: boolean
   userId?: string
+  // A departed placeholder's: the deleted account's former userId
+  // (docs/spec.md §1.12).
+  departedUserId?: string
 }
 
 export function resolveParticipant(
@@ -43,6 +46,7 @@ export function resolveParticipant(
     color: participant.color,
     isYou: false,
     isPlaceholder: true,
+    departedUserId: participant.departedUserId,
   }
 }
 
@@ -53,5 +57,17 @@ export function resolveParticipants(
 ): ResolvedParticipant[] {
   return event.participants.map(p =>
     resolveParticipant(p, currentUserId, getUser),
+  )
+}
+
+// Who wrote, reacted or is typing in chat: a Stream user id is a userId, a
+// real participant's, or a deleted account's that a departed placeholder
+// keeps (docs/spec.md §1.12, §7).
+export function participantOfStreamUser(
+  participants: ResolvedParticipant[],
+  streamUserId: string,
+): ResolvedParticipant | undefined {
+  return participants.find(
+    p => p.userId === streamUserId || p.departedUserId === streamUserId,
   )
 }
