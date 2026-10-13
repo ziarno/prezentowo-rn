@@ -69,25 +69,29 @@ export function ChatScreen(props: ChatScreenProps) {
       : t('chat.personNote', { name: person?.name ?? '' })
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-garland-paper">
-      <ScreenHeader title={title} />
-      <LockNote className="mx-[22px] mb-2">{note}</LockNote>
-      {thread ? (
-        <ChatParticipantsProvider participants={participants}>
-          <ThreadView thread={thread} />
-        </ChatParticipantsProvider>
-      ) : (
-        <Centered>
-          {ready ? (
-            <Text className="text-center text-sm text-garland-ink-60">
-              {t('chat.notFound')}
-            </Text>
-          ) : (
-            <ActivityIndicator color={garland.ink} />
-          )}
-        </Centered>
-      )}
-    </SafeAreaView>
+    // Around the whole screen, so the image viewer and the long-press
+    // overlay it draws cover our header too.
+    <OverlayProvider i18nInstance={chatI18n}>
+      <SafeAreaView edges={['top']} className="flex-1 bg-garland-paper">
+        <ScreenHeader title={title} />
+        <LockNote className="mx-[22px] mb-2">{note}</LockNote>
+        {thread ? (
+          <ChatParticipantsProvider participants={participants}>
+            <ThreadView thread={thread} />
+          </ChatParticipantsProvider>
+        ) : (
+          <Centered>
+            {ready ? (
+              <Text className="text-center text-sm text-garland-ink-60">
+                {t('chat.notFound')}
+              </Text>
+            ) : (
+              <ActivityIndicator color={garland.ink} />
+            )}
+          </Centered>
+        )}
+      </SafeAreaView>
+    </OverlayProvider>
   )
 }
 
@@ -148,26 +152,24 @@ function ThreadView({ thread }: { thread: ChatThreadDoc }) {
       className="flex-1"
       onLayout={() => frame.current?.measureInWindow((_, y) => setTop(y))}
     >
-      <OverlayProvider i18nInstance={chatI18n}>
-        <Chat client={client} i18nInstance={chatI18n}>
-          <WithComponents overrides={chatAvatarOverrides}>
-            <Channel
-              channel={shown}
-              // Both measure from the window's top while the chat starts under
-              // our header: without the offset the keyboard covers the
-              // composer, and the attachment picker opens below the screen.
-              keyboardVerticalOffset={top}
-              topInset={top}
-              // Its wrapper has no flex of its own, and its content is 100%
-              // tall: under our header that pushes the composer off screen.
-              additionalKeyboardAvoidingViewProps={{ style: { flex: 1 } }}
-            >
-              <MessageList />
-              <MessageComposer />
-            </Channel>
-          </WithComponents>
-        </Chat>
-      </OverlayProvider>
+      <Chat client={client} i18nInstance={chatI18n}>
+        <WithComponents overrides={chatAvatarOverrides}>
+          <Channel
+            channel={shown}
+            // Both measure from the window's top while the chat starts under
+            // our header: without the offset the keyboard covers the
+            // composer, and the attachment picker opens below the screen.
+            keyboardVerticalOffset={top}
+            topInset={top}
+            // Its wrapper has no flex of its own, and its content is 100%
+            // tall: under our header that pushes the composer off screen.
+            additionalKeyboardAvoidingViewProps={{ style: { flex: 1 } }}
+          >
+            <MessageList />
+            <MessageComposer />
+          </Channel>
+        </WithComponents>
+      </Chat>
     </View>
   )
 }
