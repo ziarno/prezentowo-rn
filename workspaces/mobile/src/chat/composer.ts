@@ -55,14 +55,15 @@ const giftMentionsMiddleware = (
       forward,
     }: MiddlewareHandlerParams<MessageComposerMiddlewareState>) => {
       const { text } = state.message
-      const picks = picksOf(composer)
+      if (text === undefined) return forward()
       const edited = composer.editedMessage ?? undefined
-      if (text === undefined || (!picks.length && !edited?.giftIds?.length))
-        return forward()
-      const composed = composeMentions(text, picks, edited)
+      const composed = composeMentions(text, picksOf(composer), edited)
       const data = {
         text: composed.text,
-        giftIds: composed.giftIds,
+        // Set on an edit even when empty, so a dropped mention goes.
+        ...(composed.giftIds.length || edited?.giftIds?.length
+          ? { giftIds: composed.giftIds }
+          : {}),
         ...(composed.pushText ? { pushText: composed.pushText } : {}),
       }
       return next({

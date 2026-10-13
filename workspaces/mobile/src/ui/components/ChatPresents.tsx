@@ -4,15 +4,22 @@ import { type ReactNode, createContext, useContext, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, FlatList, Modal, Pressable, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { defaultRules } from 'simple-markdown'
 import {
   type ComponentOverrides,
+  type MessageTextProps,
   MessageComposerLeadingView as StreamMessageComposerLeadingView,
   useMessageComposer,
-  useMessageContext,
 } from 'stream-chat-expo'
 
 import type { ResolvedParticipant } from '@/api/participants'
-import { MENTION_TOKEN, insertGiftMention, mentionBlocker } from '@/chat'
+import {
+  MENTION_ICON,
+  RENDERED_MENTION,
+  insertGiftMention,
+  mentionBlocker,
+  renderableMentions,
+} from '@/chat'
 import { Text } from '@/components/ui/text'
 import { PresentTile } from '@/ui/components/PresentTile'
 
@@ -61,7 +68,7 @@ function MessageComposerLeadingView() {
         hitSlop={4}
         className="mb-0.5 h-10 w-10 items-center justify-center rounded-full active:opacity-60"
       >
-        <Text className="text-[22px]">{MENTION_TOKEN}</Text>
+        <Text className="text-[22px]">{MENTION_ICON}</Text>
       </Pressable>
       <MentionPicker visible={picking} onClose={() => setPicking(false)} />
     </View>
@@ -155,38 +162,77 @@ function MentionPicker({
   )
 }
 
-// A sent message's mentions, under its text. Each is drawn from the viewer's
-// own presents: one they can't see (deleted, from another event, or hidden
-// from them) shows as unavailable, with no title and no way in. No claims.
-function MessageContentBottomView() {
-  const { message } = useMessageContext()
-  const presents = useChatPresents()
+// A sent message's text, with each mention drawn in place as a tag: the
+// present's picture and title from the viewer's own presents, opening `1e`.
+// One they can't see (deleted, from another event, or hidden from them)
+// shows as unavailable, with no title and no way in. No claims.
+function MessageText(props: MessageTextProps) {
+  const {
+    isMyMessage,
+    markdownRules,
+    markdownStyles,
+    message,
+    messageOverlay,
+    messageTextNumberOfLines,
+    onLongPress,
+    onlyEmojis,
+    onPress,
+    preventPress,
+    renderText,
+    theme: { theme },
+  } = props
+  if (!message) return null
   const giftIds = message.giftIds ?? []
-  if (!presents || !giftIds.length || message.type === 'deleted') return null
-  return (
-    <View className="gap-1.5 px-2 pb-2">
-      {giftIds.map(giftId => {
-        const gift = presents.gifts.find(
-          g => g._id === giftId && g.eventId === presents.event._id,
-        )
-        if (!gift && !presents.giftsReady) return null
-        return (
-          <MentionChip key={giftId} eventId={presents.event._id} gift={gift} />
-        )
-      })}
-    </View>
-  )
+  const { onlyEmojiMarkdown } = theme.messageItemView.content.textContainer
+  return renderText({
+    isMyMessage,
+    semantics: theme.semantics,
+    markdownRules: giftIds.length
+      ? { ...markdownRules, ...mentionRules(giftIds) }
+      : markdownRules,
+    markdownStyles: {
+      ...theme.messageItemView.content.markdown,
+      ...markdownStyles,
+      ...(onlyEmojis ? onlyEmojiMarkdown : {}),
+    },
+    message: giftIds.length
+      ? { ...message, text: renderableMentions(message.text ?? '') }
+      : message,
+    messageOverlay,
+    messageTextNumberOfLines,
+    onLongPress,
+    onlyEmojis,
+    onPress,
+    preventPress,
+  })
 }
 
-function MentionChip({ eventId, gift }: { eventId: string; gift?: GiftDoc }) {
+// A markdown rule for the rendered mentions, ahead of plain text.
+const mentionRules = (giftIds: string[]) =>
+  ({
+    giftMention: {
+      order: defaultRules.text.order - 0.25,
+      match: (source: string) => RENDERED_MENTION.exec(source),
+      parse: (capture: string[]) => ({ index: Number(capture[1]) }),
+      react: (node: { index: number }, _: unknown, state: { key?: string }) => (
+        <MentionTag key={state.key} giftId={giftIds[node.index]} />
+      ),
+    },
+  }) as unknown as MessageTextProps['markdownRules']
+
+function MentionTag({ giftId }: { giftId?: string }) {
   const { t } = useTranslation()
+  const presents = useChatPresents()
+  const gift = presents?.gifts.find(
+    g => g._id === giftId && g.eventId === presents.event._id,
+  )
+  // Not called unavailable while the presents load.
+  if (!gift && !presents?.giftsReady) return <Text>{MENTION_ICON}</Text>
   if (!gift) {
     return (
-      <View className="flex-row items-center gap-2 rounded-xl bg-garland-paper2 px-2 py-1.5">
-        <View className="h-8 w-8 items-center justify-center rounded-lg bg-garland-ink-08">
-          <Text className="text-sm opacity-40">{MENTION_TOKEN}</Text>
-        </View>
-        <Text className="text-[13px] italic text-garland-ink-40">
+      <View className="translate-y-1 flex-row items-center gap-1 rounded-full bg-garland-ink-08 py-0.5 pl-1 pr-2">
+        <Text className="text-[13px] opacity-50">{MENTION_ICON}</Text>
+        <Text className="text-[13px] italic text-garland-ink-60">
           {t('chat.mentionUnavailable')}
         </Text>
       </View>
@@ -197,15 +243,15 @@ function MentionChip({ eventId, gift }: { eventId: string; gift?: GiftDoc }) {
       onPress={() =>
         router.push({
           pathname: '/event/[eventId]/gift/[giftId]',
-          params: { eventId, giftId: gift._id },
+          params: { eventId: gift.eventId, giftId: gift._id },
         })
       }
       accessibilityRole="link"
-      className="flex-row items-center gap-2 rounded-xl bg-garland-paper2 px-2 py-1.5 active:opacity-70"
+      className="translate-y-1 flex-row items-center gap-1 rounded-full bg-garland-paper2 py-0.5 pl-0.5 pr-2 active:opacity-70"
     >
-      <PresentTile gift={gift} size={32} radius={8} />
+      <PresentTile gift={gift} size={20} radius={10} />
       <Text
-        className="flex-shrink text-[13px] font-bold text-garland-ink"
+        className="max-w-[180px] text-[14px] font-bold text-garland-ink"
         numberOfLines={1}
       >
         {gift.title}
@@ -216,5 +262,5 @@ function MentionChip({ eventId, gift }: { eventId: string; gift?: GiftDoc }) {
 
 export const chatPresentOverrides: ComponentOverrides = {
   MessageComposerLeadingView,
-  MessageContentBottomView,
+  MessageText,
 }

@@ -16,4 +16,10 @@ export {
   secretThreadOf,
   type RecapLine,
 } from './threads'
-export { MENTION_TOKEN, type MentionPick, mentionBlocker } from './mentions'
+export {
+  MENTION_ICON,
+  RENDERED_MENTION,
+  type MentionPick,
+  mentionBlocker,
+  renderableMentions,
+} from './mentions'

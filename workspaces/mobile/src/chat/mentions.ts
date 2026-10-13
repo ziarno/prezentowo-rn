@@ -23,19 +23,24 @@ export function mentionBlocker(
   return blocker?.id ?? null
 }
 
-// What a mention of a present is in a message's stored text. Its title is
-// never stored: a later member may not be allowed to see the present, so the
-// app draws it from the viewer's own `gifts.byEvent` instead.
-export const MENTION_TOKEN = '🎁'
+// The icon a mention shows with: in the composer as `🎁Title`, and as the
+// picker's button.
+export const MENTION_ICON = '🎁'
+
+// What a mention of a present is in a message's stored text: the icon and
+// an invisible word joiner, which a typed 🎁 never has. Its title is never
+// stored: a later member may not be allowed to see the present, so the app
+// draws it from the viewer's own `gifts.byEvent` instead.
+export const MENTION_MARK = `${MENTION_ICON}⁠`
 
 // A present picked in the composer, shown there by its title.
 export type MentionPick = { giftId: string; title: string }
 
-export const mentionText = (title: string) => `${MENTION_TOKEN}${title}`
+export const mentionText = (title: string) => `${MENTION_ICON}${title}`
 
 export type ComposedMentions = {
   text: string
-  // The mentioned presents, in the order they appear, each once.
+  // The present each `MENTION_MARK` in `text` stands for, in order.
   giftIds: string[]
   // The text as written, titles included, for the push only. Cleared from
   // the message once it's sent.
@@ -44,43 +49,66 @@ export type ComposedMentions = {
 
 /**
  * The message a composer's `text` sends: every picked present whose
- * `🎁Title` is still in the text becomes a bare `🎁`, and its id is listed.
- * An edit keeps the `edited` message's ids while a `🎁` is left, and has no
- * push copy: only a new message pushes.
+ * `🎁Title` is still in the text becomes a `MENTION_MARK`, and its id is
+ * listed where it stands. A marker pasted from another message is only a
+ * 🎁. An edit keeps the `edited` message's markers, unless one was deleted:
+ * which one is unknown, so they all become a 🎁. Only a new message pushes,
+ * so an edit has no push copy.
  */
 export function composeMentions(
   text: string,
   picks: MentionPick[],
   edited?: { giftIds?: string[] },
 ): ComposedMentions {
+  const old = edited?.giftIds ?? []
+  const keepOld = !!edited && text.split(MENTION_MARK).length - 1 === old.length
   // Longest first, so `🎁Lego Set` wins over `🎁Lego` where both match.
-  const candidates = [...picks].sort((a, b) => b.title.length - a.title.length)
+  const tokens = [...picks]
+    .sort((a, b) => b.title.length - a.title.length)
+    .map(pick => ({ token: mentionText(pick.title), giftId: pick.giftId }))
+  tokens.push({ token: MENTION_MARK, giftId: '' })
+
   const giftIds: string[] = []
+  let oldIndex = 0
   let stored = ''
   let rest = text
   for (;;) {
     let found: { at: number; token: string; giftId: string } | undefined
-    for (const pick of candidates) {
-      const token = mentionText(pick.title)
-      const at = rest.indexOf(token)
-      if (at >= 0 && (!found || at < found.at))
-        found = { at, token, giftId: pick.giftId }
+    for (const candidate of tokens) {
+      const at = rest.indexOf(candidate.token)
+      if (at >= 0 && (!found || at < found.at)) found = { at, ...candidate }
     }
     if (!found) break
-    stored += rest.slice(0, found.at) + MENTION_TOKEN
+    stored += rest.slice(0, found.at)
     rest = rest.slice(found.at + found.token.length)
-    if (!giftIds.includes(found.giftId)) giftIds.push(found.giftId)
-  }
-  stored += rest
-  if (edited) {
-    // Which bare `🎁` was which is unknown, so the old ones are kept while
-    // any is left.
-    const kept = stored.includes(MENTION_TOKEN) ? (edited.giftIds ?? []) : []
-    return {
-      text: stored,
-      giftIds: [...kept, ...giftIds.filter(id => !kept.includes(id))],
+    if (found.token !== MENTION_MARK) {
+      stored += MENTION_MARK
+      giftIds.push(found.giftId)
+    } else if (keepOld) {
+      stored += MENTION_MARK
+      giftIds.push(old[oldIndex++])
+    } else {
+      stored += MENTION_ICON
     }
   }
-  if (stored === text) return { text: stored, giftIds }
-  return { text: stored, giftIds, pushText: text }
+  stored += rest
+  const pushText = text.split(MENTION_MARK).join(MENTION_ICON)
+  if (edited || !giftIds.length) return { text: stored, giftIds }
+  return { text: stored, giftIds, pushText }
+}
+
+// Markdown can't match a mention by its icon, which its text rule reads as
+// a letter, so for rendering the i-th marker becomes `\u0001i\u0001`.
+const RENDER_MARK = '\u0001'
+export const RENDERED_MENTION = /^\u0001(\d+)\u0001/
+
+export function renderableMentions(text: string): string {
+  let index = 0
+  return text
+    .split(RENDER_MARK)
+    .join('')
+    .split(MENTION_MARK)
+    .reduce(
+      (acc, part) => `${acc}${RENDER_MARK}${index++}${RENDER_MARK}${part}`,
+    )
 }

@@ -1,7 +1,7 @@
 /// <reference types="jest" />
 import type { EventParticipant } from '@prezentowo/types'
 
-import { composeMentions, mentionBlocker } from '../mentions'
+import { MENTION_MARK, composeMentions, mentionBlocker } from '../mentions'
 
 const real = (id: string, userId: string): EventParticipant => ({
   id,
@@ -109,12 +109,14 @@ describe("mentionBlocker in a person's secret thread", function () {
 describe('composeMentions', function () {
   const lego = { giftId: 'g1', title: 'Lego Set' }
   const scarf = { giftId: 'g2', title: 'Scarf' }
+  // How a stored mention reads: the icon and an invisible marker.
+  const M = MENTION_MARK
 
-  it('stores only the token, and the titles for the push', function () {
+  it('stores only the marker, and the titles for the push', function () {
     expect(
       composeMentions('what about 🎁Lego Set or 🎁Scarf?', [scarf, lego]),
     ).toEqual({
-      text: 'what about 🎁 or 🎁?',
+      text: `what about ${M} or ${M}?`,
       giftIds: ['g1', 'g2'],
       pushText: 'what about 🎁Lego Set or 🎁Scarf?',
     })
@@ -122,7 +124,7 @@ describe('composeMentions', function () {
 
   it('drops a pick whose mention was deleted from the text', function () {
     expect(composeMentions('maybe 🎁Scarf', [lego, scarf])).toEqual({
-      text: 'maybe 🎁',
+      text: `maybe ${M}`,
       giftIds: ['g2'],
       pushText: 'maybe 🎁Scarf',
     })
@@ -133,10 +135,10 @@ describe('composeMentions', function () {
     })
   })
 
-  it('lists a present mentioned twice once', function () {
+  it('lists a present once per mention, in order', function () {
     expect(composeMentions('🎁Scarf, yes, 🎁Scarf', [scarf, scarf])).toEqual({
-      text: '🎁, yes, 🎁',
-      giftIds: ['g2'],
+      text: `${M}, yes, ${M}`,
+      giftIds: ['g2', 'g2'],
       pushText: '🎁Scarf, yes, 🎁Scarf',
     })
   })
@@ -148,17 +150,26 @@ describe('composeMentions', function () {
     ).toEqual(['g1', 'g3'])
   })
 
-  it("keeps an edited message's mentions, with no push copy", function () {
-    // An edit starts from the stored text, whose mentions are bare tokens.
-    expect(
-      composeMentions('🎁 or 🎁Scarf?', [scarf], { giftIds: ['g1'] }),
-    ).toEqual({ text: '🎁 or 🎁?', giftIds: ['g1', 'g2'] })
-  })
-
-  it("drops an edited message's mentions once none is left", function () {
-    expect(composeMentions('nothing here', [], { giftIds: ['g1'] })).toEqual({
-      text: 'nothing here',
+  it('leaves a typed 🎁 alone, and a pasted marker becomes one', function () {
+    expect(composeMentions(`a 🎁 for ${M}you`, [])).toEqual({
+      text: 'a 🎁 for 🎁you',
       giftIds: [],
     })
+  })
+
+  it("keeps an edited message's mentions in place, with no push copy", function () {
+    // An edit starts from the stored text, whose mentions are markers.
+    expect(
+      composeMentions(`🎁Scarf, ${M} or 🎁Scarf?`, [scarf], {
+        giftIds: ['g1'],
+      }),
+    ).toEqual({ text: `${M}, ${M} or ${M}?`, giftIds: ['g2', 'g1', 'g2'] })
+  })
+
+  it("turns an edited message's mentions into plain 🎁 once one is deleted", function () {
+    // Which marker went is unknown, so none of the old ones is trusted.
+    expect(
+      composeMentions(`${M} only, 🎁Scarf`, [scarf], { giftIds: ['g1', 'g3'] }),
+    ).toEqual({ text: `🎁 only, ${M}`, giftIds: ['g2'] })
   })
 })
