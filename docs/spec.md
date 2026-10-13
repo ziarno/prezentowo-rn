@@ -520,7 +520,7 @@ src/app/
   (app)/
     _layout.tsx               Drawer.Navigator (@react-navigation/drawer, drawerType 'front') → one screen → the Stack
     index.tsx                 3a Home
-    profile.tsx               3b item; Profile (§10.1)
+    profile.tsx               Profile (§10.1), from Home's avatar
     push-notifications.tsx    push settings (§10.2), pushed from Profile
     delete-account.tsx        typed-email deletion confirm (§10.4), modal
     notifications.tsx         notifications screen (layout from #28)
@@ -539,7 +539,7 @@ src/app/
 
 ### 4.2 Rules
 
-- **The drawer is contextual.** `drawerContent` shows the event menu (`3d`/`3d2`) when `useSegments()` includes `event/[eventId]`, and the Home menu (`3b`) otherwise. Screens open it from their own header. `EventTabs` is deleted.
+- **The drawer is the event menu.** `drawerContent` shows the event menu (`3d`/`3d2`) when `useSegments()` includes `event/[eventId]`; only event screens open it, from their own header. Home has no drawer (`3b` is dropped): its header leads with the user's avatar, which opens Profile, and Profile already holds language and sign out. `EventTabs` is deleted.
 - **Wizards** hold their step in state. `beforeRemove`/`BackHandler` steps back and dismisses only from step 1. `5a` import success jumps to `5d` by setting the step.
 - **Collapsing cover**: the feed owns an absolutely positioned header driven by Reanimated `useAnimatedScrollHandler`, collapsing from `3c` to `3c3`.
 - **Pending invite**: when signed out, `7a` Join stores `{ code, participantId? }` in SecureStore and routes to `welcome`. When the `(app)` guard opens, the join runs and the app replaces into `event/[eventId]`.
@@ -565,7 +565,6 @@ src/app/
 | Screens | Reads | Writes | Notes |
 |---|---|---|---|
 | `3a` Home | `events.mine`, `activity.recentForUser`, `notifications.mine` (bell dot = unread count) | — | The bell shows only our notifications, never Stream's unread count. |
-| `3b` Home drawer | — | — | Rows: Profile, Notifications, sign out, language. Sign out uses the shared confirm (§10.1). |
 | `3c`–`3c4` feed | `events.byId`, `gifts.byEvent`, `activity.byEvent` | — | "X of Y have a buyer" is computed client-side. |
 | `3d`/`3d2` event drawer | `events.byId`, `gifts.byEvent` (counts) | — | Counts are shown for everyone in `3d` and for the beneficiary only in `3d2`. Includes "＋ Invite people" (share link). |
 | `3e`/`3f` person | `gifts.byEvent` | `gifts.claim`/`unclaim` | `3f` groups the list into own wishes and suggested by others, by the recipient's `userId`, or `departedUserId` for a departed placeholder (§1.12). Chat recap: §7. |

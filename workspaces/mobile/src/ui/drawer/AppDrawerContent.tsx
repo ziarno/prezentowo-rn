@@ -12,7 +12,6 @@ import {
   BackIcon,
   BellIcon,
   ChatIcon,
-  GlobeIcon,
   PencilIcon,
   PlusIcon,
 } from '@/components/ui/icon'
@@ -24,10 +23,6 @@ import { useEventGifts } from '@/hooks/useEventGifts'
 import { useEventInvite } from '@/hooks/useEventInvite'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useOffline } from '@/hooks/useOffline'
-import { useSignOut } from '@/hooks/useSignOut'
-import { useLanguageModal } from '@/localization/LanguageModalProvider'
-import { LOCALES } from '@/localization/provider'
-import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
 import { PeopleDrawer } from '@/ui/components/PeopleDrawer'
 
 type IconComponent = ComponentType<{
@@ -36,8 +31,8 @@ type IconComponent = ComponentType<{
   color?: string
 }>
 
-// The drawer is contextual: the event menu (`3d`/`3d2`) anywhere under
-// `event/[eventId]`, the Home menu (`3b`) everywhere else.
+// The event menu (`3d`/`3d2`), for screens under `event/[eventId]` — the only
+// ones that open the drawer. Home goes to Profile from its avatar instead.
 export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
   const segments: string[] = useSegments()
   const { eventId } = useGlobalSearchParams<{ eventId?: string }>()
@@ -60,85 +55,13 @@ export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
           // Keyed so switching events remounts it: its Meteor trackers keep
           // the eventId they were first rendered with.
           <EventMenu key={eventId} eventId={eventId} go={go} />
-        ) : (
-          <HomeMenu go={go} />
-        )}
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   )
 }
 
 type MenuProps = { go: (navigate: () => void) => void }
-
-function HomeMenu({ go }: MenuProps) {
-  const { t, i18n } = useTranslation()
-  const { confirmSignOut } = useSignOut()
-  const { open: openLanguageModal } = useLanguageModal()
-  const user = useCurrentUser()
-
-  const email = user?.emails?.[0]?.address
-  const localeLabel =
-    LOCALES.find(l => l.code === i18n.language)?.label ?? 'English'
-
-  return (
-    <>
-      <Pressable
-        onPress={() => go(() => router.push('/profile'))}
-        accessibilityRole="button"
-        accessibilityLabel={t('shell.profile')}
-        className="flex-row items-center gap-3.5 px-[22px] pb-5 pt-4 active:opacity-70"
-      >
-        <ParticipantAvatar
-          name={user?.profile?.name ?? ''}
-          avatarKey={user?.profile?.avatar ?? 'm1'}
-          photo={user?.profile?.photo}
-          size={48}
-        />
-        <View className="min-w-0 flex-1">
-          <Text
-            className="text-[17px] font-bold text-garland-ink"
-            numberOfLines={1}
-          >
-            {user?.profile?.name ?? t('profile.friend')}
-          </Text>
-          {email ? (
-            <Text
-              className="mt-0.5 text-[13px] text-garland-ink-60"
-              numberOfLines={1}
-            >
-              {email}
-            </Text>
-          ) : null}
-        </View>
-      </Pressable>
-
-      <MenuSection>
-        <MenuRow
-          Icon={BellIcon}
-          label={t('shell.notifications')}
-          onPress={() => go(() => router.push('/notifications'))}
-        />
-        <MenuRow
-          Icon={GlobeIcon}
-          label={t('common.language')}
-          detail={localeLabel}
-          onPress={() => go(openLanguageModal)}
-        />
-      </MenuSection>
-
-      <Pressable
-        onPress={() => go(confirmSignOut)}
-        hitSlop={12}
-        accessibilityRole="button"
-        className="mt-8 self-start px-[22px]"
-      >
-        <Text className="text-sm font-bold text-garland-berry">
-          {t('profile.signOut')}
-        </Text>
-      </Pressable>
-    </>
-  )
-}
 
 function EventMenu({ eventId, go }: MenuProps & { eventId: string }) {
   const { t } = useTranslation()

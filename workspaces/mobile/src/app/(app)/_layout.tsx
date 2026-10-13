@@ -7,7 +7,7 @@ import { PushPrePromptSheet } from '@/ui/components/PushPrePromptSheet'
 import { AppDrawerContent } from '@/ui/drawer/AppDrawerContent'
 
 // A single drawer screen wrapping the whole authenticated Stack in `(stack)/`,
-// so every screen shares one drawer whose menu follows the current route (see
+// so every event screen shares one drawer with the event's menu (see
 // AppDrawerContent). Screens open it from their own header; edge-swipe stays
 // off so it never fights the stack's swipe-back gesture. The offline banner
 // sits above it all. The push pre-prompt opens over whichever screen is up.

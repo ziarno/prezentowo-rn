@@ -161,7 +161,7 @@ export function ProfileScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
-      <ScreenHeader title={t('shell.profile')} />
+      <ScreenHeader title={t('shell.profile')} variant="back" />
 
       <ScrollView
         className="flex-1"

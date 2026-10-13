@@ -14,8 +14,9 @@ type ScreenHeaderProps = {
   // `drawer` screens open the app drawer from a ☰ button (with a back arrow
   // beside it once something is underneath); `back` screens get the back
   // arrow alone; `modal` screens render above the drawer, so they get a close
-  // button instead.
+  // button instead. `left` replaces the leading buttons of a non-modal screen.
   variant?: 'drawer' | 'back' | 'modal'
+  left?: ReactNode
   right?: ReactNode
   // Replaces the modal close button's default `router.back()`.
   onClose?: () => void
@@ -24,6 +25,7 @@ type ScreenHeaderProps = {
 export function ScreenHeader({
   title,
   variant = 'drawer',
+  left,
   right,
   onClose = () => router.back(),
 }: ScreenHeaderProps) {
@@ -33,7 +35,9 @@ export function ScreenHeader({
 
   return (
     <View className="min-h-12 flex-row items-center gap-3 px-[22px] pb-2 pt-3.5">
-      {variant !== 'modal' ? (
+      {variant === 'modal' ? null : left ? (
+        left
+      ) : (
         <>
           {hasScreenBeneath || variant === 'back' ? (
             <Pressable
@@ -56,7 +60,7 @@ export function ScreenHeader({
             </Pressable>
           ) : null}
         </>
-      ) : null}
+      )}
       <Text
         className="flex-1 font-garland-display text-lg text-garland-ink"
         numberOfLines={1}

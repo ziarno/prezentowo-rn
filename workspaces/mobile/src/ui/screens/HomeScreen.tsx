@@ -7,16 +7,41 @@ import { sortForHome } from '@/api/eventList'
 import { BellIcon, PlusIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useMyEvents } from '@/hooks/useMyEvents'
 import { useOffline } from '@/hooks/useOffline'
 import { useRecentActivitySubscription } from '@/hooks/useRecentActivity'
 import { useHasUnreadNotifications } from '@/hooks/useUnreadNotifications'
 import { EventCard } from '@/ui/components/EventCard'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
+import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
 
 const openCreateEvent = () => router.push('/create-event')
 const openNotifications = () => router.push('/notifications')
+const openProfile = () => router.push('/profile')
+
+// The ScreenHeader's leading button: the user's avatar, opening Profile.
+function ProfileButton() {
+  const { t } = useTranslation()
+  const user = useCurrentUser()
+  return (
+    <Pressable
+      onPress={openProfile}
+      hitSlop={12}
+      accessibilityRole="button"
+      accessibilityLabel={t('shell.profile')}
+      className="active:opacity-70"
+    >
+      <ParticipantAvatar
+        name={user?.profile?.name ?? ''}
+        avatarKey={user?.profile?.avatar ?? 'm1'}
+        photo={user?.profile?.photo}
+        size={30}
+      />
+    </Pressable>
+  )
+}
 
 // The ScreenHeader's bell, with a dot while something is unread.
 function NotificationsBell() {
@@ -52,7 +77,11 @@ export function HomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
-      <ScreenHeader title={t('shell.home')} right={<NotificationsBell />} />
+      <ScreenHeader
+        title={t('shell.home')}
+        left={<ProfileButton />}
+        right={<NotificationsBell />}
+      />
       {events.length === 0 ? (
         <View className="flex-1 items-center justify-center gap-2 px-7">
           {ready ? (
