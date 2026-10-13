@@ -1,8 +1,25 @@
 import type { ChatThreadDoc, EventDoc, GiftDoc } from '@prezentowo/types'
 import { router } from 'expo-router'
-import { type ReactNode, createContext, useContext, useState } from 'react'
+import {
+  type ReactNode,
+  createContext,
+  forwardRef,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, FlatList, Modal, Pressable, View } from 'react-native'
+import {
+  Alert,
+  FlatList,
+  Modal,
+  Pressable,
+  Text as RNText,
+  TextInput,
+  type TextInputProps,
+  View,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { defaultRules } from 'simple-markdown'
 import {
@@ -10,6 +27,7 @@ import {
   type MessageTextProps,
   MessageComposerLeadingView as StreamMessageComposerLeadingView,
   useMessageComposer,
+  useStateStore,
 } from 'stream-chat-expo'
 
 import type { ResolvedParticipant } from '@/api/participants'
@@ -18,9 +36,11 @@ import {
   RENDERED_MENTION,
   insertGiftMention,
   mentionBlocker,
+  mentionRanges,
   renderableMentions,
 } from '@/chat'
 import { Text } from '@/components/ui/text'
+import { garland } from '@/constants/colors'
 import { PresentTile } from '@/ui/components/PresentTile'
 
 // Present mentions in chat (docs/spec.md §7). Stream reads the overrides once,
@@ -259,6 +279,65 @@ function MentionTag({ giftId }: { giftId?: string }) {
     </Pressable>
   )
 }
+
+// The composer's text field, with each mention drawn as a tag. The text
+// composer keeps mentions whole (`keepMentionsWhole`); when it changes what
+// was typed, the caret goes where it says.
+export const MentionTextInput = forwardRef<TextInput, TextInputProps>(
+  function MentionTextInput({ value = '', onChangeText, ...props }, ref) {
+    const composer = useMessageComposer()
+    const { picks } = useStateStore(composer.customDataManager.state, s => ({
+      picks: s.custom.giftMentions ?? [],
+    }))
+    const input = useRef<TextInput | null>(null)
+    const typed = useRef(value)
+
+    useEffect(() => {
+      if (value === typed.current) return
+      typed.current = value
+      const { start, end } = composer.textComposer.selection
+      input.current?.setSelection(start, end)
+    }, [value, composer])
+
+    const parts: ReactNode[] = []
+    let from = 0
+    for (const { start, end } of mentionRanges(value, picks)) {
+      parts.push(value.slice(from, start))
+      parts.push(
+        <RNText key={start} style={styles.mention}>
+          {value.slice(start, end)}
+        </RNText>,
+      )
+      from = end
+    }
+    parts.push(value.slice(from))
+
+    return (
+      <TextInput
+        {...props}
+        ref={node => {
+          input.current = node
+          if (typeof ref === 'function') ref(node)
+          else if (ref) ref.current = node
+        }}
+        onChangeText={text => {
+          typed.current = text
+          onChangeText?.(text)
+        }}
+      >
+        {parts}
+      </TextInput>
+    )
+  },
+)
+
+const styles = {
+  mention: {
+    backgroundColor: garland.paper2,
+    color: garland.ink,
+    fontWeight: '700',
+  },
+} as const
 
 export const chatPresentOverrides: ComponentOverrides = {
   MessageComposerLeadingView,

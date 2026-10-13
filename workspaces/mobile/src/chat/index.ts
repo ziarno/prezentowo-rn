@@ -21,5 +21,6 @@ export {
   RENDERED_MENTION,
   type MentionPick,
   mentionBlocker,
+  mentionRanges,
   renderableMentions,
 } from './mentions'

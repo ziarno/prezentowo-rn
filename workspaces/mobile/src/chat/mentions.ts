@@ -97,6 +97,76 @@ export function composeMentions(
   return { text: stored, giftIds, pushText }
 }
 
+// Where each mention is in a composer's text, left to right: a picked
+// present's `🎁Title` (longest first, as `composeMentions` reads them), or a
+// sent one's marker while its message is edited.
+export function mentionRanges(
+  text: string,
+  picks: MentionPick[],
+): { start: number; end: number }[] {
+  const tokens = [
+    ...[...picks]
+      .sort((a, b) => b.title.length - a.title.length)
+      .map(pick => mentionText(pick.title)),
+    MENTION_MARK,
+  ]
+  const ranges: { start: number; end: number }[] = []
+  let from = 0
+  for (;;) {
+    let found: { start: number; end: number } | undefined
+    for (const token of tokens) {
+      const at = text.indexOf(token, from)
+      if (at >= 0 && (!found || at < found.start))
+        found = { start: at, end: at + token.length }
+    }
+    if (!found) return ranges
+    ranges.push(found)
+    from = found.end
+  }
+}
+
+/**
+ * Keeps mentions whole while the composer's text goes from `prev` to `next`,
+ * so they act like tags: an edit that deletes any of a mention deletes all of
+ * it, and text typed inside one goes just after it. Returns the text and
+ * caret to use instead, or null when `next` touches no mention.
+ */
+export function keepMentionsWhole(
+  prev: string,
+  next: string,
+  picks: MentionPick[],
+): { text: string; caret: number } | null {
+  const shorter = Math.min(prev.length, next.length)
+  let start = 0
+  while (start < shorter && prev[start] === next[start]) start++
+  let tail = 0
+  while (
+    tail < shorter - start &&
+    prev[prev.length - 1 - tail] === next[next.length - 1 - tail]
+  )
+    tail++
+  const removedEnd = prev.length - tail
+  const inserted = next.slice(start, next.length - tail)
+  const ranges = mentionRanges(prev, picks)
+
+  if (removedEnd === start) {
+    const inside = ranges.find(r => r.start < start && start < r.end)
+    if (!inside) return null
+    return {
+      text: prev.slice(0, inside.end) + inserted + prev.slice(inside.end),
+      caret: inside.end + inserted.length,
+    }
+  }
+  const hit = ranges.filter(r => start < r.end && removedEnd > r.start)
+  if (!hit.length) return null
+  const from = Math.min(start, hit[0].start)
+  const to = Math.max(removedEnd, hit[hit.length - 1].end)
+  return {
+    text: prev.slice(0, from) + inserted + prev.slice(to),
+    caret: from + inserted.length,
+  }
+}
+
 // Markdown can't match a mention by its icon, which its text rule reads as
 // a letter, so for rendering the i-th marker becomes `\u0001i\u0001`.
 const RENDER_MARK = '\u0001'

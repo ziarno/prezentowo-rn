@@ -8,9 +8,15 @@ import type {
   SendMessageOptions,
   StreamChat,
   Message as StreamMessage,
+  TextComposerMiddleware,
 } from 'stream-chat'
 
-import { type MentionPick, composeMentions, mentionText } from './mentions'
+import {
+  type MentionPick,
+  composeMentions,
+  keepMentionsWhole,
+  mentionText,
+} from './mentions'
 
 // The present mentions a message carries (docs/spec.md §7).
 declare module 'stream-chat' {
@@ -75,9 +81,38 @@ const giftMentionsMiddleware = (
   },
 })
 
+// Mentions act as tags while typing: a keystroke that would change one
+// takes it whole instead. The composer still holds the text from before it.
+const wholeMentionsMiddleware = (
+  composer: MessageComposer,
+): TextComposerMiddleware => ({
+  id: 'prezentowo/whole-gift-mentions',
+  handlers: {
+    onChange: ({ state, next, forward }) => {
+      const kept = keepMentionsWhole(
+        composer.textComposer.text,
+        state.text,
+        picksOf(composer),
+      )
+      if (!kept) return forward()
+      return next({
+        ...state,
+        text: kept.text,
+        selection: { start: kept.caret, end: kept.caret },
+      })
+    },
+    onSuggestionItemSelect: ({ forward }) => forward(),
+  },
+})
+
 // Every composer the client makes gets the middleware.
 export function setUpGiftMentions(client: StreamChat) {
   client.setMessageComposerSetupFunction(({ composer }) => {
+    composer.textComposer.middlewareExecutor.insert({
+      middleware: [wholeMentionsMiddleware(composer)],
+      position: { before: 'stream-io/text-composer/pre-validation-middleware' },
+      unique: true,
+    })
     composer.compositionMiddlewareExecutor.insert({
       middleware: [giftMentionsMiddleware(composer)],
       position: {

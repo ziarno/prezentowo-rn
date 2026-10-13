@@ -38,6 +38,7 @@ import {
 } from '@/ui/components/ChatAvatars'
 import {
   ChatPresentsProvider,
+  MentionTextInput,
   chatPresentOverrides,
 } from '@/ui/components/ChatPresents'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
@@ -188,7 +189,7 @@ function ThreadView({ thread }: { thread: ChatThreadDoc }) {
             }
           >
             <MessageList />
-            <MessageComposer />
+            <MessageComposer TextInputComponent={MentionTextInput} />
           </Channel>
         </WithComponents>
       </Chat>

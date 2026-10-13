@@ -1,7 +1,12 @@
 /// <reference types="jest" />
 import type { EventParticipant } from '@prezentowo/types'
 
-import { MENTION_MARK, composeMentions, mentionBlocker } from '../mentions'
+import {
+  MENTION_MARK,
+  composeMentions,
+  keepMentionsWhole,
+  mentionBlocker,
+} from '../mentions'
 
 const real = (id: string, userId: string): EventParticipant => ({
   id,
@@ -171,5 +176,56 @@ describe('composeMentions', function () {
     expect(
       composeMentions(`${M} only, 🎁Scarf`, [scarf], { giftIds: ['g1', 'g3'] }),
     ).toEqual({ text: `🎁 only, ${M}`, giftIds: ['g2'] })
+  })
+})
+
+// The composer's text before and after a keystroke: an edit that touches a
+// mention takes the whole mention, like deleting a tag.
+describe('keepMentionsWhole', function () {
+  const lego = { giftId: 'g1', title: 'Lego Set' }
+  const M = MENTION_MARK
+
+  it('removes the whole mention on a backspace at its end', function () {
+    expect(keepMentionsWhole('hi 🎁Lego Set', 'hi 🎁Lego Se', [lego])).toEqual({
+      text: 'hi ',
+      caret: 3,
+    })
+  })
+
+  it('removes the whole mention on a backspace inside it', function () {
+    expect(
+      keepMentionsWhole('🎁Lego Set and more', '🎁Leg Set and more', [lego]),
+    ).toEqual({ text: ' and more', caret: 0 })
+  })
+
+  it('removes it when a selection reaching into it is replaced', function () {
+    expect(keepMentionsWhole('ask 🎁Lego Set?', 'asX Set?', [lego])).toEqual({
+      text: 'asX?',
+      caret: 3,
+    })
+  })
+
+  it('moves text typed inside a mention to just after it', function () {
+    expect(keepMentionsWhole('🎁Lego Set!', '🎁LegXo Set!', [lego])).toEqual({
+      text: '🎁Lego SetX!',
+      caret: 11,
+    })
+  })
+
+  it('leaves typing and deleting next to a mention alone', function () {
+    expect(keepMentionsWhole('🎁Lego Set ', '🎁Lego Set', [lego])).toBeNull()
+    expect(keepMentionsWhole('🎁Lego Set', '🎁Lego Set!', [lego])).toBeNull()
+    expect(keepMentionsWhole('🎁Lego Set', 'a🎁Lego Set', [lego])).toBeNull()
+  })
+
+  it('treats a sent mention being edited as one piece too', function () {
+    expect(keepMentionsWhole(`see ${M}`, 'see 🎁', [])).toEqual({
+      text: 'see ',
+      caret: 4,
+    })
+  })
+
+  it('leaves text without mentions alone', function () {
+    expect(keepMentionsWhole('Lego Set', 'Lego Se', [lego])).toBeNull()
   })
 })
