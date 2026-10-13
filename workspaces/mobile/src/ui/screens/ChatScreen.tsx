@@ -1,6 +1,6 @@
 import type { ChatThreadDoc } from '@prezentowo/types'
 import { useFocusEffect } from 'expo-router'
-import { type ReactNode, useCallback, useEffect, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -104,6 +104,9 @@ function ThreadView({ thread }: { thread: ChatThreadDoc }) {
     channel: StreamChannel | null
   }>()
   const [attempt, setAttempt] = useState(0)
+  // How far below the window's top the chat starts, under our header.
+  const frame = useRef<View>(null)
+  const [top, setTop] = useState(0)
 
   const cid = cidOf(thread)
   const { streamChannelType: type, streamChannelId: id } = thread
@@ -140,24 +143,33 @@ function ThreadView({ thread }: { thread: ChatThreadDoc }) {
     )
   }
   return (
-    <OverlayProvider i18nInstance={chatI18n}>
-      <Chat client={client} i18nInstance={chatI18n}>
-        <WithComponents overrides={chatAvatarOverrides}>
-          <Channel
-            channel={shown}
-            // It measures itself within this screen, which starts at the top
-            // of the window, so nothing sits above it to offset for.
-            keyboardVerticalOffset={0}
-            // Its wrapper has no flex of its own, and its content is 100%
-            // tall: under our header that pushes the composer off screen.
-            additionalKeyboardAvoidingViewProps={{ style: { flex: 1 } }}
-          >
-            <MessageList />
-            <MessageComposer />
-          </Channel>
-        </WithComponents>
-      </Chat>
-    </OverlayProvider>
+    <View
+      ref={frame}
+      className="flex-1"
+      onLayout={() => frame.current?.measureInWindow((_, y) => setTop(y))}
+    >
+      <OverlayProvider i18nInstance={chatI18n}>
+        <Chat client={client} i18nInstance={chatI18n}>
+          <WithComponents overrides={chatAvatarOverrides}>
+            <Channel
+              channel={shown}
+              // It measures itself within this screen, which starts at the top
+              // of the window, so nothing sits above it to offset for.
+              keyboardVerticalOffset={0}
+              // Its wrapper has no flex of its own, and its content is 100%
+              // tall: under our header that pushes the composer off screen.
+              additionalKeyboardAvoidingViewProps={{ style: { flex: 1 } }}
+              // The attachment picker places itself from the window's top, so
+              // without this it opens below the screen, leaving a blank gap.
+              topInset={top}
+            >
+              <MessageList />
+              <MessageComposer />
+            </Channel>
+          </WithComponents>
+        </Chat>
+      </OverlayProvider>
+    </View>
   )
 }
 
