@@ -399,7 +399,9 @@
         "year_one": "a year ago",
         "year_other": "{{count}} years ago"
       }
-    }
+    },
+    "presents_one": "{{count}} present",
+    "presents_other": "{{count}} presents"
   },
   "photoPicker": {
     "upload": "Upload photo",

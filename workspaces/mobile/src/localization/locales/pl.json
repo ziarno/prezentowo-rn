@@ -423,7 +423,11 @@
         "year_many": "{{count}} lat temu",
         "year_other": "{{count}} roku temu"
       }
-    }
+    },
+    "presents_one": "{{count}} prezent",
+    "presents_few": "{{count}} prezenty",
+    "presents_many": "{{count}} prezentów",
+    "presents_other": "{{count}} prezentu"
   },
   "photoPicker": {
     "upload": "Dodaj zdjęcie",
