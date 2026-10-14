@@ -21,7 +21,7 @@ export function NotificationsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
-      <ScreenHeader title={t('shell.notifications')} variant="back" />
+      <ScreenHeader title={t('shell.notifications')} variant="modal" />
       {sections.length === 0 ? (
         ready ? (
           <View className="items-center px-9 pt-[70px]">
