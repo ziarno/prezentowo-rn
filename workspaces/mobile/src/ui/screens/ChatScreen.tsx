@@ -82,7 +82,11 @@ export function ChatScreen(props: ChatScreenProps) {
     // overlay it draws cover our header too.
     <OverlayProvider i18nInstance={chatI18n}>
       <SafeAreaView edges={['top']} className="flex-1 bg-garland-paper">
-        <ScreenHeader title={title} />
+        {/* A person's chat is opened from their list, not a section. */}
+        <ScreenHeader
+          title={title}
+          variant={props.kind === 'event' ? 'drawer' : 'back'}
+        />
         <LockNote className="mx-[22px] mb-2">{note}</LockNote>
         {thread && event ? (
           <ChatParticipantsProvider participants={participants}>

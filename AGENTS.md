@@ -48,9 +48,8 @@ yarn workspace backend tsc --noEmit       # backend type check (not scripted)
 
 - Router entry: `workspaces/mobile/src/app` — NOT default `app/`
 - Route guards: `workspaces/mobile/src/app/_layout.tsx`
-- Authenticated shell: `workspaces/mobile/src/app/(app)/_layout.tsx` is a Drawer with one screen, the `(stack)` group; its menu is `src/ui/drawer/AppDrawerContent.tsx`
-- Authenticated stack: `workspaces/mobile/src/app/(app)/(stack)/*`
-- Modal vs push: `workspaces/mobile/src/app/(app)/(stack)/_layout.tsx`
+- Authenticated stack: `workspaces/mobile/src/app/(app)/*`; modal vs push is set in its `_layout.tsx`
+- Event sections: `workspaces/mobile/src/app/(app)/event/[eventId]/(sections)/` (feed, chat, a person) are a Drawer, one screen on the Stack; its menu is `src/ui/drawer/EventDrawerContent.tsx`. Move between sections with `DrawerActions.jumpTo` (no history), never `router.push` — that stacks a second copy of the event. Everything else under `event/[eventId]/` (a present, a person's chat, edit, add-gift) is pushed on the Stack and gets a back arrow (`ScreenHeader variant="back"`)
 - `@/*` alias maps to both `./src/*` and `./*` — see `workspaces/mobile/tsconfig.json` and `babel.config.js`
 - DDP connects at module load: `workspaces/mobile/src/hooks/useConnection.ts` using `workspaces/mobile/config.json`
 - Auth/onboarding stored in Expo SecureStore

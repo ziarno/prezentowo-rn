@@ -17,11 +17,17 @@ export type PersonItem = {
 type PeopleDrawerProps = {
   people: PersonItem[]
   onSelectPerson: (id: string) => void
+  // The person whose list is on screen.
+  selectedId?: string
 }
 
 // The event's participants, as the people section of the event drawer
 // (`3d`/`3d2`). Tapping a person opens their presents.
-export function PeopleDrawer({ people, onSelectPerson }: PeopleDrawerProps) {
+export function PeopleDrawer({
+  people,
+  onSelectPerson,
+  selectedId,
+}: PeopleDrawerProps) {
   const { t } = useTranslation()
   return (
     <View>
@@ -36,6 +42,7 @@ export function PeopleDrawer({ people, onSelectPerson }: PeopleDrawerProps) {
           presentCount={p.presentCount}
           isYou={p.isYou}
           youLabel={t('shell.you')}
+          selected={p.id === selectedId}
           onPress={() => onSelectPerson(p.id)}
         />
       ))}

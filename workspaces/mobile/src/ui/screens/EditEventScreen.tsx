@@ -62,7 +62,7 @@ export function EditEventScreen({ eventId }: { eventId: string }) {
   if (!event || !user || event.ownerId !== user._id) {
     return (
       <SafeAreaView className="flex-1 bg-garland-paper">
-        <ScreenHeader title={t('shell.editEvent')} />
+        <ScreenHeader title={t('shell.editEvent')} variant="back" />
         <View className="flex-1 items-center justify-center px-7">
           <Text className="text-center text-sm text-garland-ink-60">
             {!ready
@@ -90,7 +90,7 @@ export function EditEventScreen({ eventId }: { eventId: string }) {
 
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
-      <ScreenHeader title={t('shell.editEvent')} />
+      <ScreenHeader title={t('shell.editEvent')} variant="back" />
       <ScrollView
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}

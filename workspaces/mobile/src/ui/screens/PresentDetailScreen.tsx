@@ -93,7 +93,7 @@ export function PresentDetailScreen({
   if (!gift || !event || !user || isHiddenFrom(event, gift, user._id)) {
     return (
       <SafeAreaView className="flex-1 bg-garland-paper">
-        <ScreenHeader title={t('shell.present')} />
+        <ScreenHeader title={t('shell.present')} variant="back" />
         <View className="flex-1 items-center justify-center px-7">
           <Text className="text-center text-sm text-garland-ink-60">
             {ready ? t('present.notFound') : t('present.loading')}
@@ -173,6 +173,7 @@ export function PresentDetailScreen({
     <SafeAreaView className="flex-1 bg-garland-paper">
       <ScreenHeader
         title={event.title}
+        variant="back"
         right={
           canEditGift(gift, user._id) && serverGift ? (
             <Pressable

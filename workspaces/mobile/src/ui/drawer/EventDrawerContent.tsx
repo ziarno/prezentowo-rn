@@ -1,4 +1,4 @@
-import { router, useGlobalSearchParams, useSegments } from 'expo-router'
+import { router } from 'expo-router'
 import type { DrawerContentComponentProps } from 'expo-router/drawer'
 import type { ComponentType, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -31,19 +31,28 @@ type IconComponent = ComponentType<{
   color?: string
 }>
 
-// The event menu (`3d`/`3d2`), for screens under `event/[eventId]` — the only
-// ones that open the drawer. Home goes to Profile from its avatar instead.
-export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
-  const segments: string[] = useSegments()
-  const { eventId } = useGlobalSearchParams<{ eventId?: string }>()
-  const eventIndex = segments.indexOf('event')
-  const inEvent = eventIndex !== -1 && segments[eventIndex + 1] === '[eventId]'
-
+// The event menu (`3d`/`3d2`): the drawer of an event's sections, the only
+// screens that open it. Home goes to Profile from its avatar instead.
+// Sections are jumped between, so they leave no history; what isn't a
+// section (editing) is pushed over the drawer.
+export function EventDrawerContent({
+  navigation,
+  state,
+  eventId,
+}: DrawerContentComponentProps & { eventId: string }) {
+  const open = state.routes[state.index]
+  const current: Current = {
+    section: open?.name,
+    participantId: (open?.params as { participantId?: string } | undefined)
+      ?.participantId,
+  }
   // Close first so the drawer isn't left open over the screen we land on.
   const go = (navigate: () => void) => {
     navigation.closeDrawer()
     navigate()
   }
+  const jumpTo = (section: string, params?: Record<string, string>) =>
+    go(() => navigation.jumpTo(section, { eventId, ...params }))
 
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
@@ -51,19 +60,28 @@ export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
         contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
       >
-        {inEvent && eventId ? (
-          // Keyed so switching events remounts it: its Meteor trackers keep
-          // the eventId they were first rendered with.
-          <EventMenu key={eventId} eventId={eventId} go={go} />
-        ) : null}
+        <EventMenu
+          eventId={eventId}
+          current={current}
+          go={go}
+          jumpTo={jumpTo}
+        />
       </ScrollView>
     </SafeAreaView>
   )
 }
 
-type MenuProps = { go: (navigate: () => void) => void }
+// The section on screen, highlighted in the menu.
+type Current = { section?: string; participantId?: string }
 
-function EventMenu({ eventId, go }: MenuProps & { eventId: string }) {
+type MenuProps = {
+  eventId: string
+  current: Current
+  go: (navigate: () => void) => void
+  jumpTo: (section: string, params?: Record<string, string>) => void
+}
+
+function EventMenu({ eventId, current, go, jumpTo }: MenuProps) {
   const { t } = useTranslation()
   const { event } = useEventById(eventId)
   const { participants } = useEventParticipants(eventId)
@@ -118,26 +136,14 @@ function EventMenu({ eventId, go }: MenuProps & { eventId: string }) {
         <MenuRow
           Icon={BellIcon}
           label={t('shell.activity')}
-          onPress={() =>
-            go(() =>
-              router.dismissTo({
-                pathname: '/event/[eventId]',
-                params: { eventId },
-              }),
-            )
-          }
+          selected={current.section === 'index'}
+          onPress={() => jumpTo('index')}
         />
         <MenuRow
           Icon={ChatIcon}
           label={t('shell.chat')}
-          onPress={() =>
-            go(() =>
-              router.push({
-                pathname: '/event/[eventId]/chat',
-                params: { eventId },
-              }),
-            )
-          }
+          selected={current.section === 'chat'}
+          onPress={() => jumpTo('chat')}
         />
       </MenuSection>
 
@@ -146,13 +152,13 @@ function EventMenu({ eventId, go }: MenuProps & { eventId: string }) {
       </Text>
       <PeopleDrawer
         people={people}
+        selectedId={
+          current.section === 'person/[participantId]'
+            ? current.participantId
+            : undefined
+        }
         onSelectPerson={participantId =>
-          go(() =>
-            router.push({
-              pathname: '/event/[eventId]/person/[participantId]',
-              params: { eventId, participantId },
-            }),
-          )
+          jumpTo('person/[participantId]', { participantId })
         }
       />
       {/* Only the creator holds the invite code (`invites.forEvent`). */}
@@ -190,20 +196,22 @@ function MenuRow({
   detail,
   onPress,
   disabled = false,
+  selected = false,
 }: {
   Icon: IconComponent
   label: string
   detail?: string
   onPress?: () => void
   disabled?: boolean
+  selected?: boolean
 }) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
-      accessibilityState={{ disabled }}
-      className={`flex-row items-center gap-3 border-b border-garland-ink-08 px-[22px] py-3.5 active:opacity-70 ${disabled ? 'opacity-40' : ''}`}
+      accessibilityState={{ disabled, selected }}
+      className={`flex-row items-center gap-3 border-b border-garland-ink-08 px-[22px] py-3.5 active:opacity-70 ${disabled ? 'opacity-40' : ''} ${selected ? 'bg-garland-paper2' : ''}`}
     >
       <Icon width={20} height={20} color={garland.ink} />
       <Text className="flex-1 text-[15px] font-semibold text-garland-ink">

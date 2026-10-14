@@ -16,7 +16,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { activityLines, buyerSummary } from '@/api/activityFeed'
 import { type CoverTone, coverTone } from '@/api/stockArt'
-import { BackIcon, HamburgerIcon } from '@/components/ui/icon'
+import { HamburgerIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
@@ -24,7 +24,6 @@ import { useEventActivity } from '@/hooks/useEventActivity'
 import { useEventById } from '@/hooks/useEventById'
 import { useEventGifts } from '@/hooks/useEventGifts'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
-import { useHasScreenBeneath } from '@/hooks/useHasScreenBeneath'
 import { eventWhen } from '@/localization/eventDates'
 import { ActivityFeedItem } from '@/ui/components/ActivityFeedItem'
 import { EventBackground } from '@/ui/components/EventBackground'
@@ -75,6 +74,7 @@ function ActivityList({ event }: { event: EventDoc }) {
   const { items, ready } = useEventActivity(event._id)
   const { gifts } = useEventGifts(event._id)
   const { resolve } = useEventParticipants(event._id)
+  const navigation = useNavigation()
   const now = new Date()
 
   const lines = activityLines(event, items, user?._id)
@@ -85,11 +85,15 @@ function ActivityList({ event }: { event: EventDoc }) {
       pathname: '/event/[eventId]/gift/[giftId]',
       params: { eventId: event._id, giftId },
     })
+  // A person is another section of the event, so it's switched to, not
+  // pushed: back from there leaves the event.
   const openPerson = (participantId: string) =>
-    router.push({
-      pathname: '/event/[eventId]/person/[participantId]',
-      params: { eventId: event._id, participantId },
-    })
+    navigation.dispatch(
+      DrawerActions.jumpTo('person/[participantId]', {
+        eventId: event._id,
+        participantId,
+      }),
+    )
 
   return (
     <View className="gap-2.5 pt-5">
@@ -275,26 +279,18 @@ function CollapsingCover({
   )
 }
 
-// ☰ on a paper chip, with ← beside it when something is underneath.
+// ☰ on a paper chip. No ←: the drawer's "Back to home" is the way out.
 function CoverButtons() {
   const { t } = useTranslation()
   const navigation = useNavigation()
-  const hasScreenBeneath = useHasScreenBeneath()
 
   return (
-    <>
-      {hasScreenBeneath ? (
-        <Chip onPress={() => router.back()} label={t('shell.back')}>
-          <BackIcon width={20} height={20} color={garland.ink} />
-        </Chip>
-      ) : null}
-      <Chip
-        onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-        label={t('shell.openMenu')}
-      >
-        <HamburgerIcon width={20} height={20} color={garland.ink} />
-      </Chip>
-    </>
+    <Chip
+      onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+      label={t('shell.openMenu')}
+    >
+      <HamburgerIcon width={20} height={20} color={garland.ink} />
+    </Chip>
   )
 }
 

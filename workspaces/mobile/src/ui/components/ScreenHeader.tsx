@@ -7,14 +7,14 @@ import { Pressable, View } from 'react-native'
 import { BackIcon, CloseIcon, HamburgerIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
-import { useHasScreenBeneath } from '@/hooks/useHasScreenBeneath'
 
 type ScreenHeaderProps = {
   title: string
-  // `drawer` screens open the app drawer from a ☰ button (with a back arrow
-  // beside it once something is underneath); `back` screens get the back
-  // arrow alone; `modal` screens render above the drawer, so they get a close
-  // button instead. `left` replaces the leading buttons of a non-modal screen.
+  // `drawer` is for an event's sections: a ☰ button opens the event's drawer,
+  // with no back arrow, since sections leave no history (the drawer's "Back
+  // to home" is the way out). `back` screens, pushed over a section or Home,
+  // get the back arrow alone; `modal` screens get a close button instead.
+  // `left` replaces the leading buttons of a non-modal screen.
   variant?: 'drawer' | 'back' | 'modal'
   left?: ReactNode
   right?: ReactNode
@@ -31,7 +31,6 @@ export function ScreenHeader({
 }: ScreenHeaderProps) {
   const { t } = useTranslation()
   const navigation = useNavigation()
-  const hasScreenBeneath = useHasScreenBeneath()
 
   return (
     <View className="min-h-12 flex-row items-center gap-3 px-[22px] pb-2 pt-3.5">
@@ -39,7 +38,7 @@ export function ScreenHeader({
         left
       ) : (
         <>
-          {hasScreenBeneath || variant === 'back' ? (
+          {variant === 'back' ? (
             <Pressable
               onPress={() => router.back()}
               hitSlop={12}

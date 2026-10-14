@@ -16,6 +16,7 @@ type ParticipantRowProps = {
   presentCount?: number
   isYou?: boolean
   youLabel?: string
+  selected?: boolean
   onPress?: () => void
 }
 
@@ -28,12 +29,15 @@ export function ParticipantRow({
   presentCount,
   isYou = false,
   youLabel,
+  selected = false,
   onPress,
 }: ParticipantRowProps) {
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row items-center gap-3.5 border-t border-garland-ink-08 px-[22px] py-3.5 active:opacity-70"
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      className={`flex-row items-center gap-3.5 border-t border-garland-ink-08 px-[22px] py-3.5 active:opacity-70 ${selected ? 'bg-garland-paper2' : ''}`}
     >
       <ParticipantAvatar
         name={name}

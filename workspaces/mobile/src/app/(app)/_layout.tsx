@@ -1,31 +1,39 @@
-import { Drawer } from 'expo-router/drawer'
+import { Stack } from 'expo-router'
 
-import { garland } from '@/constants/colors'
 import { useAppBadge } from '@/hooks/useAppBadge'
 import { OfflineBanner } from '@/ui/components/OfflineBanner'
 import { PushPrePromptSheet } from '@/ui/components/PushPrePromptSheet'
-import { AppDrawerContent } from '@/ui/drawer/AppDrawerContent'
 
-// A single drawer screen wrapping the whole authenticated Stack in `(stack)/`,
-// so every event screen shares one drawer with the event's menu (see
-// AppDrawerContent). Screens open it from their own header; edge-swipe stays
-// off so it never fights the stack's swipe-back gesture. The offline banner
-// sits above it all. The push pre-prompt opens over whichever screen is up.
+// Deep links into an event still land with Home underneath, so back works.
+export const unstable_settings = {
+  initialRouteName: 'index',
+}
+
+const modal = {
+  presentation: 'modal',
+  animation: 'slide_from_bottom',
+} as const
+
+// The authenticated Stack. An event's sections (feed, chat, a person) are one
+// screen here, a drawer of their own (`event/[eventId]/(sections)`); what you
+// open from them (a present, a person's chat, editing) is pushed over it and
+// goes back to it. The offline banner sits above it all. The push pre-prompt
+// opens over whichever screen is up.
 export default function AppLayout() {
   useAppBadge()
   return (
     <OfflineBanner>
-      <Drawer
-        drawerContent={props => <AppDrawerContent {...props} />}
-        screenOptions={{
-          headerShown: false,
-          drawerType: 'front',
-          swipeEnabled: false,
-          drawerStyle: { backgroundColor: garland.paper, width: '82%' },
-        }}
+      <Stack
+        screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
       >
-        <Drawer.Screen name="(stack)" />
-      </Drawer>
+        <Stack.Screen name="index" />
+        {/* Places you visit and leave, not a next step, so no slide. */}
+        <Stack.Screen name="profile" options={{ animation: 'none' }} />
+        <Stack.Screen name="notifications" options={{ animation: 'none' }} />
+        <Stack.Screen name="create-event" options={modal} />
+        <Stack.Screen name="delete-account" options={modal} />
+        <Stack.Screen name="event/[eventId]/add-gift" options={modal} />
+      </Stack>
       <PushPrePromptSheet />
     </OfflineBanner>
   )
