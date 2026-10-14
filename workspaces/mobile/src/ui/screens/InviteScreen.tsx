@@ -11,6 +11,7 @@ import { CheckIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
 import { useAccountStage } from '@/hooks/useAccountStage'
+import { useHasScreenBeneath } from '@/hooks/useHasScreenBeneath'
 import { useMyEvents } from '@/hooks/useMyEvents'
 import { useOffline } from '@/hooks/useOffline'
 import { errorMessage } from '@/localization/errorMessage'
@@ -33,7 +34,8 @@ const openEvent = (eventId: string) =>
 
 // `7a`: an invite, readable signed in or out. Joining signed in enters the
 // event; signed out it's kept as the pending invite and runs once the app
-// opens after sign-in. Ignore goes back where the guards allow.
+// opens after sign-in. Closing it uncovers whatever it opened over; opened
+// cold from the link, with nothing beneath, it goes where the guards allow.
 export function InviteScreen({ code }: { code: string }) {
   const { t } = useTranslation()
   const offline = useOffline()
@@ -44,6 +46,7 @@ export function InviteScreen({ code }: { code: string }) {
   const hasCompletedOnboarding = useAuthStore(s => s.hasCompletedOnboarding)
   const appOpen = stage === 'app'
   const { events } = useMyEvents()
+  const hasScreenBeneath = useHasScreenBeneath()
 
   // Wherever the guards let this person be right now.
   const home: Href = appOpen
@@ -53,7 +56,8 @@ export function InviteScreen({ code }: { code: string }) {
       : hasCompletedOnboarding
         ? '/welcome'
         : '/onboarding'
-  const leave = () => router.dismissTo(home)
+  // `dismissTo('/')` would push a fresh Home over wherever they were.
+  const leave = () => (hasScreenBeneath ? router.back() : router.replace(home))
 
   const body = (() => {
     if (offline) return <Message text={t('invite.offline')} />
