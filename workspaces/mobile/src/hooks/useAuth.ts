@@ -1,5 +1,3 @@
-import { useEffect } from 'react'
-
 import { deleteAccount as deleteAccountOnServer } from '@/api/accountDeletion'
 import { chatSession } from '@/chat'
 import { pushDevice } from '@/push'
@@ -13,7 +11,6 @@ import {
   forgetSession,
   loggingIn,
   logout,
-  sessionToken,
   useTracker,
 } from '@/sync'
 
@@ -51,20 +48,12 @@ const normalizeEmail = (email: string) => email.trim().toLowerCase()
 const normalizeToken = (token: string) => token.trim().toUpperCase()
 
 export const useAuth = () => {
-  const setUserToken = useAuthStore(s => s.setUserToken)
   const setPendingEmail = useAuthStore(s => s.setPendingEmail)
   const isLoading = useTracker(() => loggingIn())
-  // Signed in on this connection, or restored from the offline cache — so an
-  // offline cold start opens signed in. Null once the session ends, including
-  // when the server rejects the stored token.
-  const token = useTracker(() => sessionToken())
-
-  useEffect(() => setUserToken(token), [token, setUserToken])
 
   // What the app holds outside the sync layer, which wipes its own.
   const clearAppSession = () => {
     chatSession.end()
-    setUserToken(null)
   }
 
   return {
@@ -80,8 +69,7 @@ export const useAuth = () => {
     },
     // Finish the passwordless flow: hand the 6-digit token + email back to
     // accounts-passwordless via the standard `login` DDP method. On success
-    // `completeLogin` saves the auth token, which `sessionToken` then reports
-    // to our Zustand store.
+    // `completeLogin` saves the auth token, which `sessionToken` then reports.
     loginWithMagicToken: ({
       email,
       token,

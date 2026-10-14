@@ -13,7 +13,10 @@ import { usePushRegistration } from '@/hooks/usePushRegistration'
 import { LanguageModalProvider } from '@/localization/LanguageModalProvider'
 import { LocalizationProvider } from '@/localization/provider'
 import { useAuthStore } from '@/store/useAuthStore'
-import { SplashScreenController } from '@/ui/SplashScreenController'
+import {
+  SplashScreenController,
+  useLaunchReady,
+} from '@/ui/SplashScreenController'
 
 import '../../global.css'
 
@@ -21,6 +24,7 @@ export default function Root() {
   const [fontsLoaded] = useFonts({
     FoglihtenNo07: require('../../assets/fonts/FoglihtenNo07.ttf'),
   })
+  const ready = useLaunchReady(fontsLoaded)
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -29,8 +33,8 @@ export default function Root() {
           <StatusBar style="dark" />
           <LocalizationProvider>
             <LanguageModalProvider>
-              <SplashScreenController fontsLoaded={fontsLoaded} />
-              {fontsLoaded ? <RootNavigator /> : null}
+              <SplashScreenController ready={ready} />
+              {ready ? <RootNavigator /> : null}
             </LanguageModalProvider>
           </LocalizationProvider>
         </GluestackUIProvider>
