@@ -14,7 +14,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { activityLines, buyerSummary } from '@/api/activityFeed'
+import { activityLines } from '@/api/activityFeed'
 import { type CoverTone, coverTone } from '@/api/stockArt'
 import { HamburgerIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
@@ -66,8 +66,7 @@ export function EventFeedScreen({ eventId }: { eventId: string }) {
   )
 }
 
-// The feed: how many presents have a buyer, then every activity item the
-// viewer may see, newest first.
+// The feed: every activity item the viewer may see, newest first.
 function ActivityList({ event }: { event: EventDoc }) {
   const { t } = useTranslation()
   const user = useCurrentUser()
@@ -78,7 +77,6 @@ function ActivityList({ event }: { event: EventDoc }) {
   const now = new Date()
 
   const lines = activityLines(event, items, user?._id)
-  const buyers = buyerSummary(event, gifts, user?._id)
 
   const openGift = (giftId: string) =>
     router.push({
@@ -97,17 +95,6 @@ function ActivityList({ event }: { event: EventDoc }) {
 
   return (
     <View className="gap-2.5 pt-5">
-      {buyers.total > 0 ? (
-        <View className="rounded-2xl bg-garland-paper2 px-3.5 py-3">
-          <Text className="text-sm font-semibold text-garland-ink">
-            {t('feed.withBuyer', {
-              count: buyers.total,
-              withBuyer: buyers.withBuyer,
-            })}
-          </Text>
-        </View>
-      ) : null}
-
       <Text className="mt-1 text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
         {t('shell.activity')}
       </Text>

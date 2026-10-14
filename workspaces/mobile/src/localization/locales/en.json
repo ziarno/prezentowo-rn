@@ -198,8 +198,6 @@
     "person": "Presents",
     "present": "Present",
     "people": "People",
-    "invitePeople": "Invite people",
-    "you": "— you",
     "openMenu": "Open menu",
     "back": "Back",
     "close": "Close",
@@ -420,9 +418,7 @@
   "feed": {
     "loading": "Loading…",
     "notFound": "This event isn't here anymore.",
-    "empty": "Nothing has happened here yet.",
-    "withBuyer_one": "{{withBuyer}} of {{count}} present has a buyer",
-    "withBuyer_other": "{{withBuyer}} of {{count}} presents have a buyer"
+    "empty": "Nothing has happened here yet."
   },
   "invite": {
     "title": "Invite",
@@ -539,8 +535,6 @@
   },
   "offline": {
     "banner": "Offline — showing saved data",
-    "inviteTitle": "You're offline",
-    "inviteBody": "Inviting people needs a connection. Try again once you’re back online.",
     "bannerWaiting_one": "Offline — showing saved data · {{count}} waiting to send",
     "bannerWaiting_other": "Offline — showing saved data · {{count}} waiting to send",
     "willAdd": "⏱ Will add when back online",

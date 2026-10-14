@@ -1,12 +1,7 @@
 /// <reference types="jest" />
-import type { ActivityDoc, EventDoc, GiftDoc } from '@prezentowo/types'
+import type { ActivityDoc, EventDoc } from '@prezentowo/types'
 
-import {
-  activityLine,
-  activityLines,
-  buyerSummary,
-  timeAgo,
-} from '../activityFeed'
+import { activityLine, activityLines, timeAgo } from '../activityFeed'
 
 // Ola (real) created the event with Bartek (real) and Dziadek (placeholder).
 const event: EventDoc = {
@@ -198,46 +193,6 @@ describe('activityLines', function () {
       { item: joined, line: { kind: 'joined', actorId: 'pBartek' } },
       { item: later, line: { kind: 'joined', actorId: 'pOla' } },
     ])
-  })
-})
-
-const gift = (
-  forParticipantId: string,
-  claimedBy: string[] | undefined,
-): GiftDoc =>
-  ({
-    _id: `g${++seq}`,
-    eventId: 'e1',
-    forParticipantId,
-    title: 'Present',
-    createdBy: 'ola',
-    createdAt: new Date('2026-09-02'),
-    ...(claimedBy ? { claimedBy } : {}),
-  }) as GiftDoc
-
-describe('buyerSummary', function () {
-  it('counts the presents with at least one buyer', function () {
-    const gifts = [
-      gift('pBartek', ['ola']),
-      gift('pDziadek', ['ola', 'bartek']),
-      gift('pDziadek', []),
-    ]
-
-    expect(buyerSummary(event, gifts, 'ola')).toEqual({
-      withBuyer: 2,
-      total: 3,
-    })
-  })
-
-  // Claim-quietly rule: their own copies carry no claim state, so counting
-  // them would read as "nobody is buying yours".
-  it("leaves out the viewer's own presents", function () {
-    const gifts = [gift('pBartek', undefined), gift('pDziadek', ['ola'])]
-
-    expect(buyerSummary(event, gifts, 'bartek')).toEqual({
-      withBuyer: 1,
-      total: 1,
-    })
   })
 })
 

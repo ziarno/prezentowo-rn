@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next'
 import { View } from 'react-native'
 
 import { ParticipantRow } from '@/ui/components/ParticipantRow'
@@ -28,7 +27,6 @@ export function PeopleDrawer({
   onSelectPerson,
   selectedId,
 }: PeopleDrawerProps) {
-  const { t } = useTranslation()
   return (
     <View>
       {people.map(p => (
@@ -40,8 +38,6 @@ export function PeopleDrawer({
           color={p.color}
           subtitle={p.subtitle}
           presentCount={p.presentCount}
-          isYou={p.isYou}
-          youLabel={t('shell.you')}
           selected={p.id === selectedId}
           onPress={() => onSelectPerson(p.id)}
         />

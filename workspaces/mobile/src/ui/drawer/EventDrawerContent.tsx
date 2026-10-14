@@ -2,25 +2,17 @@ import { router } from 'expo-router'
 import type { DrawerContentComponentProps } from 'expo-router/drawer'
 import type { ComponentType, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Pressable, ScrollView, Share, View } from 'react-native'
+import { Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { beneficiaryIdOf } from '@/api/events'
-import { inviteLink } from '@/api/invites'
 import { presentCounts } from '@/api/presentLists'
-import {
-  BackIcon,
-  BellIcon,
-  ChatIcon,
-  PencilIcon,
-  PlusIcon,
-} from '@/components/ui/icon'
+import { BackIcon, BellIcon, ChatIcon, PencilIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
 import { useEventGifts } from '@/hooks/useEventGifts'
-import { useEventInvite } from '@/hooks/useEventInvite'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useOffline } from '@/hooks/useOffline'
 import { PeopleDrawer } from '@/ui/components/PeopleDrawer'
@@ -87,7 +79,6 @@ function EventMenu({ eventId, current, go, jumpTo }: MenuProps) {
   const { participants } = useEventParticipants(eventId)
   const { gifts } = useEventGifts(eventId)
   const user = useCurrentUser()
-  const invite = useEventInvite(eventId)
   const offline = useOffline()
   // Everyone gets a count in `3d`. In `3d2` (many-to-one) the beneficiary
   // is listed first and is the only one with a count.
@@ -99,18 +90,15 @@ function EventMenu({ eventId, current, go, jumpTo }: MenuProps) {
       presentCount:
         !beneficiaryId || p.id === beneficiaryId ? counts[p.id] : undefined,
     }))
+    // The viewer is always first, then the beneficiary.
     .sort(
-      (a, b) => Number(b.id === beneficiaryId) - Number(a.id === beneficiaryId),
+      (a, b) =>
+        Number(b.isYou) - Number(a.isYou) ||
+        Number(b.id === beneficiaryId) - Number(a.id === beneficiaryId),
     )
 
   return (
     <>
-      <View className="px-[22px] pb-2 pt-4">
-        <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-          {event?.title ?? ' '}
-        </Text>
-      </View>
-
       <MenuSection>
         <MenuRow
           Icon={BackIcon}
@@ -147,9 +135,14 @@ function EventMenu({ eventId, current, go, jumpTo }: MenuProps) {
         />
       </MenuSection>
 
-      <Text className="mb-1.5 mt-7 px-[22px] text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-        {t('shell.people')}
-      </Text>
+      <View className="mb-1.5 mt-7 flex-row items-baseline gap-1.5 px-[22px]">
+        <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
+          {t('shell.people')}
+        </Text>
+        <Text className="text-[11px] font-bold tracking-[1.1px] text-garland-ink-40">
+          {people.length}
+        </Text>
+      </View>
       <PeopleDrawer
         people={people}
         selectedId={
@@ -161,27 +154,6 @@ function EventMenu({ eventId, current, go, jumpTo }: MenuProps) {
           jumpTo('person/[participantId]', { participantId })
         }
       />
-      {/* Only the creator holds the invite code (`invites.forEvent`). */}
-      {invite ? (
-        <View className="border-t border-garland-ink-08">
-          <MenuRow
-            Icon={PlusIcon}
-            label={t('shell.invitePeople')}
-            onPress={() =>
-              offline
-                ? Alert.alert(t('offline.inviteTitle'), t('offline.inviteBody'))
-                : go(() =>
-                    Share.share({
-                      message: t('invite.shareMessage', {
-                        title: event?.title ?? '',
-                        link: inviteLink(invite.code),
-                      }),
-                    }),
-                  )
-            }
-          />
-        </View>
-      ) : null}
     </>
   )
 }

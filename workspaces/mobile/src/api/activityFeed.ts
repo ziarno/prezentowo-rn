@@ -1,4 +1,4 @@
-import type { ActivityDoc, EventDoc, GiftDoc } from '@prezentowo/types'
+import type { ActivityDoc, EventDoc } from '@prezentowo/types'
 
 // Pure helpers behind the event feed (`3c`–`3c4`) and Home's recent items
 // (`3a`).
@@ -73,23 +73,6 @@ export function activityLines(
     const line = activityLine(event, item, viewerUserId)
     return line ? [{ item, line }] : []
   })
-}
-
-// The feed's "X of Y have a buyer", over the presents the viewer can see
-// claims on: never their own, whose copies the claim-quietly rule strips.
-export function buyerSummary(
-  event: EventDoc,
-  gifts: GiftDoc[],
-  viewerUserId: string | undefined,
-): { withBuyer: number; total: number } {
-  const viewerParticipantId = participantIdOf(event, viewerUserId)
-  const notForViewer = gifts.filter(
-    g => g.forParticipantId !== viewerParticipantId,
-  )
-  return {
-    withBuyer: notForViewer.filter(g => (g.claimedBy?.length ?? 0) > 0).length,
-    total: notForViewer.length,
-  }
 }
 
 const MINUTE_MS = 60 * 1000
