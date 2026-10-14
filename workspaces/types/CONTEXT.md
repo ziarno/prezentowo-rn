@@ -36,7 +36,7 @@ The `EventParticipant` a single gift is for — `GiftDoc.forParticipantId`. Appl
 Whether a gift's recipient is also the one who added it (`GiftDoc.createdBy === recipient's userId`, or their `departedUserId` once they've deleted their account; self-added) or someone else added it for them (suggested). Mirrors the wireframes' "your own wishes" vs "Suggested by others" split (`3f`).
 
 **Activity item**:
-A record of a single, already-occurred event in an event's history — a gift added, a gift claimed, or a participant joining — surfaced to participants on Home, the event feed, and the event drawer. Chat messages and the live "how many presents have a buyer" count are not activity: chat lives entirely on GetStream, and the count is computed from gift data on read, never stored. Distinct from a **notification**: an activity item is shared and impersonal — everyone allowed to see one sees the same document — where a notification is personal to one account and carries its own read state.
+A record of a single, already-occurred event in an event's history — a gift added, a gift claimed, or a participant joining — surfaced to participants in the event feed and the event drawer. Chat messages and the live "how many presents have a buyer" count are not activity: chat lives entirely on GetStream, and the count is computed from gift data on read, never stored. Distinct from a **notification**: an activity item is shared and impersonal — everyone allowed to see one sees the same document — where a notification is personal to one account and carries its own read state.
 _Avoid_: event log (ambiguous with `EventDoc`)
 
 **Chat thread** / **Secret thread** / **Retired thread**:

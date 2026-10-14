@@ -492,24 +492,6 @@
       "unclaimedFor": "<0>{{actor}}</0> isn't buying a present for <0>{{recipient}}</0> anymore",
       "unclaimedForYou": "You're not buying a present for <0>{{recipient}}</0> anymore"
     },
-    "home": {
-      "joined": "{{actor}} joined the event",
-      "joinedYou": "You joined the event",
-      "selfAdded": "{{actor}} added <1>{{gift}}</1>",
-      "selfAddedYou": "You added <1>{{gift}}</1>",
-      "suggested": "{{actor}} added <1>{{gift}}</1>",
-      "suggestedYou": "You added <1>{{gift}}</1>",
-      "suggestedFor": "{{actor}} added <1>{{gift}}</1> for {{recipient}}",
-      "suggestedForYou": "You added <1>{{gift}}</1> for {{recipient}}",
-      "claimed": "{{actor}} is buying <1>{{gift}}</1>",
-      "claimedYou": "You're buying <1>{{gift}}</1>",
-      "claimedFor": "{{actor}} is buying <1>{{gift}}</1> for {{recipient}}",
-      "claimedForYou": "You're buying <1>{{gift}}</1> for {{recipient}}",
-      "unclaimed": "{{actor}} isn't buying <1>{{gift}}</1> anymore",
-      "unclaimedYou": "You're not buying <1>{{gift}}</1> anymore",
-      "unclaimedFor": "{{actor}} isn't buying <1>{{gift}}</1> for {{recipient}} anymore",
-      "unclaimedForYou": "You're not buying <1>{{gift}}</1> for {{recipient}} anymore"
-    },
     "ago": {
       "now": "just now",
       "minute_one": "a minute ago",
@@ -519,12 +501,6 @@
       "yesterday": "yesterday",
       "day_one": "a day ago",
       "day_other": "{{count}} days ago"
-    },
-    "agoShort": {
-      "now": "now",
-      "minute": "{{count}}m",
-      "hour": "{{count}}h",
-      "day": "{{count}}d"
     }
   },
   "notifications": {

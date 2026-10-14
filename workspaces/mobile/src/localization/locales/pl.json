@@ -518,24 +518,6 @@
       "unclaimedFor": "<0>{{actor}}</0> jednak nie kupi prezentu dla: <0>{{recipient}}</0>",
       "unclaimedForYou": "Jednak nie kupisz prezentu dla: <0>{{recipient}}</0>"
     },
-    "home": {
-      "joined": "{{actor}} dołącza do wydarzenia",
-      "joinedYou": "Dołączasz do wydarzenia",
-      "selfAdded": "{{actor}} dodaje <1>{{gift}}</1>",
-      "selfAddedYou": "Dodajesz <1>{{gift}}</1>",
-      "suggested": "{{actor}} proponuje <1>{{gift}}</1>",
-      "suggestedYou": "Proponujesz <1>{{gift}}</1>",
-      "suggestedFor": "{{actor}} proponuje <1>{{gift}}</1> dla: {{recipient}}",
-      "suggestedForYou": "Proponujesz <1>{{gift}}</1> dla: {{recipient}}",
-      "claimed": "{{actor}} kupuje <1>{{gift}}</1>",
-      "claimedYou": "Kupujesz <1>{{gift}}</1>",
-      "claimedFor": "{{actor}} kupuje <1>{{gift}}</1> dla: {{recipient}}",
-      "claimedForYou": "Kupujesz <1>{{gift}}</1> dla: {{recipient}}",
-      "unclaimed": "{{actor}} jednak nie kupi <1>{{gift}}</1>",
-      "unclaimedYou": "Jednak nie kupisz <1>{{gift}}</1>",
-      "unclaimedFor": "{{actor}} jednak nie kupi <1>{{gift}}</1> dla: {{recipient}}",
-      "unclaimedForYou": "Jednak nie kupisz <1>{{gift}}</1> dla: {{recipient}}"
-    },
     "ago": {
       "now": "przed chwilą",
       "minute_one": "minutę temu",
@@ -551,12 +533,6 @@
       "day_few": "{{count}} dni temu",
       "day_many": "{{count}} dni temu",
       "day_other": "{{count}} dnia temu"
-    },
-    "agoShort": {
-      "now": "teraz",
-      "minute": "{{count}} min",
-      "hour": "{{count}} godz.",
-      "day": "{{count}} d."
     }
   },
   "notifications": {

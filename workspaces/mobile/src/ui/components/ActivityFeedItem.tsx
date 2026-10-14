@@ -63,7 +63,7 @@ export function ActivityFeedItem({
       <View className="min-w-0 flex-1 gap-1">
         <Text className="text-sm leading-[19px] text-garland-ink">
           <Trans
-            i18nKey={activityKey(line, 'feed', !!actor?.isYou)}
+            i18nKey={activityKey(line, !!actor?.isYou)}
             values={{
               actor: actorName,
               recipient: nameOf(recipient),
@@ -91,7 +91,7 @@ export function ActivityFeedItem({
           </View>
         ) : null}
         <Text className="text-xs text-garland-ink-60">
-          {activityTime(t, i18n.language, createdAt, now, 'feed')}
+          {activityTime(t, i18n.language, createdAt, now)}
         </Text>
       </View>
     </Pressable>

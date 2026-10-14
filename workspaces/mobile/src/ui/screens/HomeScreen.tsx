@@ -10,7 +10,6 @@ import { garland } from '@/constants/colors'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useMyEvents } from '@/hooks/useMyEvents'
 import { useOffline } from '@/hooks/useOffline'
-import { useRecentActivitySubscription } from '@/hooks/useRecentActivity'
 import { useHasUnreadNotifications } from '@/hooks/useUnreadNotifications'
 import { EventCard } from '@/ui/components/EventCard'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
@@ -67,13 +66,11 @@ function NotificationsBell() {
   )
 }
 
-// `3a`: the signed-in user's events, each with its recent activity and
-// opening its feed, and a ＋ FAB.
+// `3a`: the signed-in user's events, each opening its feed, and a ＋ FAB.
 export function HomeScreen() {
   const { t } = useTranslation()
   const offline = useOffline()
   const { events, ready } = useMyEvents()
-  useRecentActivitySubscription()
 
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">

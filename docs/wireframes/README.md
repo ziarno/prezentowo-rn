@@ -26,7 +26,7 @@ added**; another person's shows everything, marked by who added it.
 
 | Id | Screen |
 | --- | --- |
-| `3a` | Home — events list, each row with up to 3 recent activity items, date + countdown + `many-to-one`/`many-to-many` badge, `＋` FAB |
+| `3a` | Home — events list, each row with date + countdown + `many-to-one`/`many-to-many` badge, `＋` FAB |
 | `3b` | Home drawer — event shortcuts, profile (name + email), Notifications, Dark mode toggle, Language, Privacy & visibility, Sign out |
 | `3c` | Event feed (many-to-one) — large event cover, title, date, countdown, people count, Activity list |
 | `3c3` | Event feed scrolled — cover collapses to a compact header, stays that size |

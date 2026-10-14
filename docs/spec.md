@@ -380,7 +380,6 @@ The Dev login is **not** a method. It is an `Accounts.registerLoginHandler` for 
 | `gifts.byEvent(eventId)` | members | **Own-list visibility rule**: a gift whose recipient is the viewer and whose creator isn't the viewer is never `added`, and its `changed`/`removed` are skipped too (a `hiddenIds` set). **Claim-quietly rule**: for the viewer's self-added gifts, `claimedBy` is stripped. No owner exemption ([#9](https://github.com/ziarno/prezentowo-rn/issues/9)). |
 | `users.inEvent(eventId)` | members | Unchanged. |
 | `activity.byEvent(eventId)` | members | Excludes docs where `hiddenFromParticipantId` is the viewer's participant id. Omits the `hiddenFromParticipantId` field. |
-| `activity.recentForUser()` | signed in | The same filter helper, capped at **3 per event** across the caller's events (`3a`). |
 | `notifications.mine()` | signed in | The caller's `NotificationDoc`s, newest first, capped at 50. |
 | the user's own document | signed in | Meteor's default self publication, plus `pushPreferences`. |
 | `chatThreads.byEvent(eventId)` | members | Live threads the viewer belongs to. The viewer's own secret thread is never published. |
@@ -564,7 +563,7 @@ src/app/
 
 | Screens | Reads | Writes | Notes |
 |---|---|---|---|
-| `3a` Home | `events.mine`, `activity.recentForUser`, `notifications.mine` (bell dot = unread count) | — | The bell shows only our notifications, never Stream's unread count. |
+| `3a` Home | `events.mine`, `notifications.mine` (bell dot = unread count) | — | The bell shows only our notifications, never Stream's unread count. |
 | `3c`–`3c4` feed | `events.byId`, `gifts.byEvent`, `activity.byEvent` | — | "X of Y have a buyer" is computed client-side. |
 | `3d`/`3d2` event drawer | `events.byId`, `gifts.byEvent` (counts) | — | Counts are shown for everyone in `3d` and for the beneficiary only in `3d2`. Includes "＋ Invite people" (share link). |
 | `3e`/`3f` person | `gifts.byEvent` | `gifts.claim`/`unclaim` | `3f` groups the list into own wishes and suggested by others, by the recipient's `userId`, or `departedUserId` for a departed placeholder (§1.12). Chat recap: §7. |
@@ -668,7 +667,7 @@ Push is **in** scope (§2.5, §10), as is account deletion (§10.4).
 - An imported image is downloaded by the client and uploaded through the normal route, not fetched and stored by the server (§3.3).
 - An `Images` record per upload, deleted along with the files whenever the referencing gift/event drops it, or by the daily sweep when no gift/event ever took it (§3.1).
 - `1e`'s `✎ Edit` reopens the `add-gift` wizard in edit mode at `5d` (mirroring how `6a` reuses `create-event`), saving via `gifts.update`.
-- Caps: `activity.recentForUser` 3 per event (per `3a`), `notifications.mine` 50.
+- Caps: `notifications.mine` 50.
 - If Stream's SDK can't `queryChannels` without `connectUser`, recap boxes hide until chat has been opened once that session.
 - From [#88](https://github.com/ziarno/prezentowo-rn/issues/88), folding in [#78](https://github.com/ziarno/prezentowo-rn/issues/78):
   - `event-handed-over` doesn't push. It is rare and not urgent, and the accepted push screen has no switch for it.

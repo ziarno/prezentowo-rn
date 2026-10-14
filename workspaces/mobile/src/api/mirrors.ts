@@ -35,7 +35,6 @@ mirror('activity.byEvent', {
   scope: ([eventId]) => ({ activity: { eventId } }),
   eventId: byEvent,
 })
-mirror('activity.recentForUser', { scope: () => ({ activity: {} }) })
 
 mirror('notifications.mine', { scope: () => ({ notifications: {} }) })
 mirror('invites.deferred', { scope: () => ({ deferredInvites: {} }) })

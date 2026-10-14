@@ -1,20 +1,12 @@
-import type { ActivityDoc } from '@prezentowo/types'
 import assert from 'assert'
 
-import {
-  addGiftAs,
-  createEventWithMembers,
-  createFamilyEvent,
-  createUser,
-} from '../../../tests/fixtures'
+import { addGiftAs, createFamilyEvent } from '../../../tests/fixtures'
 import {
   callAsUser,
   resetDatabase,
   subscribeAsUser,
   waitFor,
 } from '../../../tests/helpers'
-import { Invites, createInviteIndexes } from '../invites/invites.collection'
-import { Activity } from './activity.collection'
 import './activity.publications'
 
 type Sub = Awaited<ReturnType<typeof subscribeAsUser>>
@@ -54,10 +46,6 @@ describe('activity publications', function () {
     subs.push(sub)
     return sub
   }
-
-  before(async function () {
-    await createInviteIndexes()
-  })
 
   beforeEach(async function () {
     await resetDatabase()
@@ -133,115 +121,6 @@ describe('activity publications', function () {
       await waitFor(() => sub.stopped())
 
       assert.strictEqual(sub.docs('activity').size, 0)
-    })
-  })
-
-  describe('activity.recentForUser', function () {
-    const subscribeAs = (userId: string | null) =>
-      subscribe(userId, 'activity.recentForUser')
-
-    // Items at known, distinct times, so "newest" is unambiguous.
-    const insertAt = (
-      eventId: string,
-      minute: number,
-      extra: Partial<ActivityDoc> = {},
-    ) =>
-      Activity.insertAsync({
-        eventId,
-        kind: 'gift-added',
-        actorParticipantId: family.participants.ola,
-        createdAt: new Date(Date.UTC(2026, 0, 1, 0, minute)),
-        giftTitle: `m${minute}`,
-        ...extra,
-      } as ActivityDoc)
-
-    const createSecondEvent = async () => {
-      const { users } = family
-      return createEventWithMembers(users.bartek, [users.celina])
-    }
-
-    it('publishes the 3 newest items of each of the caller’s events', async function () {
-      const second = await createSecondEvent()
-      for (const minute of [1, 5, 2, 4, 3]) {
-        await insertAt(family.eventId, minute)
-      }
-      await insertAt(second, 10)
-      await insertAt(second, 11)
-
-      const sub = await subscribeAs(family.users.celina)
-
-      assert.deepStrictEqual(giftTitles(sub), ['m10', 'm11', 'm3', 'm4', 'm5'])
-    })
-
-    it('applies the same filter before capping, and never publishes hiddenFromParticipantId', async function () {
-      const { participants, eventId, users } = family
-      await insertAt(eventId, 1)
-      await insertAt(eventId, 2)
-      await insertAt(eventId, 3, {
-        hiddenFromParticipantId: participants.bartek,
-      })
-      await insertAt(eventId, 4, {
-        hiddenFromParticipantId: participants.bartek,
-      })
-      await insertAt(eventId, 5)
-
-      const bartek = await subscribeAs(users.bartek)
-      const celina = await subscribeAs(users.celina)
-
-      assert.deepStrictEqual(giftTitles(bartek), ['m1', 'm2', 'm5'])
-      assert.deepStrictEqual(giftTitles(celina), ['m3', 'm4', 'm5'])
-      assert.strictEqual(leaksHiddenFrom(bartek), false)
-      assert.strictEqual(leaksHiddenFrom(celina), false)
-    })
-
-    it('leaves out events the caller is not a member of', async function () {
-      await seedAboutBartek(family)
-
-      const sub = await subscribeAs(family.users.outsider)
-
-      assert.strictEqual(sub.docs('activity').size, 0)
-    })
-
-    it('publishes nothing signed out', async function () {
-      await seedAboutBartek(family)
-
-      const sub = await subscribeAs(null)
-
-      assert.strictEqual(sub.docs('activity').size, 0)
-    })
-
-    it('swaps in a newer item, pushing out the oldest', async function () {
-      const { eventId, users } = family
-      for (const minute of [1, 2, 3]) await insertAt(eventId, minute)
-      const sub = await subscribeAs(users.celina)
-
-      await insertAt(eventId, 4)
-      await waitFor(() => giftTitles(sub).includes('m4'))
-
-      assert.deepStrictEqual(giftTitles(sub), ['m2', 'm3', 'm4'])
-    })
-
-    it('follows the caller into an event they join and out of one they leave', async function () {
-      const { eventId, users } = family
-      const newcomer = await createUser('Newcomer')
-      await insertAt(eventId, 1)
-      const sub = await subscribeAs(newcomer)
-      assert.strictEqual(sub.docs('activity').size, 0)
-
-      const { code } = (await Invites.findOneAsync({ eventId }))!
-      await callAsUser(newcomer, 'events.join', { code })
-      // m1 plus the newcomer's own participant-joined.
-      await waitFor(() => sub.docs('activity').size === 2)
-
-      const joined = (await Activity.findOneAsync({
-        kind: 'participant-joined',
-      }))!
-      await callAsUser(users.ola, 'events.removeParticipant', {
-        eventId,
-        participantId: joined.actorParticipantId,
-      })
-      await waitFor(() => sub.docs('activity').size === 0)
-      assert.strictEqual(sub.stopped(), false)
     })
   })
 })
