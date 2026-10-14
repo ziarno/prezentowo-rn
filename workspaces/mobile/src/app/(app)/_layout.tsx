@@ -30,6 +30,11 @@ export default function AppLayout() {
         {/* Places you visit and leave, not a next step, so no slide. */}
         <Stack.Screen name="profile" options={{ animation: 'none' }} />
         <Stack.Screen name="notifications" options={{ animation: 'none' }} />
+        {/* Home ⇄ an event cuts straight across; what opens inside it slides. */}
+        <Stack.Screen
+          name="event/[eventId]/(sections)"
+          options={{ animation: 'none' }}
+        />
         <Stack.Screen name="create-event" options={modal} />
         <Stack.Screen name="delete-account" options={modal} />
         <Stack.Screen name="event/[eventId]/add-gift" options={modal} />
