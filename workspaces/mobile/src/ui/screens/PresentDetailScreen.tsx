@@ -1,5 +1,6 @@
 import { router } from 'expo-router'
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -38,6 +39,7 @@ import { ChatRecapBox } from '@/ui/components/ChatRecapBox'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { FAILED_KEY } from '@/ui/components/GiftRow'
 import { LockNote } from '@/ui/components/LockNote'
+import { PersonAvatar } from '@/ui/components/PersonAvatar'
 import { PresentTile } from '@/ui/components/PresentTile'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
 
@@ -104,8 +106,11 @@ export function PresentDetailScreen({
   const action = claimAction(event, gift, user._id)
   // Only ever resolved for a viewer who may see them (claim-quietly rule).
   const buyers = action
-    ? shownBuyers(gift, write, user._id).map(id => nameOf(resolveUser(id)))
+    ? shownBuyers(gift, write, user._id).map(id => resolveUser(id))
     : []
+  const avatarOf = (person: typeof recipient, size = 18) => (
+    <PersonAvatar person={person} size={size} />
+  )
 
   // Only offered for a present the server has.
   const toggleClaim = () => {
@@ -135,7 +140,8 @@ export function PresentDetailScreen({
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
       <ScreenHeader
-        title={event.title}
+        title={recipient?.name ?? nameOf(recipient)}
+        leading={avatarOf(recipient, 32)}
         variant="back"
         right={
           canEditGift(gift, user._id) && serverGift ? (
@@ -185,12 +191,12 @@ export function PresentDetailScreen({
           </Text>
 
           <View className="mt-3 flex-row flex-wrap gap-1.5">
-            <Tag>
+            <Tag avatar={avatarOf(recipient)}>
               {recipient?.isYou
                 ? t('present.forYou')
                 : t('present.forName', { name: nameOf(recipient) })}
             </Tag>
-            <Tag>
+            <Tag avatar={avatarOf(creator)}>
               {creator?.isYou
                 ? t('present.addedByYou')
                 : t('present.addedBy', { name: nameOf(creator) })}
@@ -234,7 +240,12 @@ export function PresentDetailScreen({
                 {t('present.buying')}
               </Text>
               {buyers.length > 0 || viewerClaimOf(write) ? (
-                <BuyerChips names={buyers} viewerClaim={viewerClaimOf(write)} />
+                <BuyerChips
+                  names={buyers.map(nameOf)}
+                  avatars={buyers.map(b => avatarOf(b))}
+                  viewerClaim={viewerClaimOf(write)}
+                  viewerAvatar={avatarOf(resolveUser(user._id))}
+                />
               ) : (
                 <Text className="text-sm text-garland-ink-60">
                   {t('present.nobodyBuying')}
@@ -269,6 +280,8 @@ export function PresentDetailScreen({
             eventId={eventId}
             participantId={gift.forParticipantId}
             label={t('chat.presentRecap', { name: nameOf(recipient) })}
+            labelLeading={avatarOf(recipient, 24)}
+            withAvatars
             className="mt-8"
           />
         </View>
@@ -277,9 +290,10 @@ export function PresentDetailScreen({
   )
 }
 
-function Tag({ children }: { children: string }) {
+function Tag({ children, avatar }: { children: string; avatar: ReactNode }) {
   return (
-    <View className="rounded-full border border-garland-ink-15 px-2.5 py-1">
+    <View className="flex-row items-center gap-1.5 rounded-full border border-garland-ink-15 py-1 pl-1 pr-2.5">
+      {avatar}
       <Text className="text-[11px] font-semibold text-garland-ink-60">
         {children}
       </Text>

@@ -1,4 +1,5 @@
 import { router } from 'expo-router'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, View } from 'react-native'
 
@@ -11,21 +12,28 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useOffline } from '@/hooks/useOffline'
 import { usePersonName } from '@/hooks/usePersonName'
+import { PersonAvatar } from '@/ui/components/PersonAvatar'
 
 // The recap of a person's secret thread (`3f`, `1e`): its last few messages
 // and a `💬 Chat` button into `8a`. No composer: messages are only written in
 // the thread itself. Renders nothing when the viewer isn't sent the thread —
 // it's theirs, or they get no presents here. Until chat has been opened once
-// this session only the button shows (docs/spec.md §7).
+// this session only the button shows (docs/spec.md §7). `labelLeading` sits
+// before the label (e.g. the person's avatar); `withAvatars` leads each recap
+// line with its author's avatar.
 export function ChatRecapBox({
   eventId,
   participantId,
   label,
+  labelLeading,
+  withAvatars,
   className,
 }: {
   eventId: string
   participantId: string
   label: string
+  labelLeading?: ReactNode
+  withAvatars?: boolean
   className?: string
 }) {
   const { t } = useTranslation()
@@ -50,6 +58,7 @@ export function ChatRecapBox({
       className={`rounded-2xl border border-garland-ink-08 bg-garland-paper2 px-3.5 py-3 ${className ?? ''}`}
     >
       <View className="flex-row items-center gap-3">
+        {labelLeading}
         <Text className="flex-1 text-xs leading-[17px] text-garland-ink-60">
           {label}
         </Text>
@@ -79,19 +88,30 @@ export function ChatRecapBox({
           ) : recap.lines.length === 0 ? (
             <Muted>{t('chat.noMessages')}</Muted>
           ) : (
-            recap.lines.map(line => (
-              <Text
-                key={line.id}
-                className="text-[13px] leading-[18px] text-garland-ink"
-                numberOfLines={2}
-              >
-                <Text className="font-bold">
-                  {nameOf(resolveUser(line.userId))}
-                  {': '}
+            recap.lines.map(line => {
+              const author = resolveUser(line.userId)
+              const text = (
+                <Text
+                  key={withAvatars ? undefined : line.id}
+                  className={`text-[13px] leading-[18px] text-garland-ink ${withAvatars ? 'flex-1' : ''}`}
+                  numberOfLines={2}
+                >
+                  <Text className="font-bold">
+                    {nameOf(author)}
+                    {': '}
+                  </Text>
+                  {line.text ?? t('chat.attachment')}
                 </Text>
-                {line.text ?? t('chat.attachment')}
-              </Text>
-            ))
+              )
+              return withAvatars ? (
+                <View key={line.id} className="flex-row items-start gap-2">
+                  <PersonAvatar person={author} size={18} />
+                  {text}
+                </View>
+              ) : (
+                text
+              )
+            })
           )}
         </View>
       )}

@@ -17,6 +17,8 @@ type ScreenHeaderProps = {
   // `left` replaces the leading buttons of a non-modal screen.
   variant?: 'drawer' | 'back' | 'modal'
   left?: ReactNode
+  // Shown just before the title, e.g. a person's avatar.
+  leading?: ReactNode
   right?: ReactNode
   // Replaces the modal close button's default `router.back()`.
   onClose?: () => void
@@ -26,6 +28,7 @@ export function ScreenHeader({
   title,
   variant = 'drawer',
   left,
+  leading,
   right,
   onClose = () => router.back(),
 }: ScreenHeaderProps) {
@@ -60,6 +63,7 @@ export function ScreenHeader({
           ) : null}
         </>
       )}
+      {leading}
       <Text
         className="flex-1 font-garland-display text-lg text-garland-ink"
         numberOfLines={1}
