@@ -1,9 +1,9 @@
-import type { EventDoc, ImportedFields } from '@prezentowo/types'
+import type { EventDoc, GiftDoc, ImportedFields } from '@prezentowo/types'
 import { router, useNavigation } from 'expo-router'
 import { usePreventRemove } from 'expo-router/react-navigation'
-import { useRef, useState } from 'react'
+import { type ReactNode, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, View } from 'react-native'
+import { Alert, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { uploadDraftImage } from '@/api/draftImage'
@@ -20,10 +20,10 @@ import {
   toAddGiftArgs,
   toUpdateGiftArgs,
 } from '@/api/giftWizard'
-import { addGift, updateGift } from '@/api/gifts'
+import { addGift, removeGift, updateGift } from '@/api/gifts'
 import { downloadImage, uploadImage } from '@/api/images'
 import { blockedShopName, importLink } from '@/api/linkImport'
-import { canEditGift } from '@/api/presentLists'
+import { canEditGift, claimCountForRemoval } from '@/api/presentLists'
 import { Text } from '@/components/ui/text'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
@@ -46,7 +46,8 @@ import {
 } from '@/ui/components/Wizard'
 
 // `5a`–`5d`: adds a present for `forParticipantId` (the list it was opened
-// from), or, with `giftId`, edits one from `1e` on the summary.
+// from), or, with `giftId`, edits one from `1e` on the summary, where it can
+// also be deleted.
 export function AddGiftScreen({
   eventId,
   forParticipantId,
@@ -129,7 +130,71 @@ function EditGift({ eventId, giftId }: { eventId: string; giftId: string }) {
         await updateGift(toUpdateGiftArgs(gift, draft))
         router.back()
       }}
+      footer={<DeleteGift gift={gift} />}
     />
+  )
+}
+
+// Always through a confirm dialog, which adds "N people claimed this" only
+// when the viewer's copy carries `claimedBy`. Online-only. On success it
+// leaves the deleted present's `1e` too.
+function DeleteGift({ gift }: { gift: GiftDoc }) {
+  const { t } = useTranslation()
+  const offline = useOffline()
+  const [removing, setRemoving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const remove = async () => {
+    setError(null)
+    setRemoving(true)
+    try {
+      await removeGift(gift._id)
+      router.dismiss(2)
+    } catch (err) {
+      setError(errorMessage(err, t('common.somethingWentWrong')))
+      setRemoving(false)
+    }
+  }
+
+  const confirmRemove = () => {
+    const claimCount = claimCountForRemoval(gift)
+    Alert.alert(
+      t('present.deleteTitle', { title: gift.title }),
+      [
+        t('present.deleteMessage'),
+        claimCount ? t('present.deleteClaimed', { count: claimCount }) : null,
+      ]
+        .filter(Boolean)
+        .join(' '),
+      [
+        { text: t('present.deleteCancel'), style: 'cancel' },
+        {
+          text: t('present.delete'),
+          style: 'destructive',
+          onPress: () => void remove(),
+        },
+      ],
+    )
+  }
+
+  return (
+    <View className="mt-10 border-t border-garland-ink-08 pt-5">
+      <GarlandButton
+        variant="link"
+        onPress={confirmRemove}
+        loading={removing}
+        disabled={offline}
+        className="self-start"
+        hitSlop={12}
+      >
+        <GarlandButtonText className="text-sm font-bold text-garland-berry">
+          {t('present.delete')}
+        </GarlandButtonText>
+      </GarlandButton>
+      {error ? (
+        <Text className="mt-3 text-xs text-garland-berry">{error}</Text>
+      ) : null}
+    </View>
   )
 }
 
@@ -161,6 +226,7 @@ function GiftWizard({
   event,
   initialDraft,
   onSubmit,
+  footer,
 }: {
   mode: GiftWizardMode
   event: EventDoc
@@ -168,6 +234,8 @@ function GiftWizard({
   // Navigates away on success (or once an add is queued); a rejection is
   // shown on the summary.
   onSubmit: (draft: GiftDraft) => Promise<void>
+  // Under the last step, e.g. the edit's Delete present.
+  footer?: ReactNode
 }) {
   const { t } = useTranslation()
   const navigation = useNavigation()
@@ -364,6 +432,8 @@ function GiftWizard({
               {submitError}
             </Text>
           ) : null}
+
+          {isLast ? footer : null}
         </ScrollView>
 
         <WizardFooter
@@ -587,7 +657,10 @@ function SummaryStep({
 
   return (
     <>
-      <StepHeading>{t('addPresent.summary.heading')}</StepHeading>
+      {/* Editing opens straight on this step: the header says it all. */}
+      {mode === 'add' ? (
+        <StepHeading>{t('addPresent.summary.heading')}</StepHeading>
+      ) : null}
 
       {review ? (
         <Text className="-mt-3 mb-5 rounded-xl bg-garland-paper2 px-3.5 py-2.5 text-xs leading-[17px] text-garland-ink-60">
@@ -595,7 +668,9 @@ function SummaryStep({
         </Text>
       ) : null}
 
-      <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
+      <Text
+        className={`text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40 ${mode === 'edit' ? 'mt-4' : ''}`}
+      >
         {t('addPresent.summary.forLabel')}
       </Text>
       {options.length > 1 ? (

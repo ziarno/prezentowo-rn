@@ -1,10 +1,10 @@
 import { router } from 'expo-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Linking, Pressable, ScrollView, View } from 'react-native'
+import { Linking, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-import { addedGiftId, claimGift, removeGift, unclaimGift } from '@/api/gifts'
+import { addedGiftId, claimGift, unclaimGift } from '@/api/gifts'
 import {
   type FailureReason,
   type GiftWrite,
@@ -18,9 +18,7 @@ import {
 import {
   type ClaimAction,
   canEditGift,
-  canRemoveGift,
   claimAction,
-  claimCountForRemoval,
   isHiddenFrom,
 } from '@/api/presentLists'
 import { LinkIcon, PencilIcon } from '@/components/ui/icon'
@@ -54,8 +52,8 @@ const hrefOf = (url: string) =>
 
 // `1e`: a present's photo or illustration, who it's for and who added it,
 // its description and link, and — for everyone but its recipient — who is
-// buying it and the claim/unclaim action. Whoever added it can edit it;
-// they or the event creator can delete it. A present (or a claim) still in
+// buying it and the claim/unclaim action. Whoever added it can edit it
+// (and delete it from there). A present (or a claim) still in
 // the offline queue shows as waiting, or as failed with Discard
 // (docs/spec.md §6.4).
 export function PresentDetailScreen({
@@ -86,8 +84,6 @@ export function PresentDetailScreen({
 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [removing, setRemoving] = useState(false)
-  const [removeError, setRemoveError] = useState<string | null>(null)
 
   // A suggestion for the viewer (a stale local copy) reads as missing.
   if (!gift || !event || !user || isHiddenFrom(event, gift, user._id)) {
@@ -134,39 +130,6 @@ export function PresentDetailScreen({
     discardWrite(failed.id)
     // A present only the write was keeping on screen goes with it.
     if (!serverGift) router.back()
-  }
-
-  const remove = async () => {
-    setRemoveError(null)
-    setRemoving(true)
-    try {
-      await removeGift(gift._id)
-      router.back()
-    } catch (err) {
-      setRemoveError(errorMessage(err, t('common.somethingWentWrong')))
-      setRemoving(false)
-    }
-  }
-
-  const confirmRemove = () => {
-    const claimCount = claimCountForRemoval(gift)
-    Alert.alert(
-      t('present.deleteTitle', { title: gift.title }),
-      [
-        t('present.deleteMessage'),
-        claimCount ? t('present.deleteClaimed', { count: claimCount }) : null,
-      ]
-        .filter(Boolean)
-        .join(' '),
-      [
-        { text: t('present.deleteCancel'), style: 'cancel' },
-        {
-          text: t('present.delete'),
-          style: 'destructive',
-          onPress: () => void remove(),
-        },
-      ],
-    )
   }
 
   return (
@@ -308,28 +271,6 @@ export function PresentDetailScreen({
             label={t('chat.presentRecap', { name: nameOf(recipient) })}
             className="mt-8"
           />
-
-          {canRemoveGift(event, gift, user._id) && serverGift ? (
-            <View className="mt-10 border-t border-garland-ink-08 pt-5">
-              <GarlandButton
-                variant="link"
-                onPress={confirmRemove}
-                loading={removing}
-                disabled={offline}
-                className="self-start"
-                hitSlop={12}
-              >
-                <GarlandButtonText className="text-sm font-bold text-garland-berry">
-                  {t('present.delete')}
-                </GarlandButtonText>
-              </GarlandButton>
-              {removeError ? (
-                <Text className="mt-3 text-xs text-garland-berry">
-                  {removeError}
-                </Text>
-              ) : null}
-            </View>
-          ) : null}
         </View>
       </ScrollView>
     </SafeAreaView>
