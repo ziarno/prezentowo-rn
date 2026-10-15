@@ -24,11 +24,20 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { defaultRules } from 'simple-markdown'
 import {
+  AttachmentTypePickerButton,
+  CameraPickerButton,
+  CommandsPickerButton,
   type ComponentOverrides,
+  FilePickerButton,
+  MediaPickerButton,
   type MessageTextProps,
+  PollPickerButton,
+  AttachmentPickerSelectionBar as StreamAttachmentPickerSelectionBar,
   MessageComposerLeadingView as StreamMessageComposerLeadingView,
+  useAttachmentPickerContext,
   useMessageComposer,
   useStateStore,
+  useTheme,
 } from 'stream-chat-expo'
 
 import type { ResolvedParticipant } from '@/api/participants'
@@ -58,14 +67,23 @@ type ChatPresents = {
   participants: ResolvedParticipant[]
 }
 
-const ChatPresentsContext = createContext<ChatPresents | null>(null)
+const ChatPresentsContext = createContext<
+  | (ChatPresents & {
+      // Whether the picker is open: 🎁 sits in the attachment shelf, which
+      // closes as the picker opens, so the picker lives in the composer.
+      picking: boolean
+      setPicking: (picking: boolean) => void
+    })
+  | null
+>(null)
 
 export function ChatPresentsProvider({
   children,
   ...value
 }: ChatPresents & { children: ReactNode }) {
+  const [picking, setPicking] = useState(false)
   return (
-    <ChatPresentsContext.Provider value={value}>
+    <ChatPresentsContext.Provider value={{ ...value, picking, setPicking }}>
       {children}
     </ChatPresentsContext.Provider>
   )
@@ -73,27 +91,64 @@ export function ChatPresentsProvider({
 
 const useChatPresents = () => useContext(ChatPresentsContext)
 
-// Stream's buttons, then 🎁, which opens the picker.
+// Stream's buttons, and the picker 🎁 opens.
 function MessageComposerLeadingView() {
-  const { t } = useTranslation()
-  const [picking, setPicking] = useState(false)
   const presents = useChatPresents()
-  if (!presents) return <StreamMessageComposerLeadingView />
   return (
-    <View className="flex-row items-end">
+    <>
       <StreamMessageComposerLeadingView />
-      <Pressable
-        onPress={() => setPicking(true)}
-        accessibilityRole="button"
-        accessibilityLabel={t('chat.mention')}
-        hitSlop={4}
-        className="mb-0.5 h-10 w-10 items-center justify-center rounded-full active:opacity-60"
-      >
-        <Text className="text-[22px]">{MENTION_ICON}</Text>
-      </Pressable>
-      <MentionPicker visible={picking} onClose={() => setPicking(false)} />
+      {presents ? (
+        <MentionPicker
+          visible={presents.picking}
+          onClose={() => presents.setPicking(false)}
+        />
+      ) : null}
+    </>
+  )
+}
+
+// 🎁, then the attachment shelf's buttons. 🎁 closes the shelf and opens
+// the picker. Stream's own bar, rebuilt (its styles: 12/16 are its
+// `spacingSm`/`spacingMd`), since 🎁 beside it lands off its row.
+function AttachmentPickerSelectionBar() {
+  const { t } = useTranslation()
+  const presents = useChatPresents()
+  const { closePicker } = useAttachmentPickerContext()
+  const { theme } = useTheme()
+  if (!presents) return <StreamAttachmentPickerSelectionBar />
+  return (
+    <View
+      style={[
+        {
+          backgroundColor: theme.semantics.backgroundCoreElevation1,
+          paddingBottom: 12,
+          paddingHorizontal: 16,
+          alignItems: 'center',
+          flexDirection: 'row',
+        },
+        theme.attachmentSelectionBar.container,
+      ]}
+    >
+      <AttachmentTypePickerButton
+        // Stream translates it, and leaves a string it doesn't know as is.
+        accessibilityLabelKey={t('chat.mention')}
+        Icon={MentionIcon}
+        onPress={() => {
+          closePicker()
+          presents.setPicking(true)
+        }}
+      />
+      <MediaPickerButton />
+      <CameraPickerButton />
+      <FilePickerButton />
+      <PollPickerButton />
+      <CommandsPickerButton />
     </View>
   )
+}
+
+function MentionIcon() {
+  return <Text className="text-[20px] leading-[24px]">{MENTION_ICON}</Text>
 }
 
 // The event's presents the viewer can see. One that someone in this thread
@@ -351,6 +406,7 @@ const styles = {
 } as const
 
 export const chatPresentOverrides: ComponentOverrides = {
+  AttachmentPickerSelectionBar,
   MessageComposerLeadingView,
   MessageText,
 }
