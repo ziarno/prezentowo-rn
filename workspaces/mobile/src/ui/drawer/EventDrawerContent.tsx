@@ -80,8 +80,8 @@ function EventMenu({ eventId, current, go, jumpTo }: MenuProps) {
   const { gifts } = useEventGifts(eventId)
   const user = useCurrentUser()
   const offline = useOffline()
-  // Everyone gets a count in `3d`. In `3d2` (many-to-one) the beneficiary
-  // is listed first and is the only one with a count.
+  // Everyone gets a count and a list in `3d`. In `3d2` (many-to-one) the
+  // beneficiary is listed first and is the only one with either.
   const counts = event ? presentCounts(event, gifts, user?._id) : {}
   const beneficiaryId = event ? beneficiaryIdOf(event) : undefined
   const people = participants
@@ -89,6 +89,7 @@ function EventMenu({ eventId, current, go, jumpTo }: MenuProps) {
       ...p,
       presentCount:
         !beneficiaryId || p.id === beneficiaryId ? counts[p.id] : undefined,
+      canOpen: !beneficiaryId || p.id === beneficiaryId,
     }))
     // The viewer is always first, then the beneficiary.
     .sort(

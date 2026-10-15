@@ -15,6 +15,7 @@ import Animated, {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { activityLines } from '@/api/activityFeed'
+import { recipientOptions } from '@/api/giftWizard'
 import { type CoverTone, coverTone } from '@/api/stockArt'
 import { HamburgerIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
@@ -124,11 +125,14 @@ function ActivityList({ event }: { event: EventDoc }) {
               }
               gift={gift}
               // A present opens while it's still there; a join opens the
-              // person's list while they're still in the event.
+              // person's list while they're still in the event, if they
+              // have one (not in a many-to-one event, bar the beneficiary).
               onPress={
                 gift
                   ? () => openGift(gift._id)
-                  : line.kind === 'joined' && actor
+                  : line.kind === 'joined' &&
+                      actor &&
+                      recipientOptions(event).includes(actor.id)
                     ? () => openPerson(actor.id)
                     : undefined
               }

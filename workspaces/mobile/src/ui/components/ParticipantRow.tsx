@@ -15,6 +15,7 @@ type ParticipantRowProps = {
   // isn't shown (e.g. non-beneficiaries in a many-to-one event, `3d2`).
   presentCount?: number
   selected?: boolean
+  // Omitted when the row leads nowhere: no press feedback, no arrow.
   onPress?: () => void
 }
 
@@ -31,9 +32,10 @@ export function ParticipantRow({
   return (
     <Pressable
       onPress={onPress}
-      accessibilityRole="button"
+      disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
       accessibilityState={{ selected }}
-      className={`flex-row items-center gap-3.5 border-t border-garland-ink-08 px-[22px] py-3.5 active:opacity-70 ${selected ? 'bg-garland-paper2' : ''}`}
+      className={`flex-row items-center gap-3.5 border-t border-garland-ink-08 px-[22px] py-3.5 ${onPress ? 'active:opacity-70' : ''} ${selected ? 'bg-garland-paper2' : ''}`}
     >
       <ParticipantAvatar
         name={name}
@@ -53,7 +55,9 @@ export function ParticipantRow({
           {presentCount}
         </Text>
       ) : null}
-      <ArrowRightIcon width={20} height={20} color={garland.ink40} />
+      {onPress ? (
+        <ArrowRightIcon width={20} height={20} color={garland.ink40} />
+      ) : null}
     </Pressable>
   )
 }

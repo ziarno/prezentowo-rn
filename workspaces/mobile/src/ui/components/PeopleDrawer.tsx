@@ -11,6 +11,8 @@ export type PersonItem = {
   isYou: boolean
   subtitle?: string
   presentCount?: number
+  // False for someone whose list the viewer can't open.
+  canOpen?: boolean
 }
 
 type PeopleDrawerProps = {
@@ -21,7 +23,7 @@ type PeopleDrawerProps = {
 }
 
 // The event's participants, as the people section of the event drawer
-// (`3d`/`3d2`). Tapping a person opens their presents.
+// (`3d`/`3d2`). Tapping a person opens their presents, where they can be.
 export function PeopleDrawer({
   people,
   onSelectPerson,
@@ -39,7 +41,7 @@ export function PeopleDrawer({
           subtitle={p.subtitle}
           presentCount={p.presentCount}
           selected={p.id === selectedId}
-          onPress={() => onSelectPerson(p.id)}
+          onPress={p.canOpen === false ? undefined : () => onSelectPerson(p.id)}
         />
       ))}
     </View>
