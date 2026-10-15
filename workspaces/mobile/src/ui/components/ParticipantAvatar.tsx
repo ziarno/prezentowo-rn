@@ -48,7 +48,16 @@ export function ParticipantAvatar({
         backgroundColor: color ?? garland.moss,
       }}
     >
-      <Text className="font-bold text-white" style={{ fontSize: size * 0.42 }}>
+      {/* Explicit lineHeight: Text's default `text-base` line height (24px)
+          is shorter than the glyph at larger sizes, which iOS draws
+          off-centre. */}
+      <Text
+        className="font-bold text-white"
+        style={{
+          fontSize: size * 0.42,
+          lineHeight: Math.round(size * 0.42 * 1.2),
+        }}
+      >
         {name.charAt(0).toUpperCase()}
       </Text>
     </View>
