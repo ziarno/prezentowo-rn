@@ -71,8 +71,7 @@ const VERSION = versionLabel(
 )
 
 // The name and its field share one size, so editing doesn't jump.
-const NAME_TEXT =
-  'font-garland-display text-[32px] leading-[36px] text-garland-ink'
+const NAME_TEXT = 'text-[32px] font-semibold leading-[38px] text-garland-ink'
 
 // Layout B, "Grouped cards" (docs/spec.md §10.1).
 export function ProfileScreen() {
@@ -321,12 +320,16 @@ function EditableName({ name, disabled }: { name: string; disabled: boolean }) {
         accessibilityRole="button"
         accessibilityLabel={t('profile.editName')}
         accessibilityState={{ disabled }}
-        className={`flex-row items-center justify-center gap-2 ${
+        // Equal padding on both sides keeps the name centred; the pencil sits
+        // in the right one.
+        className={`self-center px-6 ${
           disabled ? 'opacity-40' : 'active:opacity-70'
         }`}
       >
-        <Text className={`shrink text-center ${NAME_TEXT}`}>{name}</Text>
-        <PencilIcon width={18} height={18} color={garland.ink40} />
+        <Text className={`text-center ${NAME_TEXT}`}>{name}</Text>
+        <View className="absolute bottom-1.5 right-0">
+          <PencilIcon width={18} height={18} color={garland.ink40} />
+        </View>
       </Pressable>
     )
   }
