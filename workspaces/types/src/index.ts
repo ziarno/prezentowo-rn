@@ -490,6 +490,16 @@ export type UserSearchResult = {
   photo?: string
 }
 
+// An event title, present title or person name as stored: its first
+// character in upper case, the rest as typed ("iPhone" becomes "IPhone").
+// Every write of one goes through here.
+export function upperFirst(text: string): string {
+  const first = text.codePointAt(0)
+  if (first === undefined) return text
+  const head = String.fromCodePoint(first)
+  return head.toLocaleUpperCase() + text.slice(head.length)
+}
+
 // The searchable words of a name, or of a search query: lower case,
 // diacritics stripped (`ł` too, which has no decomposition), split on
 // whitespace and hyphens. The server stores a user's as `nameTokens`.

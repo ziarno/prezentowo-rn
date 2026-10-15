@@ -426,6 +426,12 @@ describe('events.update', function () {
       assert.strictEqual(event.date, '2026-12-25')
     })
 
+    it('stores the title with its first letter in upper case', async function () {
+      const event = await update({ title: 'święta u babci' })
+
+      assert.strictEqual(event.title, 'Święta u babci')
+    })
+
     it('leaves fields it was not sent alone', async function () {
       const before = (await Events.findOneAsync(family.eventId)) as EventDoc
 

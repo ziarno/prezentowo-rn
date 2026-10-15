@@ -22,6 +22,12 @@ describe('updateUser', function () {
   const profileOf = async (userId: string) =>
     (await Meteor.users.findOneAsync(userId))?.profile
 
+  it('stores the name with its first letter in upper case', async function () {
+    await callAsUser(ola, 'updateUser', { name: 'łucja' })
+
+    assert.strictEqual((await profileOf(ola))?.name, 'Łucja')
+  })
+
   describe('photo', function () {
     useImagesSandbox()
 

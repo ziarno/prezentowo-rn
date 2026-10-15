@@ -29,6 +29,19 @@ describe('gifts methods', function () {
   })
 
   describe('gifts.add', function () {
+    it('stores the title with its first letter in upper case', async function () {
+      const { users, participants, eventId } = family
+
+      const id = await addGiftAs(
+        users.celina,
+        eventId,
+        participants.bartek,
+        ' żółty iPhone ',
+      )
+
+      assert.strictEqual((await Gifts.findOneAsync(id))?.title, 'Żółty iPhone')
+    })
+
     it('returns the existing gift when its creator replays a clientId', async function () {
       const { users, participants, eventId } = family
       const args = { clientId: 'offline-1' }

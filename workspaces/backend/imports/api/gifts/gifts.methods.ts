@@ -3,6 +3,7 @@ import {
   type EventDoc,
   PRESENT_ILLUSTRATION_IDS,
   type UpdateGiftArgs,
+  upperFirst,
 } from '@prezentowo/types'
 import { Match, check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
@@ -111,7 +112,7 @@ const addGift = async function (
     throw new Meteor.Error('notFound', 'participantNotFound')
   }
 
-  const title = options.title.trim()
+  const title = upperFirst(options.title.trim())
   if (!title) {
     throw new Meteor.Error('invalidArgs', 'missingTitle')
   }
@@ -182,7 +183,7 @@ const updateGift = async function (
 
   const updates: Record<string, unknown> = {}
   if (options.title !== undefined) {
-    const title = options.title.trim()
+    const title = upperFirst(options.title.trim())
     if (!title) throw new Meteor.Error('invalidArgs', 'missingTitle')
     updates.title = title
   }

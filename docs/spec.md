@@ -339,6 +339,8 @@ All methods are `async`, check `this.userId`, and validate arguments. "Member" m
 
 ### 2.2 Methods
 
+Every event title, present title, placeholder name and profile name is stored trimmed and with its first character in upper case (`upperFirst` in `@prezentowo/types`), the rest as typed. A display never re-cases one.
+
 | Method | Who | Behaviour | Writes Activity / Notification / Chat |
 |---|---|---|---|
 | `events.create(CreateEventArgs)` | signed in | Mints participant ids and resolves `beneficiaryIndex`. Inserts the `InviteDoc` eagerly. A `real` entry must be the caller (`notAuthorized` otherwise): nobody is made a member of someone else's event without accepting. An `invited` entry becomes a **reserved placeholder**, with `name` and `avatar` snapshotted from that user's profile (`notFound` if the user doesn't exist or has no name; `invalidArgs` for the caller or a duplicate). | Notification `invited` to each invited user. Chat: creates the `event_thread` and a `secret_thread` per real recipient (§2.4). |

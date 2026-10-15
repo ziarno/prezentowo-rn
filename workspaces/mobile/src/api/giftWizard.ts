@@ -1,8 +1,9 @@
-import type {
-  EventDoc,
-  GiftDoc,
-  ImportedFields,
-  UpdateGiftArgs,
+import {
+  type EventDoc,
+  type GiftDoc,
+  type ImportedFields,
+  type UpdateGiftArgs,
+  upperFirst,
 } from '@prezentowo/types'
 
 import { type DraftImage, imageChange, savedImage } from './draftImage'
@@ -150,7 +151,8 @@ export function toAddGiftArgs(
   return {
     eventId,
     forParticipantId: draft.forParticipantId!,
-    title: draft.title.trim(),
+    // As the server will store it, for while it waits in the queue.
+    title: upperFirst(draft.title.trim()),
     ...(description ? { description } : {}),
     ...(url ? { url } : {}),
     ...(image ? { image } : {}),

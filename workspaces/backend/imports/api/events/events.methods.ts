@@ -10,6 +10,7 @@ import {
   type RemoveParticipantArgs,
   type UpdateEventArgs,
   type UpdateParticipantArgs,
+  upperFirst,
 } from '@prezentowo/types'
 import { isEmpty } from 'lodash'
 import { Match, check } from 'meteor/check'
@@ -160,7 +161,7 @@ const createEvent = async function (
   }
   const userId = this.userId
 
-  const title = options.title.trim()
+  const title = upperFirst(options.title.trim())
   const date = options.date.trim()
 
   if (!title || !date) {
@@ -193,7 +194,7 @@ const createEvent = async function (
     return {
       id: Random.id(),
       kind: 'placeholder',
-      name: p.name.trim(),
+      name: upperFirst(p.name.trim()),
       color: p.color,
       ...(p.avatar ? { avatar: p.avatar } : {}),
       ...(p.photo ? { photo: p.photo } : {}),
@@ -280,7 +281,7 @@ const updateEvent = async function (
   const $unset: Record<string, ''> = {}
 
   if (options.title !== undefined) {
-    const title = options.title.trim()
+    const title = upperFirst(options.title.trim())
     if (!title) throw new Meteor.Error('invalidArgs', 'missingFields')
     $set.title = title
   }
