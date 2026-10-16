@@ -2,7 +2,9 @@ import {
   BACKGROUND_ILLUSTRATION_IDS,
   type BackgroundIllustrationId,
   PRESENT_ILLUSTRATION_IDS,
+  PRESENT_THEME_IDS,
   type PresentIllustrationId,
+  type PresentThemeId,
 } from '@prezentowo/types'
 
 import { type DraftImage, isPhoto } from './draftImage'
@@ -40,6 +42,16 @@ export const presentArt = (
   image: DraftImage | undefined,
   giftId: string,
 ): PresentIllustrationId => stockArt(PRESENT_ILLUSTRATION_IDS, image, giftId)
+
+// The theme a gift's `1e` picture shows: its own, or a stable pick seeded by
+// the gift `_id` when it has none (or one this build doesn't know).
+export const presentTheme = (
+  theme: string | undefined,
+  giftId: string,
+): PresentThemeId =>
+  (PRESENT_THEME_IDS as readonly string[]).includes(theme ?? '')
+    ? (theme as PresentThemeId)
+    : stablePick(giftId, PRESENT_THEME_IDS)
 
 // The stock background an event shows, seeded by the event `_id`.
 export const backgroundArt = (

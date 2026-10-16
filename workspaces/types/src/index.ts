@@ -219,6 +219,21 @@ export const BACKGROUND_ILLUSTRATION_IDS = [
   'b20',
 ] as const
 
+// How a present's picture is staged on its `1e` screen (docs/spec.md §1.1).
+// Append-only, like the stock art: an id is never reused or renamed.
+export const PRESENT_THEME_IDS = [
+  'polaroid',
+  'rays',
+  'wrapped',
+  'confetti',
+  'snowfall',
+  'torn',
+  'popArt',
+  'sticker',
+] as const
+
+export type PresentThemeId = (typeof PRESENT_THEME_IDS)[number]
+
 export type PresentIllustrationId = (typeof PRESENT_ILLUSTRATION_IDS)[number]
 export type BackgroundIllustrationId =
   (typeof BACKGROUND_ILLUSTRATION_IDS)[number]
@@ -357,6 +372,8 @@ export type GiftDoc = {
   description?: string
   url?: string
   image?: ImageRef
+  // Unset (or an id this build doesn't know) shows a stable pick.
+  theme?: PresentThemeId
   // userIds who have reserved this gift. Stripped for the recipient by the
   // gifts.byEvent publication — the claim-quietly rule.
   claimedBy: string[]
@@ -372,6 +389,7 @@ export type AddGiftArgs = {
   description?: string
   url?: string
   image?: ImageRef
+  theme?: PresentThemeId
   // Idempotency key for offline replay: a repeat (createdBy, clientId)
   // returns the existing gift instead of inserting a duplicate.
   clientId?: string
@@ -384,6 +402,7 @@ export type UpdateGiftArgs = {
   url?: string
   // null clears; undefined leaves unchanged.
   image?: ImageRef | null
+  theme?: PresentThemeId
 }
 
 // One already-occurred thing in an event's history, shown on Home and the

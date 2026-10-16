@@ -58,6 +58,9 @@ The images Prezentowo offers instead of an upload ("or use one of ours"): **pres
 **Fallback art**:
 The stock art shown when a gift or event has no image (or one this version of the app doesn't have). It's picked from the gift's or event's identity, so it always looks the same for that gift or event, but it isn't stored. The field stays empty, and "no image chosen" stays distinguishable from a chosen one.
 
+**Present theme**:
+How a gift's detail screen stages its picture: one of a fixed, append-only set of looks (a taped instant photo, wrapping paper, confetti, …) drawn over the gift tag tone. Chosen next to the image when adding or editing a gift. A gift without one shows a **fallback** pick from its identity, like fallback art; an add saves the pick it previewed.
+
 **Notification**:
 An account-level record telling one user something they personally need to catch up on — distinct from an activity item, which is a per-event record the whole room can see. Keyed on `userId`, never `EventParticipant.id`, because the person being notified may not be a participant of the relevant event at all (someone who ignored an invite hasn't joined). Carries its own read/unread state and a `kind` discriminant, following the same denormalized-snapshot pattern as an activity item — but the two are separate collections, since a notification's per-viewer mutable state does not belong bolted onto an append-only shared log.
 

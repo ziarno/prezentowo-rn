@@ -277,6 +277,19 @@
       "change": "Change picture",
       "sheetTitle": "Picture"
     },
+    "theme": {
+      "label": "Background",
+      "names": {
+        "polaroid": "Polaroid",
+        "rays": "Rays",
+        "wrapped": "Wrapped",
+        "confetti": "Confetti",
+        "snowfall": "Snowfall",
+        "torn": "Torn paper",
+        "popArt": "Pop art",
+        "sticker": "Sticker"
+      }
+    },
     "details": {
       "heading": "Anything else?",
       "hint": "Both are optional."

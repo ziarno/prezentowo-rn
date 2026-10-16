@@ -31,7 +31,11 @@ import {
 import { addGift, removeGift, updateGift } from '@/api/gifts'
 import { downloadImage, uploadImage } from '@/api/images'
 import { blockedShopName, importLink } from '@/api/linkImport'
-import { canEditGift, claimCountForRemoval } from '@/api/presentLists'
+import {
+  canEditGift,
+  claimCountForRemoval,
+  isOwnWish,
+} from '@/api/presentLists'
 import { CloseIcon, LinkIcon, PencilIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
@@ -44,8 +48,10 @@ import { usePersonName } from '@/hooks/usePersonName'
 import { errorMessage } from '@/localization/errorMessage'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { GarlandField } from '@/ui/components/GarlandField'
+import { TONE_COLOR } from '@/ui/components/GiftTag'
 import { ImagePickerGrid } from '@/ui/components/ImagePickerGrid'
 import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
+import { PresentThemePicker } from '@/ui/components/PresentThemePicker'
 import { PresentTile } from '@/ui/components/PresentTile'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
 import { SheetKeyboardAvoidingView } from '@/ui/components/SheetKeyboardAvoidingView'
@@ -142,6 +148,7 @@ function EditGift({ eventId, giftId }: { eventId: string; giftId: string }) {
       mode="edit"
       event={event}
       initialDraft={draftFromGift(gift)}
+      pictureSeed={gift._id}
       onSubmit={async draft => {
         await updateGift(toUpdateGiftArgs(gift, draft))
         router.back()
@@ -242,12 +249,16 @@ function GiftWizard({
   mode,
   event,
   initialDraft,
+  pictureSeed,
   onSubmit,
   footer,
 }: {
   mode: GiftWizardMode
   event: EventDoc
   initialDraft: GiftDraft
+  // What a present without a picture seeds its illustration with: the gift
+  // `_id` when editing; an add's is its `clientId`.
+  pictureSeed?: string
   // Navigates away on success (or once an add is queued); a rejection is
   // shown on the summary.
   onSubmit: (draft: GiftDraft) => Promise<void>
@@ -276,6 +287,28 @@ function GiftWizard({
   const index = steps.indexOf(step)
   const isLast = index === steps.length - 1
   const error = giftStepError(step, draft)
+
+  // The theme thumbnails show this present's picture on its tag tone: green
+  // for the recipient's own wish, berry for someone's suggestion.
+  const user = useCurrentUser()
+  const tone =
+    TONE_COLOR[
+      draft.forParticipantId &&
+      isOwnWish(event, {
+        forParticipantId: draft.forParticipantId,
+        createdBy: user?._id ?? '',
+      })
+        ? 'own'
+        : 'suggested'
+    ]
+  const themeField = (
+    <ThemeField
+      draft={draft}
+      onChange={setDraft}
+      gift={{ _id: pictureSeed ?? draft.clientId, image: draft.image }}
+      tone={tone}
+    />
+  )
 
   const goBack = () => {
     setShowError(false)
@@ -426,7 +459,11 @@ function GiftWizard({
           ) : step === 'photo' ? (
             <>
               <StepHeading>{t('addPresent.photo.heading')}</StepHeading>
-              <PresentPhoto draft={draft} onChange={setDraft} />
+              <PresentPhoto
+                draft={draft}
+                onChange={setDraft}
+                themeField={themeField}
+              />
             </>
           ) : step === 'details' ? (
             <>
@@ -449,6 +486,7 @@ function GiftWizard({
               draft={draft}
               onChange={setDraft}
               review={review}
+              themeField={themeField}
               titleError={titleError}
               linkError={linkError}
               recipientError={
@@ -619,17 +657,61 @@ function LinkImport({
   )
 }
 
-// `5b`: one photo or illustration per present, or none (the fallback). An
-// imported shop photo can be removed, so it need not be kept.
-function PresentPhoto({ draft, onChange }: FieldsProps) {
+// `5b`: one photo or illustration per present, or none (the fallback), and
+// the theme it's staged in on `1e`. An imported shop photo can be removed,
+// so it need not be kept.
+function PresentPhoto({
+  draft,
+  onChange,
+  themeField,
+}: FieldsProps & { themeField: ReactNode }) {
+  const { t } = useTranslation()
   return (
-    <ImagePickerGrid
-      art="present"
-      value={draft.image}
-      onChange={image => onChange({ ...draft, image })}
-      removable={draft.image?.kind === 'remote'}
-      preview={<PhotoPreview image={draft.image} size={160} />}
-    />
+    <>
+      <View className="mb-4 items-center">
+        <PhotoPreview image={draft.image} size={160} />
+      </View>
+      {themeField}
+      <FieldLabel>{t('addPresent.photo.sheetTitle')}</FieldLabel>
+      <ImagePickerGrid
+        art="present"
+        value={draft.image}
+        onChange={image => onChange({ ...draft, image })}
+        removable={draft.image?.kind === 'remote'}
+      />
+    </>
+  )
+}
+
+function FieldLabel({ children }: { children: string }) {
+  return (
+    <Text className="mb-2 text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
+      {children}
+    </Text>
+  )
+}
+
+// The present's theme on `1e`, picked from thumbnails of its picture.
+function ThemeField({
+  draft,
+  onChange,
+  gift,
+  tone,
+}: FieldsProps & {
+  gift: { _id: string; image?: DraftImage }
+  tone: string
+}) {
+  const { t } = useTranslation()
+  return (
+    <View className="mb-6">
+      <FieldLabel>{t('addPresent.theme.label')}</FieldLabel>
+      <PresentThemePicker
+        value={draft.theme}
+        onChange={theme => onChange({ ...draft, theme })}
+        gift={gift}
+        tone={tone}
+      />
+    </View>
   )
 }
 
@@ -743,6 +825,7 @@ function SummaryStep({
   draft,
   onChange,
   review,
+  themeField,
   titleError,
   linkError,
   recipientError,
@@ -751,6 +834,7 @@ function SummaryStep({
   event: EventDoc
   // Set after a link import: the import review hint.
   review: Missing | null
+  themeField: ReactNode
   titleError?: string
   linkError?: string
   recipientError?: string
@@ -808,6 +892,8 @@ function SummaryStep({
           </Text>
         ) : null}
       </View>
+
+      {themeField}
 
       <TitleField
         draft={draft}

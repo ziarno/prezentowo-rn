@@ -283,6 +283,19 @@
       "change": "Zmień obrazek",
       "sheetTitle": "Obrazek"
     },
+    "theme": {
+      "label": "Tło",
+      "names": {
+        "polaroid": "Polaroid",
+        "rays": "Promienie",
+        "wrapped": "Zapakowany",
+        "confetti": "Konfetti",
+        "snowfall": "Śnieg",
+        "torn": "Rozdarty papier",
+        "popArt": "Pop-art",
+        "sticker": "Naklejka"
+      }
+    },
     "details": {
       "heading": "Coś jeszcze?",
       "hint": "Oba pola są opcjonalne."

@@ -2,6 +2,7 @@
 import {
   BACKGROUND_ILLUSTRATION_IDS,
   PRESENT_ILLUSTRATION_IDS,
+  PRESENT_THEME_IDS,
 } from '@prezentowo/types'
 
 import {
@@ -9,9 +10,30 @@ import {
   backgroundTone,
   coverTone,
   presentArt,
+  presentTheme,
 } from '../stockArt'
 
 const art = (id: string) => ({ kind: 'illustration', id }) as const
+
+describe('presentTheme', () => {
+  it('shows the chosen theme', () => {
+    expect(presentTheme('snowfall', 'gift-1')).toBe('snowfall')
+  })
+
+  it('falls back to a stable pick from the gift id, also for an unknown id', () => {
+    const fallback = presentTheme(undefined, 'gift-1')
+    expect(PRESENT_THEME_IDS).toContain(fallback)
+    expect(presentTheme(undefined, 'gift-1')).toBe(fallback)
+    expect(presentTheme('disco', 'gift-1')).toBe(fallback)
+  })
+
+  it('spreads the fallback across the themes', () => {
+    const picks = new Set(
+      Array.from({ length: 200 }, (_, i) => presentTheme(undefined, `g${i}`)),
+    )
+    expect(picks.size).toBe(PRESENT_THEME_IDS.length)
+  })
+})
 
 describe('presentArt', () => {
   it('shows the chosen present', () => {

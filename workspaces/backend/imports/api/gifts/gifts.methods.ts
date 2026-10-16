@@ -2,6 +2,7 @@ import {
   type AddGiftArgs,
   type EventDoc,
   PRESENT_ILLUSTRATION_IDS,
+  PRESENT_THEME_IDS,
   type UpdateGiftArgs,
   upperFirst,
 } from '@prezentowo/types'
@@ -65,6 +66,8 @@ const loadGift = async function (userId: string, giftId: string) {
 const isDuplicateKeyError = (error: unknown) =>
   (error as { code?: unknown } | null)?.code === 11000
 
+const themePattern = Match.Optional(Match.OneOf(...PRESENT_THEME_IDS))
+
 const isImageInUse = (error: unknown) =>
   (error as { reason?: unknown } | null)?.reason === 'imageInUse'
 
@@ -78,6 +81,7 @@ const insertGift = (userId: string, options: AddGiftArgs, title: string) =>
       : {}),
     ...(options.url?.trim() ? { url: options.url.trim() } : {}),
     ...(options.image ? { image: options.image } : {}),
+    ...(options.theme ? { theme: options.theme } : {}),
     claimedBy: [],
     createdBy: userId,
     createdAt: new Date(),
@@ -97,6 +101,7 @@ const addGift = async function (
       description: Match.Maybe(String),
       url: Match.Maybe(String),
       image: Match.Optional(imageRefPattern),
+      theme: themePattern,
       clientId: Match.Maybe(String),
     }),
   )
@@ -168,6 +173,7 @@ const updateGift = async function (
       description: Match.Maybe(String),
       url: Match.Maybe(String),
       image: Match.Optional(Match.OneOf(null, imageRefPattern)),
+      theme: themePattern,
     }),
   )
 
@@ -191,6 +197,7 @@ const updateGift = async function (
     updates.description = options.description.trim()
   if (options.url !== undefined) updates.url = options.url.trim()
   if (options.image) updates.image = options.image
+  if (options.theme) updates.theme = options.theme
 
   const modifier = {
     ...(Object.keys(updates).length > 0 ? { $set: updates } : {}),

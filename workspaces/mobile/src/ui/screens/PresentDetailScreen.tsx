@@ -39,6 +39,7 @@ import {
   isHiddenFrom,
   isOwnWish,
 } from '@/api/presentLists'
+import { presentTheme } from '@/api/stockArt'
 import { BackIcon, LinkIcon, PencilIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
@@ -59,8 +60,8 @@ import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { FAILED_KEY } from '@/ui/components/GiftRow'
 import { TONE_COLOR } from '@/ui/components/GiftTag'
 import { PersonAvatar } from '@/ui/components/PersonAvatar'
-import { PresentTile } from '@/ui/components/PresentTile'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
+import { PresentHero } from '@/ui/components/presentHero/PresentHero'
 
 const CTA_KEY: Record<ClaimAction, string> = {
   claim: 'present.claim',
@@ -230,37 +231,20 @@ export function PresentDetailScreen({
 
   return (
     <View className="flex-1 bg-garland-paper">
-      {/* The picture on the tone's colour, edge to edge, behind the
-          details. */}
-      <Animated.View
-        pointerEvents="none"
-        className="absolute inset-x-0 top-0 items-center"
-        style={[{ backgroundColor: tone, paddingTop: tileTop }, heroStyle]}
-      >
-        <Animated.View
-          style={[
-            {
-              shadowColor: '#000',
-              shadowOpacity: 0.25,
-              shadowRadius: 18,
-              shadowOffset: { width: 0, height: 10 },
-            },
-            queuedAdd && write.state === 'pending'
-              ? { opacity: 0.55 }
-              : undefined,
-            tileStyle,
-          ]}
-        >
-          <PresentTile
-            gift={gift}
-            size={tile}
-            imageSize={Math.round(tile * 0.84)}
-            radius={28}
-            derivative={1000}
-            pending={queuedAdd && write.state === 'pending'}
-          />
-        </Animated.View>
-      </Animated.View>
+      {/* The picture, staged by its theme on the tone's colour, edge to
+          edge behind the details. */}
+      <PresentHero
+        theme={presentTheme(gift.theme, gift._id)}
+        gift={gift}
+        tone={tone}
+        tile={tile}
+        tileTop={tileTop}
+        width={width}
+        height={heroHeight}
+        pending={queuedAdd && write.state === 'pending'}
+        heroStyle={heroStyle}
+        tileStyle={tileStyle}
+      />
 
       <Animated.ScrollView
         className="flex-1"

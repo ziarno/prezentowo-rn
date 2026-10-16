@@ -15,6 +15,7 @@ import {
   toUpdateGiftArgs,
   withStockImage,
 } from '../giftWizard'
+import { presentTheme } from '../stockArt'
 
 const ME = 'user-me'
 
@@ -45,6 +46,7 @@ const draft = (overrides: Partial<GiftDraft> = {}): GiftDraft => ({
   title: 'Scarf',
   description: '',
   url: '',
+  theme: 'rays',
   clientId: 'client-1',
   ...overrides,
 })
@@ -150,6 +152,11 @@ describe('emptyGiftDraft', () => {
     expect(a.clientId).toMatch(/^[A-Za-z0-9]{17}$/)
     expect(a.clientId).not.toBe(b.clientId)
   })
+
+  it('starts on the theme a present without one shows, seeded by its client id', () => {
+    const a = emptyGiftDraft('p-anna')
+    expect(a.theme).toBe(presentTheme(undefined, a.clientId))
+  })
 })
 
 describe('draftFromImport', () => {
@@ -168,6 +175,7 @@ describe('draftFromImport', () => {
       description: 'Steel, 1.7 l',
       url: 'https://www.x-kom.pl/p/1-kettle.html',
       image: { kind: 'remote', uri: 'https://cdn.x-kom.pl/1.jpg' },
+      theme: 'rays',
       clientId: 'client-1',
     })
   })
@@ -220,6 +228,7 @@ describe('toAddGiftArgs', () => {
       title: 'Scarf',
       description: 'Green',
       url: 'shop.pl/scarf',
+      theme: 'rays',
       clientId: 'client-1',
     })
   })
@@ -229,6 +238,7 @@ describe('toAddGiftArgs', () => {
       eventId: 'e1',
       forParticipantId: 'p-anna',
       title: 'Scarf',
+      theme: 'rays',
       clientId: 'client-1',
     })
   })
@@ -280,6 +290,22 @@ describe('toUpdateGiftArgs', () => {
     expect(
       toUpdateGiftArgs(g, { ...draftFromGift(g), image: undefined }),
     ).toEqual({ giftId: 'g1', image: null })
+  })
+})
+
+describe('toUpdateGiftArgs with a theme', () => {
+  it('sends nothing for the theme a theme-less present already shows', () => {
+    const g = gift()
+    expect(draftFromGift(g).theme).toBe(presentTheme(undefined, 'g1'))
+    expect(toUpdateGiftArgs(g, draftFromGift(g))).toEqual({ giftId: 'g1' })
+  })
+
+  it('sends a changed theme', () => {
+    const g = gift({ theme: 'rays' })
+    expect(toUpdateGiftArgs(g, draftFromGift(g))).toEqual({ giftId: 'g1' })
+    expect(
+      toUpdateGiftArgs(g, { ...draftFromGift(g), theme: 'sticker' }),
+    ).toEqual({ giftId: 'g1', theme: 'sticker' })
   })
 })
 

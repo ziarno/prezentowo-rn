@@ -3,6 +3,7 @@ import {
   type GiftDoc,
   type ImportedFields,
   PRESENT_ILLUSTRATION_IDS,
+  type PresentThemeId,
   type UpdateGiftArgs,
   upperFirst,
 } from '@prezentowo/types'
@@ -11,6 +12,7 @@ import { type DraftImage, imageChange, savedImage } from './draftImage'
 import { stablePick } from './eventList'
 import { beneficiaryIdOf } from './events'
 import type { QueuedAddGiftArgs } from './pendingWrites'
+import { presentTheme } from './stockArt'
 
 // The add-present wizard's steps: `5a` name (or a link to import), `5b`
 // photo, `5c` description and link, `5d` summary.
@@ -24,6 +26,10 @@ export type GiftDraft = {
   description: string
   url: string
   image?: DraftImage
+  // Always set: the add starts on the same stable pick a present without a
+  // theme shows, seeded by the `clientId`, so skipping it saves what was
+  // previewed.
+  theme: PresentThemeId
   // Minted once per wizard, so resending the same add can't duplicate it.
   clientId: string
 }
@@ -133,12 +139,14 @@ function newClientId(): string {
 export function emptyGiftDraft(
   forParticipantId: string | undefined,
 ): GiftDraft {
+  const clientId = newClientId()
   return {
     forParticipantId,
     title: '',
     description: '',
     url: '',
-    clientId: newClientId(),
+    theme: presentTheme(undefined, clientId),
+    clientId,
   }
 }
 
@@ -149,6 +157,7 @@ export function draftFromGift(gift: GiftDoc): GiftDraft {
     description: gift.description ?? '',
     url: gift.url ?? '',
     image: gift.image,
+    theme: presentTheme(gift.theme, gift._id),
     clientId: newClientId(),
   }
 }
@@ -213,6 +222,7 @@ export function toAddGiftArgs(
     ...(description ? { description } : {}),
     ...(url ? { url } : {}),
     ...(image ? { image } : {}),
+    theme: draft.theme,
     clientId: draft.clientId,
   }
 }
@@ -234,5 +244,8 @@ export function toUpdateGiftArgs(
   if (url !== (gift.url ?? '')) args.url = url
   const image = imageChange(gift.image, savedImage(draft.image))
   if (image !== undefined) args.image = image
+  // The fallback a theme-less present shows counts as unchanged.
+  if (draft.theme !== presentTheme(gift.theme, gift._id))
+    args.theme = draft.theme
   return args
 }

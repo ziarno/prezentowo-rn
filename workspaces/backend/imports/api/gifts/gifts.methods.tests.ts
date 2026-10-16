@@ -163,6 +163,34 @@ describe('gifts methods', function () {
       assert.strictEqual(await Gifts.find({ eventId }).countAsync(), 0)
     })
 
+    it('stores a theme', async function () {
+      const { users, participants, eventId } = family
+
+      const gift = await addGiftAs(
+        users.celina,
+        eventId,
+        participants.bartek,
+        'Scarf',
+        { theme: 'snowfall' },
+      )
+
+      assert.strictEqual((await Gifts.findOneAsync(gift))?.theme, 'snowfall')
+    })
+
+    it('rejects a theme that is not one of ours', async function () {
+      const { users, participants, eventId } = family
+
+      for (const theme of ['disco', 'Polaroid', 3, null]) {
+        await assert.rejects(
+          addGiftAs(users.celina, eventId, participants.bartek, 'Scarf', {
+            theme,
+          }),
+          /Match error/,
+        )
+      }
+      assert.strictEqual(await Gifts.find({ eventId }).countAsync(), 0)
+    })
+
     it('no longer stores a price', async function () {
       const { users, participants, eventId } = family
 
@@ -205,6 +233,37 @@ describe('gifts methods', function () {
       })
 
       assert.strictEqual((await Gifts.findOneAsync(gift))?.title, 'Wool scarf')
+    })
+
+    it('changes the theme, and keeps it when left out', async function () {
+      const { users, participants, eventId } = family
+      const gift = await addGiftAs(
+        users.celina,
+        eventId,
+        participants.bartek,
+        'Scarf',
+        { theme: 'rays' },
+      )
+
+      await callAsUser(users.celina, 'gifts.update', {
+        giftId: gift,
+        theme: 'sticker',
+      })
+      assert.strictEqual((await Gifts.findOneAsync(gift))?.theme, 'sticker')
+
+      await callAsUser(users.celina, 'gifts.update', {
+        giftId: gift,
+        title: 'Wool scarf',
+      })
+      assert.strictEqual((await Gifts.findOneAsync(gift))?.theme, 'sticker')
+
+      await assert.rejects(
+        callAsUser(users.celina, 'gifts.update', {
+          giftId: gift,
+          theme: 'disco',
+        }),
+        /Match error/,
+      )
     })
 
     it('rejects an illustration id that is not a present', async function () {
