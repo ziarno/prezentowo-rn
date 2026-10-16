@@ -51,7 +51,8 @@ import { usePersonName } from '@/hooks/usePersonName'
 import { useQueuedWrites } from '@/hooks/useQueuedWrites'
 import { errorMessage } from '@/localization/errorMessage'
 import { discardWrite } from '@/sync'
-import { BuyerSeal, DollarIcon } from '@/ui/components/BuyerSeal'
+import { DollarIcon } from '@/ui/components/BuyerSeal'
+import { BuyersStamp, randomStampEntrance } from '@/ui/components/BuyersStamp'
 import { ChatRecapBox } from '@/ui/components/ChatRecapBox'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { FAILED_KEY } from '@/ui/components/GiftRow'
@@ -156,6 +157,23 @@ export function PresentDetailScreen({
       if (over !== before) scheduleOnRN(setOverHero, over)
     },
   )
+  // The buyers stamp arrives, a different way each time the screen opens,
+  // once most of it is on screen. Its top in the scroll content: the
+  // details' column plus its own offset in it.
+  const [stampEntrance] = useState(randomStampEntrance)
+  const columnY = useSharedValue(0)
+  const stampY = useSharedValue(Infinity)
+  const stampH = useSharedValue(0)
+  const [stampSeen, setStampSeen] = useState(false)
+  useAnimatedReaction(
+    () =>
+      heroHeight + columnY.get() + stampY.get() + stampH.get() * 0.6 <
+      scrollY.get() + windowHeight,
+    (seen, before) => {
+      if (seen && !before) scheduleOnRN(setStampSeen, true)
+    },
+  )
+
   const shown =
     !!gift && !!event && !!user && !isHiddenFrom(event, gift, user._id)
   const light = shown && overHero
@@ -273,7 +291,10 @@ export function PresentDetailScreen({
         >
           <Perforation width={width} />
 
-          <View className="px-6 pt-5">
+          <View
+            className="px-6 pt-5"
+            onLayout={e => columnY.set(e.nativeEvent.layout.y)}
+          >
             <Text
               className="text-[11px] font-bold uppercase tracking-[2px]"
               style={{ color: tone }}
@@ -337,26 +358,44 @@ export function PresentDetailScreen({
             {/* Not for the recipient (claim-quietly rule), and not at all
               while nobody is buying it. */}
             {showBuyers ? (
-              <BuyersStamp label={t('present.buying')}>
-                {buyers.map((buyer, i) => (
-                  <Text key={i} className="text-sm font-bold text-garland-ink">
-                    {nameOf(buyer)}
-                  </Text>
-                ))}
-                {viewerClaimOf(write) ? (
-                  <Text
-                    className={`text-sm font-bold ${
-                      viewerClaimOf(write) === 'failed'
-                        ? 'text-garland-berry line-through'
-                        : 'text-garland-green'
-                    }`}
-                  >
-                    {viewerClaimOf(write) === 'failed'
-                      ? t('person.you')
-                      : `${t('person.you')} · ⏱`}
-                  </Text>
-                ) : null}
-              </BuyersStamp>
+              <View
+                onLayout={e => {
+                  stampH.set(e.nativeEvent.layout.height)
+                  stampY.set(e.nativeEvent.layout.y)
+                }}
+              >
+                <BuyersStamp
+                  entrance={stampEntrance}
+                  label={t('present.buying')}
+                  play={stampSeen}
+                  lines={[
+                    ...buyers.map((buyer, i) => (
+                      <Text
+                        key={i}
+                        className="text-sm font-bold text-garland-ink"
+                      >
+                        {nameOf(buyer)}
+                      </Text>
+                    )),
+                    ...(viewerClaimOf(write)
+                      ? [
+                          <Text
+                            key="you"
+                            className={`text-sm font-bold ${
+                              viewerClaimOf(write) === 'failed'
+                                ? 'text-garland-berry line-through'
+                                : 'text-garland-green'
+                            }`}
+                          >
+                            {viewerClaimOf(write) === 'failed'
+                              ? t('person.you')
+                              : `${t('person.you')} · ⏱`}
+                          </Text>,
+                        ]
+                      : []),
+                  ]}
+                />
+              </View>
             ) : null}
 
             {queuedAdd ? (
@@ -458,30 +497,6 @@ function MetaPerson({
       >
         {name}
       </Text>
-    </View>
-  )
-}
-
-// Who is buying it, as a rubber stamp: the seal, the label, a name a line.
-function BuyersStamp({
-  label,
-  children,
-}: {
-  label: string
-  children: ReactNode
-}) {
-  return (
-    <View
-      className="mt-8 max-w-[80%] flex-row items-center gap-3 self-end rounded-xl border-2 border-dashed border-garland-ink-40 px-3 py-2"
-      style={{ transform: [{ rotate: '-3deg' }] }}
-    >
-      <BuyerSeal size={34} />
-      <View className="shrink">
-        <Text className="text-[10px] font-bold uppercase tracking-[1.5px] text-garland-ink-60">
-          {label}
-        </Text>
-        {children}
-      </View>
     </View>
   )
 }
