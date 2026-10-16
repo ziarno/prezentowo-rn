@@ -40,7 +40,6 @@ import { ChatRecapBox } from '@/ui/components/ChatRecapBox'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { FAILED_KEY } from '@/ui/components/GiftRow'
 import { TONE_COLOR } from '@/ui/components/GiftTag'
-import { LockNote } from '@/ui/components/LockNote'
 import { PersonAvatar } from '@/ui/components/PersonAvatar'
 import { PresentTile } from '@/ui/components/PresentTile'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
@@ -304,9 +303,7 @@ export function PresentDetailScreen({
                 <Text className="mt-3 text-xs text-garland-berry">{error}</Text>
               ) : null}
             </>
-          ) : (
-            <LockNote className="mt-8">{t('present.onYourList')}</LockNote>
-          )}
+          ) : null}
 
           {/* Buyers coordinate in the recipient's thread, which the
               recipient is never sent: on their own present it's absent. */}

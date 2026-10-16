@@ -2,7 +2,14 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { View } from 'react-native'
 
+import {
+  BackIcon,
+  CheckIcon,
+  ChevronIcon,
+  PlusIcon,
+} from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
+import { garland } from '@/constants/colors'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 
 // The chrome the create-event (`4a`–`4e`) and add-present (`5a`–`5d`)
@@ -50,14 +57,22 @@ export function StepHeading({ children }: { children: ReactNode }) {
   )
 }
 
+// What the primary button does: `forward` to the next step (its arrow
+// trails the label), or `add` / `save` on the last one.
+export type WizardPrimaryIcon = 'forward' | 'add' | 'save'
+
+const ICON_SIZE = 18
+
 export function WizardFooter({
   primaryLabel,
+  primaryIcon,
   onPrimary,
   onBack,
   submitting,
   disabled = false,
 }: {
   primaryLabel: string
+  primaryIcon: WizardPrimaryIcon
   onPrimary: () => void
   // Omitted on the first step.
   onBack?: () => void
@@ -76,7 +91,13 @@ export function WizardFooter({
             variant="outline"
             onPress={onBack}
             disabled={submitting || disabled}
+            className="gap-1.5"
           >
+            <BackIcon
+              width={ICON_SIZE}
+              height={ICON_SIZE}
+              color={garland.ink}
+            />
             <GarlandButtonText>{t('wizard.back')}</GarlandButtonText>
           </GarlandButton>
         </View>
@@ -86,8 +107,29 @@ export function WizardFooter({
           onPress={onPrimary}
           loading={submitting}
           disabled={disabled}
+          className="gap-1.5"
         >
+          {primaryIcon === 'add' ? (
+            <PlusIcon
+              width={ICON_SIZE}
+              height={ICON_SIZE}
+              color={garland.paper}
+            />
+          ) : primaryIcon === 'save' ? (
+            <CheckIcon
+              width={ICON_SIZE}
+              height={ICON_SIZE}
+              color={garland.paper}
+            />
+          ) : null}
           <GarlandButtonText>{primaryLabel}</GarlandButtonText>
+          {primaryIcon === 'forward' ? (
+            <ChevronIcon
+              width={ICON_SIZE}
+              height={ICON_SIZE}
+              color={garland.paper}
+            />
+          ) : null}
         </GarlandButton>
       </View>
     </View>

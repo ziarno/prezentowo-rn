@@ -238,7 +238,6 @@
     "claim": "I'll buy this",
     "claimToo": "I'll buy this too",
     "unclaim": "I'm not buying this anymore",
-    "onYourList": "This is on your list. You won't see whether anyone is buying it.",
     "edit": "Edit",
     "delete": "Delete present",
     "deleteTitle": "Delete “{{title}}”?",
@@ -254,28 +253,27 @@
     "add": "Add present",
     "save": "Save",
     "nameLabel": "Name",
-    "namePlaceholder": "A warm scarf",
     "descriptionLabel": "Description",
-    "descriptionPlaceholder": "Size, colour, anything that helps",
     "linkLabel": "Link",
-    "linkPlaceholder": "Where to buy it",
     "title": {
       "heading": "What's the present?"
     },
     "link": {
       "or": "or",
       "label": "Shop link",
-      "placeholder": "Paste a link to the product",
-      "create": "🔗 Create from link",
+      "create": "Create from link",
       "hint": "Paste a shop link and we'll fill in the rest.",
       "unreadable": "We couldn't read this link — fill the present in yourself.",
       "blocked": "{{shop}} links can't be imported — fill the present in yourself.",
       "failed": "Couldn't import the link just now.",
-      "tryAgain": "Try again"
+      "tryAgain": "Try again",
+      "invalid": "That doesn't look like a link."
     },
     "photo": {
       "heading": "Add a photo?",
-      "noPhoto": "Nothing picked — we'll show one of our illustrations."
+      "noPhoto": "Nothing picked — we'll show one of our illustrations.",
+      "change": "Change picture",
+      "sheetTitle": "Picture"
     },
     "details": {
       "heading": "Anything else?",
@@ -289,11 +287,12 @@
       "generic": "Filled in from the shop — check everything before adding.",
       "title": "The shop didn't give a name. Add one.",
       "description": "The shop didn't give a description.",
-      "image": "The shop didn't give a photo. Pick one, or leave it."
+      "image": "The shop didn't give a photo, so we picked an illustration. Tap it to change it."
     },
     "errors": {
       "titleRequired": "Give the present a name.",
-      "recipientRequired": "Choose who the present is for."
+      "recipientRequired": "Choose who the present is for.",
+      "linkInvalid": "That doesn't look like a link. Fix it, or leave it empty."
     }
   },
   "wizard": {

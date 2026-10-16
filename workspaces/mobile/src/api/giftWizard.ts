@@ -2,11 +2,13 @@ import {
   type EventDoc,
   type GiftDoc,
   type ImportedFields,
+  PRESENT_ILLUSTRATION_IDS,
   type UpdateGiftArgs,
   upperFirst,
 } from '@prezentowo/types'
 
 import { type DraftImage, imageChange, savedImage } from './draftImage'
+import { stablePick } from './eventList'
 import { beneficiaryIdOf } from './events'
 import type { QueuedAddGiftArgs } from './pendingWrites'
 
@@ -26,7 +28,40 @@ export type GiftDraft = {
   clientId: string
 }
 
-export type GiftStepError = 'titleRequired' | 'recipientRequired'
+export type GiftStepError =
+  | 'titleRequired'
+  | 'linkInvalid'
+  | 'recipientRequired'
+
+/**
+ * Whether `text` reads as a web address: http(s), or no scheme at all
+ * ("x-kom.pl/p/…", taken as https, as the link import and `1e` take it),
+ * with a dotted host and no spaces.
+ */
+export function isWebLink(text: string): boolean {
+  const trimmed = text.trim()
+  if (!trimmed || /\s/.test(trimmed)) return false
+  const withScheme = /^[a-z][a-z\d+.-]*:/i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`
+  let url: URL
+  try {
+    url = new URL(withScheme)
+  } catch {
+    return false
+  }
+  const host = url.hostname
+  return (
+    (url.protocol === 'http:' || url.protocol === 'https:') &&
+    host.includes('.') &&
+    !host.startsWith('.') &&
+    !host.endsWith('.')
+  )
+}
+
+// An empty link is fine: it's optional.
+const linkError = (draft: GiftDraft): GiftStepError | null =>
+  draft.url.trim() && !isWebLink(draft.url) ? 'linkInvalid' : null
 
 const ADD_STEPS: GiftWizardStep[] = ['title', 'photo', 'details', 'summary']
 
@@ -46,11 +81,15 @@ export function giftStepError(
     case 'title':
       return draft.title.trim() ? null : 'titleRequired'
     case 'photo':
-    case 'details':
       return null
+    case 'details':
+      return linkError(draft)
     case 'summary':
       if (!draft.title.trim()) return 'titleRequired'
-      return draft.forParticipantId ? null : 'recipientRequired'
+      return (
+        linkError(draft) ??
+        (draft.forParticipantId ? null : 'recipientRequired')
+      )
   }
 }
 
@@ -134,6 +173,24 @@ export function draftFromImport(
       draft.image ??
       (fields.imageUrl ? { kind: 'remote', uri: fields.imageUrl } : undefined),
   }
+}
+
+/**
+ * The draft as an add's summary shows it: with no photo or illustration
+ * picked, one of our illustrations at random, so the summary shows the
+ * picture that will be saved. Seeded by the draft's `clientId`, so it's the
+ * same pick each time the wizard comes back to the summary.
+ */
+export function withStockImage(draft: GiftDraft): GiftDraft {
+  return draft.image
+    ? draft
+    : {
+        ...draft,
+        image: {
+          kind: 'illustration',
+          id: stablePick(draft.clientId, PRESENT_ILLUSTRATION_IDS),
+        },
+      }
 }
 
 /**

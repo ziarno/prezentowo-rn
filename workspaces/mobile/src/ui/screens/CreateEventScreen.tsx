@@ -360,6 +360,7 @@ function EventWizard({
 
         <WizardFooter
           primaryLabel={primaryLabel}
+          primaryIcon={!isLast ? 'forward' : mode === 'create' ? 'add' : 'save'}
           onPrimary={next}
           onBack={index > 0 ? goBack : undefined}
           submitting={submitting}

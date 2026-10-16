@@ -29,21 +29,24 @@ const RADIUS = 12
 // `4c`, `5b` and `6a`: "Upload photo" first, then our stock art, with a ring
 // on the current pick (docs/spec.md §5). A photo stays on the device (a
 // `local` image) until the wizard saves, which uploads it. Tapping the
-// picked stock tile again unpicks it; `removable` (`6a`) adds "Remove".
+// picked stock tile again unpicks it, unless `deselectable` is off (it then
+// picks it again); `removable` (`6a`) adds "Remove".
 export function ImagePickerGrid({
   art,
   value,
   onChange,
   preview,
   removable = false,
+  deselectable = true,
   layout = 'grid',
 }: {
   art: Art
   value: DraftImage | undefined
   onChange: (image: DraftImage | undefined) => void
   // How the current value looks where it will be shown.
-  preview: ReactNode
+  preview?: ReactNode
   removable?: boolean
+  deselectable?: boolean
   // `row` scrolls sideways, for a picker that shares its screen.
   layout?: 'grid' | 'row'
 }) {
@@ -59,7 +62,7 @@ export function ImagePickerGrid({
   const pickStock = (id: string) => {
     clearError()
     const picked = value?.kind === 'illustration' && value.id === id
-    onChange(picked ? undefined : { kind: 'illustration', id })
+    onChange(picked && deselectable ? undefined : { kind: 'illustration', id })
   }
 
   const columns = COLUMNS[art]
@@ -130,19 +133,19 @@ export function ImagePickerGrid({
 
   return (
     <View>
-      <View className="items-center">{preview}</View>
+      {preview ? <View className="mb-4 items-center">{preview}</View> : null}
       {layout === 'row' ? (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          className="-mx-[22px] mt-4"
+          className="-mx-[22px]"
           contentContainerStyle={{ paddingHorizontal: 22, gap: GAP }}
         >
           {tiles}
         </ScrollView>
       ) : (
         <View
-          className="mt-4 flex-row flex-wrap"
+          className="flex-row flex-wrap"
           style={{ gap: GAP }}
           onLayout={e => setWidth(e.nativeEvent.layout.width)}
         >

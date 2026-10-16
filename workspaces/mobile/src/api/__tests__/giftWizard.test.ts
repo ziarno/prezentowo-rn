@@ -8,10 +8,12 @@ import {
   emptyGiftDraft,
   giftStepError,
   giftWizardSteps,
+  isWebLink,
   recipientOptions,
   startingRecipient,
   toAddGiftArgs,
   toUpdateGiftArgs,
+  withStockImage,
 } from '../giftWizard'
 
 const ME = 'user-me'
@@ -71,6 +73,17 @@ describe('giftStepError', () => {
   it('lets the photo and details steps be skipped', () => {
     expect(giftStepError('photo', draft())).toBeNull()
     expect(giftStepError('details', draft())).toBeNull()
+  })
+
+  it('takes an empty link, but not one that is not a link', () => {
+    expect(giftStepError('details', draft({ url: '  ' }))).toBeNull()
+    expect(giftStepError('details', draft({ url: 'x-kom.pl/p/1' }))).toBeNull()
+    expect(giftStepError('details', draft({ url: 'szalik' }))).toBe(
+      'linkInvalid',
+    )
+    expect(giftStepError('summary', draft({ url: 'szalik' }))).toBe(
+      'linkInvalid',
+    )
   })
 
   it('needs a name and a recipient on the summary', () => {
@@ -268,4 +281,43 @@ describe('toUpdateGiftArgs', () => {
       toUpdateGiftArgs(g, { ...draftFromGift(g), image: undefined }),
     ).toEqual({ giftId: 'g1', image: null })
   })
+})
+
+describe('withStockImage', () => {
+  it('picks an illustration when nothing is picked, the same one each time', () => {
+    const draft = emptyGiftDraft('p1')
+    const picked = withStockImage(draft)
+    expect(picked.image).toEqual({
+      kind: 'illustration',
+      id: expect.stringMatching(/^p\d+$/),
+    })
+    expect(withStockImage(draft)).toEqual(picked)
+  })
+
+  it('keeps a picked photo or illustration', () => {
+    const draft = {
+      ...emptyGiftDraft('p1'),
+      image: { kind: 'local' as const, uri: 'file:///a.jpg' },
+    }
+    expect(withStockImage(draft)).toBe(draft)
+  })
+})
+
+describe('isWebLink', () => {
+  it.each([
+    'https://www.x-kom.pl/p/123-szalik.html',
+    'http://shop.example.com',
+    'x-kom.pl/p/123',
+    '  allegro.pl  ',
+  ])('takes %s', text => expect(isWebLink(text)).toBe(true))
+
+  it.each([
+    '',
+    'szalik',
+    'ciepły szalik.pl',
+    'ftp://files.example.com',
+    'mailto:a@b.pl',
+    'https://localhost',
+    'https://.pl',
+  ])('refuses %s', text => expect(isWebLink(text)).toBe(false))
 })

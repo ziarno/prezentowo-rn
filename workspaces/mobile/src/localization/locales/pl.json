@@ -242,7 +242,6 @@
     "claim": "Kupię to",
     "claimToo": "Też to kupię",
     "unclaim": "Jednak tego nie kupię",
-    "onYourList": "To jest na twojej liście. Nie zobaczysz, czy ktoś to kupuje.",
     "edit": "Edytuj",
     "delete": "Usuń prezent",
     "deleteTitle": "Usunąć „{{title}}”?",
@@ -260,28 +259,27 @@
     "add": "Dodaj prezent",
     "save": "Zapisz",
     "nameLabel": "Nazwa",
-    "namePlaceholder": "Ciepły szalik",
     "descriptionLabel": "Opis",
-    "descriptionPlaceholder": "Rozmiar, kolor, cokolwiek pomoże",
     "linkLabel": "Link",
-    "linkPlaceholder": "Gdzie to kupić",
     "title": {
       "heading": "Jaki to prezent?"
     },
     "link": {
       "or": "albo",
       "label": "Link do sklepu",
-      "placeholder": "Wklej link do produktu",
-      "create": "🔗 Utwórz z linku",
+      "create": "Utwórz z linku",
       "hint": "Wklej link ze sklepu, a resztę uzupełnimy.",
       "unreadable": "Nie udało się odczytać tego linku — uzupełnij prezent samodzielnie.",
       "blocked": "Linków z {{shop}} nie da się zaimportować — uzupełnij prezent samodzielnie.",
       "failed": "Nie udało się teraz zaimportować linku.",
-      "tryAgain": "Spróbuj ponownie"
+      "tryAgain": "Spróbuj ponownie",
+      "invalid": "To nie wygląda na link."
     },
     "photo": {
       "heading": "Dodać zdjęcie?",
-      "noPhoto": "Nic nie wybrano — pokażemy jedną z naszych ilustracji."
+      "noPhoto": "Nic nie wybrano — pokażemy jedną z naszych ilustracji.",
+      "change": "Zmień obrazek",
+      "sheetTitle": "Obrazek"
     },
     "details": {
       "heading": "Coś jeszcze?",
@@ -295,11 +293,12 @@
       "generic": "Uzupełnione ze sklepu — sprawdź wszystko przed dodaniem.",
       "title": "Sklep nie podał nazwy. Dodaj ją.",
       "description": "Sklep nie podał opisu.",
-      "image": "Sklep nie podał zdjęcia. Wybierz jakieś albo zostaw tak."
+      "image": "Sklep nie podał zdjęcia, więc wybraliśmy ilustrację. Dotknij jej, żeby ją zmienić."
     },
     "errors": {
       "titleRequired": "Nazwij prezent.",
-      "recipientRequired": "Wybierz, dla kogo jest prezent."
+      "recipientRequired": "Wybierz, dla kogo jest prezent.",
+      "linkInvalid": "To nie wygląda na link. Popraw go albo zostaw puste."
     }
   },
   "wizard": {

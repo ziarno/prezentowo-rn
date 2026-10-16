@@ -1,12 +1,19 @@
+import {
+  BottomSheetBackdrop,
+  type BottomSheetBackdropProps,
+  BottomSheetModal,
+  BottomSheetModalProvider,
+  BottomSheetScrollView,
+} from '@gorhom/bottom-sheet'
 import type { EventDoc, GiftDoc, ImportedFields } from '@prezentowo/types'
 import { router, useNavigation } from 'expo-router'
 import { usePreventRemove } from 'expo-router/react-navigation'
 import { type ReactNode, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { uploadDraftImage } from '@/api/draftImage'
+import { type DraftImage, uploadDraftImage } from '@/api/draftImage'
 import {
   type GiftDraft,
   type GiftWizardMode,
@@ -15,16 +22,19 @@ import {
   emptyGiftDraft,
   giftStepError,
   giftWizardSteps,
-  recipientOptions,
+  isWebLink,
   startingRecipient,
   toAddGiftArgs,
   toUpdateGiftArgs,
+  withStockImage,
 } from '@/api/giftWizard'
 import { addGift, removeGift, updateGift } from '@/api/gifts'
 import { downloadImage, uploadImage } from '@/api/images'
 import { blockedShopName, importLink } from '@/api/linkImport'
 import { canEditGift, claimCountForRemoval } from '@/api/presentLists'
+import { CloseIcon, LinkIcon, PencilIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
+import { garland } from '@/constants/colors'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
@@ -57,10 +67,16 @@ export function AddGiftScreen({
   forParticipantId?: string
   giftId?: string
 }) {
-  return giftId ? (
-    <EditGift eventId={eventId} giftId={giftId} />
-  ) : (
-    <AddGift eventId={eventId} forParticipantId={forParticipantId} />
+  return (
+    // The app-wide provider sits under this native modal, where its sheets
+    // would never show; the summary's picture sheet needs one inside.
+    <BottomSheetModalProvider>
+      {giftId ? (
+        <EditGift eventId={eventId} giftId={giftId} />
+      ) : (
+        <AddGift eventId={eventId} forParticipantId={forParticipantId} />
+      )}
+    </BottomSheetModalProvider>
   )
 }
 
@@ -218,6 +234,7 @@ type Missing = ImportedFields['missing']
 type LinkImportState =
   | { status: 'idle' }
   | { status: 'importing' }
+  | { status: 'invalid' }
   | { status: 'unreadable'; blockedShop?: string }
   | { status: 'failed' }
 
@@ -279,7 +296,10 @@ function GiftWizard({
     }
     setShowError(false)
     if (!isLast) {
-      setStep(steps[index + 1]!)
+      const nextStep = steps[index + 1]!
+      if (nextStep === 'summary' && mode === 'add')
+        setDraft(withStockImage(draft))
+      setStep(nextStep)
       return
     }
     setSubmitting(true)
@@ -321,10 +341,16 @@ function GiftWizard({
   const createFromLink = async () => {
     if (!draft.url.trim() || linkImport.status === 'importing') return
     setShowError(false)
+    if (!isWebLink(draft.url)) {
+      setLinkImport({ status: 'invalid' })
+      return
+    }
     setLinkImport({ status: 'importing' })
     const result = await importLink(draft.url)
     if (result.outcome === 'success') {
-      setDraft(current => draftFromImport(current, result.fields))
+      setDraft(current =>
+        withStockImage(draftFromImport(current, result.fields)),
+      )
       setReview(result.fields.missing)
       setLinkImport({ status: 'idle' })
       setStep('summary')
@@ -347,6 +373,10 @@ function GiftWizard({
   const titleError =
     showError && error === 'titleRequired'
       ? t('addPresent.errors.titleRequired')
+      : undefined
+  const linkError =
+    showError && error === 'linkInvalid'
+      ? t('addPresent.errors.linkInvalid')
       : undefined
 
   return (
@@ -396,17 +426,18 @@ function GiftWizard({
           ) : step === 'photo' ? (
             <>
               <StepHeading>{t('addPresent.photo.heading')}</StepHeading>
-              <PresentPhoto
-                draft={draft}
-                onChange={setDraft}
-                size={160}
-                mode={mode}
-              />
+              <PresentPhoto draft={draft} onChange={setDraft} />
             </>
           ) : step === 'details' ? (
             <>
               <StepHeading>{t('addPresent.details.heading')}</StepHeading>
-              <DetailFields draft={draft} onChange={setDraft} />
+              <View className="gap-5">
+                <DetailFields
+                  draft={draft}
+                  onChange={setDraft}
+                  linkError={linkError}
+                />
+              </View>
               <Text className="text-xs leading-[17px] text-garland-ink-60">
                 {t('addPresent.details.hint')}
               </Text>
@@ -419,6 +450,7 @@ function GiftWizard({
               onChange={setDraft}
               review={review}
               titleError={titleError}
+              linkError={linkError}
               recipientError={
                 showError && error === 'recipientRequired'
                   ? t('addPresent.errors.recipientRequired')
@@ -438,6 +470,7 @@ function GiftWizard({
 
         <WizardFooter
           primaryLabel={primaryLabel}
+          primaryIcon={!isLast ? 'forward' : mode === 'add' ? 'add' : 'save'}
           onPrimary={next}
           onBack={index > 0 ? goBack : undefined}
           submitting={submitting}
@@ -476,7 +509,6 @@ function TitleField({
       label={t('addPresent.nameLabel')}
       value={draft.title}
       onChangeText={title => onChange({ ...draft, title })}
-      placeholder={t('addPresent.namePlaceholder')}
       errorMessage={errorMessage}
       note={note}
       autoFocus={autoFocus}
@@ -491,7 +523,8 @@ function DetailFields({
   draft,
   onChange,
   descriptionNote,
-}: FieldsProps & { descriptionNote?: string }) {
+  linkError,
+}: FieldsProps & { descriptionNote?: string; linkError?: string }) {
   const { t } = useTranslation()
   return (
     <>
@@ -499,7 +532,6 @@ function DetailFields({
         label={t('addPresent.descriptionLabel')}
         value={draft.description}
         onChangeText={description => onChange({ ...draft, description })}
-        placeholder={t('addPresent.descriptionPlaceholder')}
         note={descriptionNote}
         multiline
       />
@@ -507,7 +539,7 @@ function DetailFields({
         label={t('addPresent.linkLabel')}
         value={draft.url}
         onChangeText={url => onChange({ ...draft, url })}
-        placeholder={t('addPresent.linkPlaceholder')}
+        errorMessage={linkError}
         keyboardType="url"
         autoCapitalize="none"
         autoCorrect={false}
@@ -533,19 +565,14 @@ function LinkImport({
   const offline = useOffline()
   const importing = state.status === 'importing'
   return (
-    <View className="mt-2">
-      <View className="mb-5 flex-row items-center gap-3">
-        <View className="h-px flex-1 bg-garland-ink-08" />
-        <Text className="text-xs text-garland-ink-40">
-          {t('addPresent.link.or')}
-        </Text>
-        <View className="h-px flex-1 bg-garland-ink-08" />
-      </View>
+    <View>
+      <Text className="mb-8 mt-6 text-center text-xs text-garland-ink-40">
+        {t('addPresent.link.or')}
+      </Text>
       <GarlandField
         label={t('addPresent.link.label')}
         value={url}
         onChangeText={onChangeUrl}
-        placeholder={t('addPresent.link.placeholder')}
         note={state.status === 'idle' ? t('addPresent.link.hint') : undefined}
         editable={!importing}
         keyboardType="url"
@@ -560,9 +587,14 @@ function LinkImport({
         disabled={!url.trim() || offline}
         loading={importing}
       >
+        <LinkIcon width={18} height={18} color={garland.ink} />
         <GarlandButtonText>{t('addPresent.link.create')}</GarlandButtonText>
       </GarlandButton>
-      {state.status === 'unreadable' ? (
+      {state.status === 'invalid' ? (
+        <Text className="mt-3 text-xs leading-[17px] text-garland-berry">
+          {t('addPresent.link.invalid')}
+        </Text>
+      ) : state.status === 'unreadable' ? (
         <Text className="mt-3 text-xs leading-[17px] text-garland-ink-60">
           {state.blockedShop
             ? t('addPresent.link.blocked', {
@@ -587,53 +619,124 @@ function LinkImport({
   )
 }
 
-// `5b`, and the picture on `5d`: one photo or illustration per present, or
-// none (the fallback). While editing it can be removed, and so can an
-// imported shop photo, so it need not be kept.
-function PresentPhoto({
-  draft,
-  onChange,
-  size,
-  mode,
-  layout,
-}: FieldsProps & {
-  size: number
-  mode: GiftWizardMode
-  layout?: 'grid' | 'row'
-}) {
-  const { t } = useTranslation()
+// `5b`: one photo or illustration per present, or none (the fallback). An
+// imported shop photo can be removed, so it need not be kept.
+function PresentPhoto({ draft, onChange }: FieldsProps) {
   return (
     <ImagePickerGrid
       art="present"
       value={draft.image}
       onChange={image => onChange({ ...draft, image })}
-      removable={mode === 'edit' || draft.image?.kind === 'remote'}
-      layout={layout}
-      preview={
-        draft.image ? (
-          <PresentTile
-            gift={{ _id: '', image: draft.image }}
-            size={size}
-            radius={20}
-            derivative={1000}
-          />
-        ) : (
-          <View
-            className="items-center justify-center rounded-[20px] border-[1.5px] border-dashed border-garland-ink-15 px-3"
-            style={{ width: size, height: size }}
-          >
-            <Text className="text-center text-[13px] leading-[19px] text-garland-ink-60">
-              {t('addPresent.photo.noPhoto')}
-            </Text>
-          </View>
-        )
-      }
+      removable={draft.image?.kind === 'remote'}
+      preview={<PhotoPreview image={draft.image} size={160} />}
     />
   )
 }
 
-// `5d`: every field editable in place. The recipient is write-once, so it
-// can only be picked while adding.
+// How the present's picture will look, or a note when there's none.
+function PhotoPreview({
+  image,
+  size,
+}: {
+  image: DraftImage | undefined
+  size: number
+}) {
+  const { t } = useTranslation()
+  return image ? (
+    <PresentTile
+      gift={{ _id: '', image }}
+      size={size}
+      radius={20}
+      derivative={1000}
+    />
+  ) : (
+    <View
+      className="items-center justify-center rounded-[20px] border-[1.5px] border-dashed border-garland-ink-15 px-3"
+      style={{ width: size, height: size }}
+    >
+      <Text className="text-center text-[13px] leading-[19px] text-garland-ink-60">
+        {t('addPresent.photo.noPhoto')}
+      </Text>
+    </View>
+  )
+}
+
+// `5d`'s picture, with a ✎: tapping it opens `5b`'s picker in a sheet, which
+// closes on a pick. While editing the picture can be removed, and so can an
+// imported shop photo.
+function SummaryPhoto({
+  draft,
+  onChange,
+  mode,
+}: FieldsProps & { mode: GiftWizardMode }) {
+  const { t } = useTranslation()
+  const insets = useSafeAreaInsets()
+  const sheetRef = useRef<BottomSheetModal>(null)
+  const dismiss = () => sheetRef.current?.dismiss()
+
+  const renderBackdrop = (props: BottomSheetBackdropProps) => (
+    <BottomSheetBackdrop
+      {...props}
+      appearsOnIndex={0}
+      disappearsOnIndex={-1}
+      opacity={0.4}
+    />
+  )
+
+  return (
+    <>
+      <Pressable
+        onPress={() => sheetRef.current?.present()}
+        accessibilityRole="button"
+        accessibilityLabel={t('addPresent.photo.change')}
+        className="self-center active:opacity-70"
+      >
+        <PhotoPreview image={draft.image} size={120} />
+        <View className="absolute -bottom-2 -right-2 h-9 w-9 items-center justify-center rounded-full border border-garland-ink-08 bg-garland-paper">
+          <PencilIcon width={16} height={16} color={garland.ink} />
+        </View>
+      </Pressable>
+
+      <BottomSheetModal
+        ref={sheetRef}
+        snapPoints={['85%']}
+        enableDynamicSizing={false}
+        backdropComponent={renderBackdrop}
+        backgroundStyle={{ backgroundColor: garland.paper }}
+        handleIndicatorStyle={{ backgroundColor: garland.ink40 }}
+      >
+        <View className="flex-row items-center justify-between px-[22px] pb-3 pt-1">
+          <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
+            {t('addPresent.photo.sheetTitle')}
+          </Text>
+          <Pressable onPress={dismiss} hitSlop={12}>
+            <CloseIcon width={20} height={20} color={garland.ink40} />
+          </Pressable>
+        </View>
+        <BottomSheetScrollView
+          contentContainerStyle={{
+            paddingHorizontal: 22,
+            paddingBottom: insets.bottom + 16,
+          }}
+        >
+          <ImagePickerGrid
+            art="present"
+            value={draft.image}
+            onChange={image => {
+              onChange({ ...draft, image })
+              dismiss()
+            }}
+            removable={mode === 'edit' || draft.image?.kind === 'remote'}
+            deselectable={false}
+          />
+        </BottomSheetScrollView>
+      </BottomSheetModal>
+    </>
+  )
+}
+
+// `5d`: every field editable in place, but the recipient: it's write-once,
+// set by the list the wizard was opened from.
 function SummaryStep({
   mode,
   event,
@@ -641,6 +744,7 @@ function SummaryStep({
   onChange,
   review,
   titleError,
+  linkError,
   recipientError,
 }: FieldsProps & {
   mode: GiftWizardMode
@@ -648,12 +752,15 @@ function SummaryStep({
   // Set after a link import: the import review hint.
   review: Missing | null
   titleError?: string
+  linkError?: string
   recipientError?: string
 }) {
   const { t } = useTranslation()
   const { resolve } = useEventParticipants(event._id)
   const nameOf = usePersonName()
-  const options = mode === 'add' ? recipientOptions(event) : []
+  const person = draft.forParticipantId
+    ? resolve(draft.forParticipantId)
+    : undefined
 
   return (
     <>
@@ -673,67 +780,30 @@ function SummaryStep({
       >
         {t('addPresent.summary.forLabel')}
       </Text>
-      {options.length > 1 ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="-mx-[22px] mt-2"
-          contentContainerStyle={{ paddingHorizontal: 22, gap: 8 }}
-        >
-          {options.map(id => {
-            const person = resolve(id)
-            const selected = id === draft.forParticipantId
-            return (
-              <Pressable
-                key={id}
-                onPress={() => onChange({ ...draft, forParticipantId: id })}
-                accessibilityRole="radio"
-                accessibilityState={{ selected }}
-                className={`flex-row items-center gap-2 rounded-full border-[1.5px] py-1 pl-1 pr-3.5 active:opacity-70 ${
-                  selected
-                    ? 'border-garland-ink bg-garland-paper2'
-                    : 'border-garland-ink-15'
-                }`}
-              >
-                <ParticipantAvatar
-                  name={person?.name ?? ''}
-                  avatarKey={person?.avatarKey}
-                  photo={person?.photo}
-                  color={person?.color}
-                  size={28}
-                />
-                <Text className="text-sm font-semibold text-garland-ink">
-                  {nameOf(person)}
-                </Text>
-              </Pressable>
-            )
-          })}
-        </ScrollView>
-      ) : (
-        <Text className="mt-1.5 text-[15px] text-garland-ink">
-          {nameOf(
-            draft.forParticipantId
-              ? resolve(draft.forParticipantId)
-              : undefined,
-          )}
-        </Text>
-      )}
+      {draft.forParticipantId ? (
+        <View className="mt-2 flex-row items-center gap-2 self-start rounded-full bg-garland-paper2 py-1 pl-1 pr-3.5">
+          <ParticipantAvatar
+            name={person?.name ?? ''}
+            avatarKey={person?.avatarKey}
+            photo={person?.photo}
+            color={person?.color}
+            size={28}
+          />
+          <Text className="text-sm font-semibold text-garland-ink">
+            {nameOf(person)}
+          </Text>
+        </View>
+      ) : null}
       {recipientError ? (
         <Text className="mt-1.5 text-xs text-garland-berry">
           {recipientError}
         </Text>
       ) : null}
 
-      <View className="my-4 border-b border-garland-ink-08 pb-5">
-        <PresentPhoto
-          draft={draft}
-          onChange={onChange}
-          size={120}
-          mode={mode}
-          layout="row"
-        />
+      <View className="my-4 pb-5">
+        <SummaryPhoto draft={draft} onChange={onChange} mode={mode} />
         {review?.includes('image') ? (
-          <Text className="mt-3 text-center text-xs leading-[17px] text-garland-ink-60">
+          <Text className="mt-4 text-center text-xs leading-[17px] text-garland-ink-60">
             {t('addPresent.review.image')}
           </Text>
         ) : null}
@@ -755,6 +825,7 @@ function SummaryStep({
             ? t('addPresent.review.description')
             : undefined
         }
+        linkError={linkError}
       />
     </>
   )
