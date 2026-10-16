@@ -49,6 +49,7 @@ import { useGiftById } from '@/hooks/useGiftById'
 import { useOffline } from '@/hooks/useOffline'
 import { usePersonName } from '@/hooks/usePersonName'
 import { useQueuedWrites } from '@/hooks/useQueuedWrites'
+import { useSeenOnScreen } from '@/hooks/useSeenOnScreen'
 import { errorMessage } from '@/localization/errorMessage'
 import { discardWrite } from '@/sync'
 import { DollarIcon } from '@/ui/components/BuyerSeal'
@@ -158,21 +159,9 @@ export function PresentDetailScreen({
     },
   )
   // The buyers stamp arrives, a different way each time the screen opens,
-  // once most of it is on screen. Its top in the scroll content: the
-  // details' column plus its own offset in it.
+  // once the viewer can see all of it.
   const [stampEntrance] = useState(randomStampEntrance)
-  const columnY = useSharedValue(0)
-  const stampY = useSharedValue(Infinity)
-  const stampH = useSharedValue(0)
-  const [stampSeen, setStampSeen] = useState(false)
-  useAnimatedReaction(
-    () =>
-      heroHeight + columnY.get() + stampY.get() + stampH.get() * 0.6 <
-      scrollY.get() + windowHeight,
-    (seen, before) => {
-      if (seen && !before) scheduleOnRN(setStampSeen, true)
-    },
-  )
+  const [stampRef, onStampLayout, stampSeen] = useSeenOnScreen(scrollY)
 
   const shown =
     !!gift && !!event && !!user && !isHiddenFrom(event, gift, user._id)
@@ -291,10 +280,7 @@ export function PresentDetailScreen({
         >
           <Perforation width={width} />
 
-          <View
-            className="px-6 pt-5"
-            onLayout={e => columnY.set(e.nativeEvent.layout.y)}
-          >
+          <View className="px-6 pt-5">
             <Text
               className="text-[11px] font-bold uppercase tracking-[2px]"
               style={{ color: tone }}
@@ -358,11 +344,10 @@ export function PresentDetailScreen({
             {/* Not for the recipient (claim-quietly rule), and not at all
               while nobody is buying it. */}
             {showBuyers ? (
-              <View
-                onLayout={e => {
-                  stampH.set(e.nativeEvent.layout.height)
-                  stampY.set(e.nativeEvent.layout.y)
-                }}
+              <Animated.View
+                ref={stampRef}
+                onLayout={onStampLayout}
+                className="mt-8"
               >
                 <BuyersStamp
                   entrance={stampEntrance}
@@ -395,7 +380,7 @@ export function PresentDetailScreen({
                       : []),
                   ]}
                 />
-              </View>
+              </Animated.View>
             ) : null}
 
             {queuedAdd ? (

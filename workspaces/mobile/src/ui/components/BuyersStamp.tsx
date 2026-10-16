@@ -64,7 +64,7 @@ function StampBody({
 }) {
   return (
     <Animated.View
-      className="mt-8 max-w-[80%] flex-row items-center gap-3 self-end px-3 py-2"
+      className="max-w-[80%] flex-row items-center gap-3 self-end px-3 py-2"
       style={[{ transform: [{ rotate: `${TILT}deg` }] }, cardStyle]}
     >
       {/* Its own layer, so it can unroll behind the seal. */}
