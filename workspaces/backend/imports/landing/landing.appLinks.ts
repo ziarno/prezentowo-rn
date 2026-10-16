@@ -40,10 +40,7 @@ function appleAppSiteAssociation(_req: Request, res: Response) {
       details: [
         {
           appIDs: [`${appleTeamId}.${IOS_BUNDLE_ID}`],
-          components: [
-            { '/': '/e/*/og.png', exclude: true },
-            { '/': '/e/*' },
-          ],
+          components: [{ '/': '/e/*/og.png', exclude: true }, { '/': '/e/*' }],
         },
       ],
     },

@@ -37,7 +37,10 @@ type AssetLinks = {
 function opensInApp(aasa: Aasa, path: string) {
   const toRegExp = (pattern: string) =>
     new RegExp(
-      `^${pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.')}$`,
+      `^${pattern
+        .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+        .replace(/\*/g, '.*')
+        .replace(/\?/g, '.')}$`,
     )
   const match = aasa.applinks.details[0].components.find(c =>
     toRegExp(c['/']).test(path),

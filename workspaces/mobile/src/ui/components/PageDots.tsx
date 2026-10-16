@@ -1,8 +1,5 @@
-import Animated, {
-  useAnimatedStyle,
-  withTiming,
-} from 'react-native-reanimated'
 import { View } from 'react-native'
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated'
 
 import { garland } from '@/constants/colors'
 
