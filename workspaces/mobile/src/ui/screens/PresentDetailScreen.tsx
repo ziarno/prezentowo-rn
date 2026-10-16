@@ -5,12 +5,21 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Linking,
+  Platform,
   Pressable,
-  ScrollView,
   View,
   useWindowDimensions,
 } from 'react-native'
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedReaction,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { scheduleOnRN } from 'react-native-worklets'
 
 import { addedGiftId, claimGift, unclaimGift } from '@/api/gifts'
 import {
@@ -57,6 +66,9 @@ const CTA_KEY: Record<ClaimAction, string> = {
   unclaim: 'present.unclaim',
 }
 
+// How small the picture gets before the details start sliding over it.
+const MIN_SCALE = 0.5
+
 const hrefOf = (url: string) =>
   /^https?:\/\//i.test(url) ? url : `https://${url}`
 
@@ -102,13 +114,48 @@ export function PresentDetailScreen({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const insets = useSafeAreaInsets()
-  const { width } = useWindowDimensions()
+  const { width, height: windowHeight } = useWindowDimensions()
 
-  // A light status bar while it's over the picture's coloured backdrop,
-  // dark again once that has scrolled away under it.
+  // The picture stays put behind the details. Scrolling first shrinks it
+  // (its top fixed, its bottom keeping clear of the details), then the
+  // details slide up over it. Pulling down past the top grows it instead.
   const tile = Math.min(width - 96, 300)
-  const heroHeight = insets.top + 64 + tile + 56
+  const tileTop = insets.top + 64
+  const heroHeight = tileTop + tile + 56
+  const scrollY = useSharedValue(0)
+  const onScroll = useAnimatedScrollHandler(e => {
+    scrollY.set(e.contentOffset.y)
+  })
+  const heroStyle = useAnimatedStyle(() => ({
+    // Follows the details down when pulled past the top. Android's stretch
+    // overscroll moves them down without a negative offset, so there it
+    // reaches down behind them from the start.
+    height:
+      Platform.OS === 'android'
+        ? Math.max(heroHeight, windowHeight)
+        : heroHeight + Math.max(0, -scrollY.get()),
+  }))
+  const tileStyle = useAnimatedStyle(() => {
+    const scale = interpolate(
+      scrollY.get(),
+      [-tile, 0, (1 - MIN_SCALE) * tile],
+      [2, 1, MIN_SCALE],
+      Extrapolation.CLAMP,
+    )
+    return {
+      transform: [{ translateY: ((scale - 1) * tile) / 2 }, { scale }],
+    }
+  })
+
+  // A light status bar while the picture's coloured backdrop is behind it,
+  // dark once the details have slid up under it.
   const [overHero, setOverHero] = useState(true)
+  useAnimatedReaction(
+    () => scrollY.get() < heroHeight - insets.top / 2,
+    (over, before) => {
+      if (over !== before) scheduleOnRN(setOverHero, over)
+    },
+  )
   const shown =
     !!gift && !!event && !!user && !isHiddenFrom(event, gift, user._id)
   const light = shown && overHero
@@ -176,179 +223,180 @@ export function PresentDetailScreen({
 
   return (
     <View className="flex-1 bg-garland-paper">
-      <ScrollView
+      {/* The picture on the tone's colour, edge to edge, behind the
+          details. */}
+      <Animated.View
+        pointerEvents="none"
+        className="absolute inset-x-0 top-0 items-center"
+        style={[{ backgroundColor: tone, paddingTop: tileTop }, heroStyle]}
+      >
+        <Animated.View
+          style={[
+            {
+              shadowColor: '#000',
+              shadowOpacity: 0.25,
+              shadowRadius: 18,
+              shadowOffset: { width: 0, height: 10 },
+            },
+            queuedAdd && write.state === 'pending'
+              ? { opacity: 0.55 }
+              : undefined,
+            tileStyle,
+          ]}
+        >
+          <PresentTile
+            gift={gift}
+            size={tile}
+            imageSize={Math.round(tile * 0.84)}
+            radius={28}
+            derivative={1000}
+            pending={queuedAdd && write.state === 'pending'}
+          />
+        </Animated.View>
+      </Animated.View>
+
+      <Animated.ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 48 }}
-        scrollEventThrottle={32}
-        onScroll={e =>
-          setOverHero(
-            e.nativeEvent.contentOffset.y < heroHeight - insets.top - 10,
-          )
-        }
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={{ paddingTop: heroHeight }}
       >
-        {/* The picture on the tone's colour, edge to edge. */}
+        {/* However short the details, they can slide up over the whole
+            picture, to just under the round buttons. */}
         <View
-          className="items-center"
+          className="bg-garland-paper"
           style={{
-            backgroundColor: tone,
-            paddingTop: insets.top + 64,
-            paddingBottom: 56,
+            minHeight: windowHeight - tileTop,
+            paddingBottom: insets.bottom + 48,
           }}
         >
-          {/* Above the top, so pulling down past it (iOS bounce) shows the
-              colour carrying on rather than the paper behind. */}
-          <View
-            pointerEvents="none"
-            className="absolute inset-x-0 -top-[1000px] h-[1000px]"
-            style={{ backgroundColor: tone }}
-          />
-          <View
-            style={[
-              {
-                shadowColor: '#000',
-                shadowOpacity: 0.25,
-                shadowRadius: 18,
-                shadowOffset: { width: 0, height: 10 },
-              },
-              queuedAdd && write.state === 'pending'
-                ? { opacity: 0.55 }
-                : undefined,
-            ]}
-          >
-            <PresentTile
-              gift={gift}
-              size={tile}
-              imageSize={Math.round(tile * 0.84)}
-              radius={28}
-              derivative={1000}
-              pending={queuedAdd && write.state === 'pending'}
-            />
-          </View>
-        </View>
-        <Perforation width={width} />
+          <Perforation width={width} />
 
-        <View className="px-6 pt-5">
-          <Text
-            className="text-[11px] font-bold uppercase tracking-[2px]"
-            style={{ color: tone }}
-          >
-            {isOwnWish(event, gift)
-              ? t('present.ownWish')
-              : t('present.suggestion')}
-          </Text>
-          <Text className="mt-2 font-garland-display text-[34px] leading-[40px] text-garland-ink">
-            {gift.title}
-          </Text>
-
-          <View className="mt-4 flex-row flex-wrap items-center gap-x-4 gap-y-2">
-            <MetaPerson
-              label={t('present.for')}
-              avatar={avatarOf(recipient, 20)}
-              name={nameOf(recipient)}
-            />
-            <MetaPerson
-              label={t('present.addedBy')}
-              avatar={avatarOf(creator, 20)}
-              name={nameOf(creator)}
-            />
-          </View>
-
-          {gift.description ? (
-            <Text className="mt-6 text-base leading-[25px] text-garland-ink">
-              {gift.description}
-            </Text>
-          ) : null}
-
-          {gift.url ? (
-            <Pressable
-              onPress={() => void Linking.openURL(hrefOf(gift.url!))}
-              accessibilityRole="link"
-              accessibilityLabel={gift.url}
-              hitSlop={6}
-              className="mt-5 max-w-full flex-row items-center gap-2 self-start rounded-full border border-dashed border-garland-green px-4 py-2 active:opacity-60"
+          <View className="px-6 pt-5">
+            <Text
+              className="text-[11px] font-bold uppercase tracking-[2px]"
+              style={{ color: tone }}
             >
-              <LinkIcon width={14} height={14} color={garland.green} />
-              <Text
-                className="shrink text-[14px] font-bold text-garland-green"
-                numberOfLines={1}
-              >
-                {hostOf(gift.url)}
+              {isOwnWish(event, gift)
+                ? t('present.ownWish')
+                : t('present.suggestion')}
+            </Text>
+            <Text className="mt-2 font-garland-display text-[34px] leading-[40px] text-garland-ink">
+              {gift.title}
+            </Text>
+
+            <View className="mt-4 flex-row flex-wrap items-center gap-x-4 gap-y-2">
+              <MetaPerson
+                label={t('present.for')}
+                avatar={avatarOf(recipient, 20)}
+                name={nameOf(recipient)}
+              />
+              <MetaPerson
+                label={t('present.addedBy')}
+                avatar={avatarOf(creator, 20)}
+                name={nameOf(creator)}
+              />
+            </View>
+
+            {gift.description ? (
+              <Text className="mt-6 text-base leading-[25px] text-garland-ink">
+                {gift.description}
               </Text>
-            </Pressable>
-          ) : null}
+            ) : null}
 
-          {/* Buyers coordinate in the recipient's thread, which the
-              recipient is never sent: on their own present it's absent. */}
-          <ChatRecapBox
-            eventId={eventId}
-            participantId={gift.forParticipantId}
-            label={t('chat.presentRecap', { name: nameOf(recipient) })}
-            labelLeading={avatarOf(recipient, 24)}
-            withAvatars
-            className="mt-8"
-          />
-
-          {/* Not for the recipient (claim-quietly rule), and not at all
-              while nobody is buying it. */}
-          {showBuyers ? (
-            <BuyersStamp label={t('present.buying')}>
-              {buyers.map((buyer, i) => (
-                <Text key={i} className="text-sm font-bold text-garland-ink">
-                  {nameOf(buyer)}
-                </Text>
-              ))}
-              {viewerClaimOf(write) ? (
+            {gift.url ? (
+              <Pressable
+                onPress={() => void Linking.openURL(hrefOf(gift.url!))}
+                accessibilityRole="link"
+                accessibilityLabel={gift.url}
+                hitSlop={6}
+                className="mt-5 max-w-full flex-row items-center gap-2 self-start rounded-full border border-dashed border-garland-green px-4 py-2 active:opacity-60"
+              >
+                <LinkIcon width={14} height={14} color={garland.green} />
                 <Text
-                  className={`text-sm font-bold ${
-                    viewerClaimOf(write) === 'failed'
-                      ? 'text-garland-berry line-through'
-                      : 'text-garland-green'
-                  }`}
+                  className="shrink text-[14px] font-bold text-garland-green"
+                  numberOfLines={1}
                 >
-                  {viewerClaimOf(write) === 'failed'
-                    ? t('person.you')
-                    : `${t('person.you')} · ⏱`}
+                  {hostOf(gift.url)}
                 </Text>
-              ) : null}
-            </BuyersStamp>
-          ) : null}
+              </Pressable>
+            ) : null}
 
-          {queuedAdd ? (
-            write.state === 'failed' ? (
-              <FailedWrite write={write} onDiscard={() => discard(write)} />
-            ) : (
-              <WaitingNote>
-                {action ? t('offline.addWaitingNote') : t('offline.willAdd')}
-              </WaitingNote>
-            )
-          ) : action ? (
-            <>
-              {write?.state === 'failed' ? (
+            {/* Buyers coordinate in the recipient's thread, which the
+              recipient is never sent: on their own present it's absent. */}
+            <ChatRecapBox
+              eventId={eventId}
+              participantId={gift.forParticipantId}
+              label={t('chat.presentRecap', { name: nameOf(recipient) })}
+              labelLeading={avatarOf(recipient, 24)}
+              withAvatars
+              className="mt-8"
+            />
+
+            {/* Not for the recipient (claim-quietly rule), and not at all
+              while nobody is buying it. */}
+            {showBuyers ? (
+              <BuyersStamp label={t('present.buying')}>
+                {buyers.map((buyer, i) => (
+                  <Text key={i} className="text-sm font-bold text-garland-ink">
+                    {nameOf(buyer)}
+                  </Text>
+                ))}
+                {viewerClaimOf(write) ? (
+                  <Text
+                    className={`text-sm font-bold ${
+                      viewerClaimOf(write) === 'failed'
+                        ? 'text-garland-berry line-through'
+                        : 'text-garland-green'
+                    }`}
+                  >
+                    {viewerClaimOf(write) === 'failed'
+                      ? t('person.you')
+                      : `${t('person.you')} · ⏱`}
+                  </Text>
+                ) : null}
+              </BuyersStamp>
+            ) : null}
+
+            {queuedAdd ? (
+              write.state === 'failed' ? (
                 <FailedWrite write={write} onDiscard={() => discard(write)} />
-              ) : write ? (
-                <WaitingCta kind={write.kind} />
               ) : (
-                // Claiming works offline too: it's queued.
-                <GarlandButton
-                  variant={action === 'unclaim' ? 'outline' : 'solid'}
-                  className="mt-8"
-                  loading={submitting}
-                  onPress={toggleClaim}
-                >
-                  {action === 'claim' ? (
-                    <DollarIcon size={18} color={garland.paper} />
-                  ) : null}
-                  <GarlandButtonText>{t(CTA_KEY[action])}</GarlandButtonText>
-                </GarlandButton>
-              )}
-              {error ? (
-                <Text className="mt-3 text-xs text-garland-berry">{error}</Text>
-              ) : null}
-            </>
-          ) : null}
+                <WaitingNote>
+                  {action ? t('offline.addWaitingNote') : t('offline.willAdd')}
+                </WaitingNote>
+              )
+            ) : action ? (
+              <>
+                {write?.state === 'failed' ? (
+                  <FailedWrite write={write} onDiscard={() => discard(write)} />
+                ) : write ? (
+                  <WaitingCta kind={write.kind} />
+                ) : (
+                  // Claiming works offline too: it's queued.
+                  <GarlandButton
+                    variant={action === 'unclaim' ? 'outline' : 'solid'}
+                    className="mt-8"
+                    loading={submitting}
+                    onPress={toggleClaim}
+                  >
+                    {action === 'claim' ? (
+                      <DollarIcon size={18} color={garland.paper} />
+                    ) : null}
+                    <GarlandButtonText>{t(CTA_KEY[action])}</GarlandButtonText>
+                  </GarlandButton>
+                )}
+                {error ? (
+                  <Text className="mt-3 text-xs text-garland-berry">
+                    {error}
+                  </Text>
+                ) : null}
+              </>
+            ) : null}
+          </View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* Over the picture, so round buttons rather than a header bar. */}
       <View
