@@ -209,12 +209,12 @@ export function PresentDetailScreen({
         </View>
 
         <View className="px-[22px] pt-8">
-          <Text className="text-center font-garland-display text-[26px] leading-[31px] text-garland-ink">
+          <Text className="text-center font-garland-display text-[30px] leading-[36px] text-garland-ink">
             {gift.title}
           </Text>
 
           {gift.description ? (
-            <Text className="mt-6 text-sm leading-[21px] text-garland-ink">
+            <Text className="mt-6 text-base leading-[24px] text-garland-ink">
               {gift.description}
             </Text>
           ) : null}
@@ -228,7 +228,7 @@ export function PresentDetailScreen({
             >
               <LinkIcon width={14} height={14} color={garland.green} />
               <Text
-                className="flex-1 text-[13px] font-bold text-garland-green"
+                className="flex-1 text-[15px] font-bold text-garland-green"
                 numberOfLines={1}
               >
                 {gift.url}
@@ -242,7 +242,7 @@ export function PresentDetailScreen({
           !queuedAdd &&
           (buyers.length > 0 || viewerClaimOf(write)) ? (
             <View className="mt-4 flex-row justify-end">
-              <Tag label={t('present.buying')} strong>
+              <Tag label={t('present.buying')} strong wrap>
                 {buyers.map((buyer, i) => (
                   <TagPerson
                     key={i}
@@ -323,25 +323,31 @@ export function PresentDetailScreen({
 
 // A chip: "Label: <avatar> Name …". `strong` for the buyers, so who is
 // buying it stands out.
+// One line, its name cut short when it can't fit. `wrap` lets several
+// people break onto more lines instead, e.g. everyone buying.
 function Tag({
   label,
   strong = false,
+  wrap = false,
   children,
 }: {
   label: string
   strong?: boolean
+  wrap?: boolean
   children: ReactNode
 }) {
   return (
     <View
-      className={`flex-row flex-wrap items-center gap-x-1.5 gap-y-1 rounded-full py-1 pl-2.5 pr-2.5 ${
+      className={`max-w-full flex-row items-center gap-x-1.5 gap-y-1 rounded-full py-1 pl-2.5 pr-2.5 ${
+        wrap ? 'flex-wrap' : ''
+      } ${
         strong
           ? 'border-[1.5px] border-garland-ink-40'
           : 'border border-garland-ink-15'
       }`}
     >
       <Text
-        className={`text-[11px] ${strong ? 'font-bold text-garland-ink' : 'font-semibold text-garland-ink-60'}`}
+        className={`text-[12px] ${strong ? 'font-bold text-garland-ink' : 'font-semibold text-garland-ink-60'}`}
       >
         {label}
       </Text>
@@ -363,10 +369,11 @@ function TagPerson({
   className?: string
 }) {
   return (
-    <View className="flex-row items-center gap-1">
+    <View className="min-w-0 shrink flex-row items-center gap-1">
       {avatar}
       <Text
-        className={`text-[11px] ${strong ? 'font-bold' : 'font-semibold'} ${
+        numberOfLines={1}
+        className={`shrink text-[12px] ${strong ? 'font-bold' : 'font-semibold'} ${
           className ?? (strong ? 'text-garland-ink' : 'text-garland-ink-60')
         }`}
       >
