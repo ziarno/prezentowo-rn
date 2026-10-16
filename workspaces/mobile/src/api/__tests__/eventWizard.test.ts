@@ -15,6 +15,7 @@ import {
   setPlaceholderAvatar,
   setPlaceholderPhoto,
   stepError,
+  toAddParticipantsArgs,
   toCreateEventArgs,
   toUpdateEventArgs,
   uploadPlaceholderPhotos,
@@ -98,8 +99,9 @@ describe('parseStep', () => {
     expect(parseStep('kind', 'create')).toBe('kind')
   })
 
-  it('never edits the people step, which has no update path', () => {
-    expect(parseStep('people', 'edit')).toBe('details')
+  it('edits the people step, and the beneficiary, on their own', () => {
+    expect(parseStep('people', 'edit')).toBe('people')
+    expect(wizardSteps('edit', 'people', 'many-to-one')).toEqual(['people'])
     expect(parseStep('beneficiary', 'edit')).toBe('beneficiary')
   })
 })
@@ -361,6 +363,35 @@ describe('edit mode', () => {
       ['p-me', 'you'],
       ['p-babcia', 'member'],
     ])
+  })
+
+  it('knows who is already taking part, so they are not invited again', () => {
+    const e = event({
+      participants: [
+        ...event().participants,
+        { id: 'p-bartek', kind: 'real', userId: 'u-bartek' },
+      ],
+    })
+
+    expect(hasUser(draftFromEvent(e, ME), 'u-bartek')).toBe(true)
+    expect(hasUser(draftFromEvent(e, ME), ME)).toBe(false)
+  })
+
+  it('adds only the people the draft added', () => {
+    const e = event()
+    const d = addInvitee(addPlaceholder(draftFromEvent(e, ME), ' Wujek '), {
+      userId: 'u-bartek',
+      name: 'Bartek',
+    })
+
+    expect(toAddParticipantsArgs('e1', d)).toEqual({
+      eventId: 'e1',
+      participants: [
+        { kind: 'placeholder', name: 'Wujek', color: expect.any(String) },
+        { kind: 'invited', userId: 'u-bartek', color: expect.any(String) },
+      ],
+    })
+    expect(toAddParticipantsArgs('e1', draftFromEvent(e, ME))).toBeNull()
   })
 
   it('sends only what changed', () => {

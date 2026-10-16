@@ -8,6 +8,7 @@ import {
   Pressable,
   ScrollView,
   Share,
+  TextInput,
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -22,7 +23,12 @@ import {
 import { uploadImage } from '@/api/images'
 import { inviteLink, rotateInvite } from '@/api/invites'
 import type { ResolvedParticipant } from '@/api/participants'
-import { ArrowRightIcon, LockIcon } from '@/components/ui/icon'
+import {
+  ArrowRightIcon,
+  LockIcon,
+  PencilIcon,
+  PlusIcon,
+} from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { type AvatarKey, isAvatarKey } from '@/constants/avatars'
 import { garland } from '@/constants/colors'
@@ -156,6 +162,7 @@ export function EditEventScreen({ eventId }: { eventId: string }) {
             eventId={eventId}
             participants={participants}
             beneficiaryId={beneficiaryId}
+            onAdd={() => openStep('people')}
           />
 
           <SectionLabel>{t('editEvent.inviteLink')}</SectionLabel>
@@ -179,19 +186,23 @@ export function EditEventScreen({ eventId }: { eventId: string }) {
 }
 
 // Everyone but the host can be removed, and the beneficiary only once the
-// event is no longer for them. A placeholder's avatar opens its picture.
+// event is no longer for them. A placeholder's avatar opens its picture, and
+// its name turns into a field to rename it. New people are added on `4d`.
 function PeopleList({
   eventId,
   participants,
   beneficiaryId,
+  onAdd,
 }: {
   eventId: string
   participants: ResolvedParticipant[]
   beneficiaryId: string | undefined
+  onAdd: () => void
 }) {
   const { t } = useTranslation()
   const { confirm, pending: removingId, error } = useConfirmedAction()
-  const picture = usePlaceholderPicture(eventId)
+  const picture = usePlaceholderEdit(eventId)
+  const [renamingId, setRenamingId] = useState<string | null>(null)
 
   const confirmRemove = ({ id, name }: ResolvedParticipant) =>
     confirm({
@@ -237,9 +248,43 @@ function PeopleList({
                 </View>
               ) : null}
             </Pressable>
-            <Text className="flex-1 text-[15px] font-semibold text-garland-ink">
-              {p.name}
-            </Text>
+            {renamingId === p.id ? (
+              <TextInput
+                autoFocus
+                defaultValue={p.name}
+                // On Done and on leaving the field alike.
+                onEndEditing={e => {
+                  setRenamingId(null)
+                  picture.rename(p, e.nativeEvent.text)
+                }}
+                returnKeyType="done"
+                autoCorrect={false}
+                accessibilityLabel={t('editEvent.nameOf', { name: p.name })}
+                className="flex-1 py-0 text-[15px] font-semibold text-garland-ink"
+              />
+            ) : (
+              <Pressable
+                disabled={!p.isPlaceholder || picture.saving !== null}
+                onPress={() => setRenamingId(p.id)}
+                accessibilityRole={p.isPlaceholder ? 'button' : undefined}
+                accessibilityLabel={
+                  p.isPlaceholder
+                    ? t('editEvent.rename', { name: p.name })
+                    : undefined
+                }
+                className="min-w-0 flex-1 flex-row items-center gap-1.5 active:opacity-70"
+              >
+                <Text
+                  className="shrink text-[15px] font-semibold text-garland-ink"
+                  numberOfLines={1}
+                >
+                  {p.name}
+                </Text>
+                {p.isPlaceholder ? (
+                  <PencilIcon width={14} height={14} color={garland.ink40} />
+                ) : null}
+              </Pressable>
+            )}
             {p.isYou ? (
               <Tag>{t('createEvent.people.host')}</Tag>
             ) : isBeneficiary ? (
@@ -264,6 +309,18 @@ function PeopleList({
           </View>
         )
       })}
+      <Pressable
+        onPress={onAdd}
+        accessibilityRole="button"
+        className="flex-row items-center gap-3.5 border-t border-garland-ink-08 px-[22px] py-3 active:opacity-70"
+      >
+        <View className="size-[34px] items-center justify-center rounded-full border-[1.5px] border-dashed border-garland-ink-15">
+          <PlusIcon width={14} height={14} color={garland.green} />
+        </View>
+        <Text className="text-[15px] font-semibold text-garland-green">
+          {t('editEvent.addPeople')}
+        </Text>
+      </Pressable>
       {error ? (
         <Text className="px-[22px] pt-1 text-xs text-garland-berry">
           {error}
@@ -280,11 +337,11 @@ function PeopleList({
 }
 
 /**
- * The creator's picture for a placeholder added by name (docs/spec.md
- * §1.11): a photo, taken or chosen and uploaded at once, or a stock avatar,
- * which replaces the photo. Saved as soon as it's picked.
+ * The creator's name and picture for a placeholder added by name
+ * (docs/spec.md §1.11): a photo, taken or chosen and uploaded at once, or a
+ * stock avatar, which replaces the photo. Saved as soon as it's picked.
  */
-function usePlaceholderPicture(eventId: string) {
+function usePlaceholderEdit(eventId: string) {
   const { t } = useTranslation()
   const pickerRef = useRef<AvatarPickerModalHandle>(null)
   const [target, setTarget] = useState<ResolvedParticipant | null>(null)
@@ -293,7 +350,12 @@ function usePlaceholderPicture(eventId: string) {
 
   const save = async (
     person: ResolvedParticipant,
-    change: () => Promise<{ avatar?: string; photo?: string | null }>,
+    change: () => Promise<{
+      name?: string
+      avatar?: string
+      photo?: string | null
+    }>,
+    failed = t('editEvent.pictureFailed', { name: person.name }),
   ) => {
     setSaving(person.id)
     setFailure(null)
@@ -310,10 +372,7 @@ function usePlaceholderPicture(eventId: string) {
       setFailure(
         reason === 'placeholderReserved'
           ? t('editEvent.placeholderReserved', { name: person.name })
-          : errorMessage(
-              e,
-              t('editEvent.pictureFailed', { name: person.name }),
-            ),
+          : errorMessage(e, failed),
       )
     } finally {
       setSaving(null)
@@ -334,6 +393,17 @@ function usePlaceholderPicture(eventId: string) {
     person && !person.photo && isAvatarKey(person.avatarKey)
       ? person.avatarKey
       : null
+
+  // A blank or unchanged name is left as it was.
+  const rename = (person: ResolvedParticipant, typed: string) => {
+    const name = typed.trim()
+    if (!name || name === person.name) return
+    void save(
+      person,
+      async () => ({ name }),
+      t('editEvent.renameFailed', { name: person.name }),
+    )
+  }
 
   const open = (person: ResolvedParticipant) => {
     setFailure(null)
@@ -362,7 +432,7 @@ function usePlaceholderPicture(eventId: string) {
     failure ??
     (photoPrompt.error ? t(`photoPicker.errors.${photoPrompt.error}`) : null)
 
-  return { open, saving, error, picker }
+  return { open, rename, saving, error, picker }
 }
 
 // Set apart at the bottom of `6a`: everyone loses the event, presents and

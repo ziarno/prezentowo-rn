@@ -1,4 +1,5 @@
 import {
+  type AddParticipantsArgs,
   BACKGROUND_ILLUSTRATION_IDS,
   type CreateEventArgs,
   type EventDoc,
@@ -115,6 +116,34 @@ async function loadInvitees(
   return invitees
 }
 
+type Invitees = Awaited<ReturnType<typeof loadInvitees>>
+
+// The placeholder a non-`real` entry becomes, with a fresh id.
+const mintPlaceholder = (
+  p: Exclude<EventParticipantInput, { kind: 'real' }>,
+  invitees: Invitees,
+): EventParticipant => {
+  if (p.kind === 'invited') {
+    const profile = invitees.get(p.userId)!
+    return {
+      id: Random.id(),
+      kind: 'placeholder',
+      name: profile.name,
+      color: p.color,
+      ...(profile.avatar ? { avatar: profile.avatar } : {}),
+      invitedUserId: p.userId,
+    }
+  }
+  return {
+    id: Random.id(),
+    kind: 'placeholder',
+    name: upperFirst(p.name.trim()),
+    color: p.color,
+    ...(p.avatar ? { avatar: p.avatar } : {}),
+    ...(p.photo ? { photo: p.photo } : {}),
+  }
+}
+
 // The stored kind, with `beneficiaryIndex` resolved to the minted id of the
 // participant it points at.
 const resolveKind = (
@@ -178,28 +207,9 @@ const createEvent = async function (
   // Mint an id per input entry, in order, so `beneficiaryIndex` can be
   // resolved. The host is always the caller: any `real` entry for them maps
   // to the one host participant, which is prepended exactly once.
-  const minted = options.participants.map((p): EventParticipant => {
-    if (p.kind === 'real') return host
-    if (p.kind === 'invited') {
-      const profile = invitees.get(p.userId)!
-      return {
-        id: Random.id(),
-        kind: 'placeholder',
-        name: profile.name,
-        color: p.color,
-        ...(profile.avatar ? { avatar: profile.avatar } : {}),
-        invitedUserId: p.userId,
-      }
-    }
-    return {
-      id: Random.id(),
-      kind: 'placeholder',
-      name: upperFirst(p.name.trim()),
-      color: p.color,
-      ...(p.avatar ? { avatar: p.avatar } : {}),
-      ...(p.photo ? { photo: p.photo } : {}),
-    }
-  })
+  const minted = options.participants.map(p =>
+    p.kind === 'real' ? host : mintPlaceholder(p, invitees),
+  )
   const kind = resolveKind(
     options,
     minted.map(p => p.id),
@@ -326,8 +336,64 @@ const updateEvent = async function (
   if (options.kind !== undefined) await syncChatThreads(event._id)
 }
 
-// The placeholder whose picture the creator may set: one added by name. A
-// reserved placeholder shows its invitee's picture (docs/spec.md §1.11).
+const addParticipants = async function (
+  this: Meteor.MethodThisType,
+  options: AddParticipantsArgs,
+) {
+  check(options, { eventId: String, participants: [participantPattern] })
+
+  if (!this.userId) {
+    throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
+  }
+  const userId = this.userId
+  const event = await loadOwnEvent(options.eventId, userId)
+
+  // Typed without one, but sent by a client.
+  const sent: EventParticipantInput[] = options.participants
+  const participants = sent.filter(
+    (p): p is AddParticipantsArgs['participants'][number] => p.kind !== 'real',
+  )
+  // Even the caller: they're already the host.
+  if (participants.length !== sent.length) {
+    throw new Meteor.Error('notAuthorized', 'cannotAddOthers')
+  }
+  if (participants.length === 0) return
+
+  const invitees = await loadInvitees(participants, userId)
+  for (const invitee of invitees.keys()) {
+    if (
+      event.participants.some(p =>
+        p.kind === 'real' ? p.userId === invitee : p.invitedUserId === invitee,
+      )
+    ) {
+      throw new Meteor.Error('invalidArgs', 'alreadyInEvent')
+    }
+  }
+
+  const added = participants.map(p => mintPlaceholder(p, invitees))
+  const photos = participants.map(p =>
+    p.kind === 'placeholder' ? asUpload(p.photo) : undefined,
+  )
+  await withUploadsAttached({ images: photos, userId }, async () => {
+    // Lands only on the list the duplicate check read, so a join or another
+    // add in between can't sneak in a second place for the same user.
+    // Compare-and-set on the whole array, which the selector typings don't
+    // model.
+    const participantsAsRead = {
+      _id: event._id,
+      participants: event.participants,
+    } as unknown as Mongo.Selector<EventDoc>
+    const updated = await Events.updateAsync(participantsAsRead, {
+      $set: { participants: [...event.participants, ...added] },
+    })
+    if (!updated) throw new Meteor.Error('serverError', 'concurrentChange')
+  })
+  for (const invitee of invitees.keys()) await recordInvited(invitee, event._id)
+  await syncChatThreads(event._id)
+}
+
+// The placeholder whose name and picture the creator may set: one added by
+// name. A reserved placeholder shows its invitee's (docs/spec.md §1.11).
 const editablePlaceholder = (event: EventDoc, participantId: string) => {
   const participant = event.participants.find(p => p.id === participantId)
   if (!participant) {
@@ -349,6 +415,7 @@ const updateParticipant = async function (
   check(options, {
     eventId: String,
     participantId: String,
+    name: Match.Optional(String),
     avatar: Match.Optional(nonEmptyString),
     photo: Match.Optional(Match.OneOf(nonEmptyString, null)),
   })
@@ -358,12 +425,16 @@ const updateParticipant = async function (
   }
   const userId = this.userId
   const { avatar, photo } = options
+  const name =
+    options.name === undefined ? undefined : upperFirst(options.name.trim())
+  if (name === '') throw new Meteor.Error('invalidArgs', 'missingFields')
 
   const event = await loadOwnEvent(options.eventId, userId)
   const placeholder = editablePlaceholder(event, options.participantId)
 
   const $set: Record<string, string> = {}
   const $unset: Record<string, ''> = {}
+  if (name) $set['participants.$.name'] = name
   if (avatar) $set['participants.$.avatar'] = avatar
   if (photo) $set['participants.$.photo'] = photo
   if (photo === null) $unset['participants.$.photo'] = ''
@@ -590,6 +661,7 @@ const deleteEvent = async function (
 Meteor.methods({
   'events.create': createEvent,
   'events.update': updateEvent,
+  'events.addParticipants': addParticipants,
   'events.updateParticipant': updateParticipant,
   'events.join': joinEvent,
   'events.removeParticipant': removeParticipant,

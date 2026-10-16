@@ -25,12 +25,13 @@ import {
   setPlaceholderAvatar,
   setPlaceholderPhoto,
   stepError,
+  toAddParticipantsArgs,
   toCreateEventArgs,
   toUpdateEventArgs,
   uploadPlaceholderPhotos,
   wizardSteps,
 } from '@/api/eventWizard'
-import { createEvent, updateEvent } from '@/api/events'
+import { addParticipants, createEvent, updateEvent } from '@/api/events'
 import { downloadImage, uploadImage } from '@/api/images'
 import { CheckIcon, CloseIcon, PlusIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
@@ -66,9 +67,11 @@ const COVER_PREVIEW_HEIGHT = 180
 
 // Server reasons the wizard explains in its own words. `kindLocked` can
 // reach an edit `6a` left open: a present hidden from the creator still
-// locks the kind.
+// locks the kind. `alreadyInEvent` is someone invited earlier, whose
+// reservation the client can't see.
 const SAVE_ERRORS: Record<string, string> = {
   kindLocked: 'editEvent.kindLocked',
+  alreadyInEvent: 'editEvent.alreadyInEvent',
 }
 
 // How a person in the draft is shown.
@@ -187,7 +190,10 @@ function EditEvent({ eventId, start }: { eventId: string; start: WizardStep }) {
         }
       }}
       onSubmit={async draft => {
-        await updateEvent(toUpdateEventArgs(event, draft))
+        const added = toAddParticipantsArgs(event._id, draft)
+        if (added) await addParticipants(added)
+        const update = toUpdateEventArgs(event, draft)
+        if (Object.keys(update).length > 1) await updateEvent(update)
         router.back()
       }}
     />
@@ -616,7 +622,7 @@ function PeopleStep({
                   ) : null}
                 </View>
                 <Text className="mt-0.5 text-[11px] text-garland-ink-40">
-                  {isPlaceholder
+                  {isPlaceholder || (person.kind === 'member' && !person.userId)
                     ? t('createEvent.people.addedByName')
                     : person.kind === 'invited'
                       ? t('createEvent.people.willBeInvited')

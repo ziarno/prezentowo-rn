@@ -299,6 +299,22 @@ describe('placeholder photos', function () {
         assert.strictEqual(await isAttached(id), false)
       })
     })
+
+    describe('name', function () {
+      it('renames, trimmed and capitalised, leaving the picture alone', async function () {
+        await update({ avatar: 'f2' })
+
+        await update({ name: '  dziadzio ' })
+
+        assert.strictEqual((await dziadek())?.name, 'Dziadzio')
+        assert.strictEqual((await dziadek())?.avatar, 'f2')
+      })
+
+      it('rejects a blank name', async function () {
+        await rejectsWithReason(update({ name: '   ' }), 'missingFields')
+        assert.strictEqual((await dziadek())?.name, 'Dziadek')
+      })
+    })
   })
 
   describe('cleanup', function () {

@@ -1,4 +1,5 @@
 import type {
+  AddParticipantsArgs,
   CreateEventArgs,
   EventDoc,
   EventKind,
@@ -31,11 +32,12 @@ export type WizardMode = 'create' | 'edit'
 export type EventType = EventKind['type']
 
 // Someone in the draft. `you` is the host; `member` is an existing
-// participant in edit mode; `invited` is a user found by `4d`'s search, who
-// becomes a reserved placeholder. `key` is the participant id in edit mode.
+// participant in edit mode, with `userId` when they're a real one; `invited`
+// is a user found by `4d`'s search, who becomes a reserved placeholder.
+// `key` is the participant id in edit mode.
 export type DraftPerson =
   | { key: string; kind: 'you' }
-  | { key: string; kind: 'member' }
+  | { key: string; kind: 'member'; userId?: string }
   | {
       key: string
       kind: 'invited'
@@ -82,12 +84,13 @@ const CREATE_STEPS: WizardStep[] = [
   'beneficiary',
 ]
 
-// People are edited on `6a` itself (remove) or by invite (add), and
-// `UpdateEventArgs` has no participants, so edit mode never opens that step.
+// Edit mode's `4d` only adds people (`events.addParticipants`); they're
+// renamed and removed on `6a` itself.
 const EDIT_STEPS: WizardStep[] = [
   'details',
   'kind',
   'background',
+  'people',
   'beneficiary',
 ]
 
@@ -163,9 +166,11 @@ export function draftFromEvent(event: EventDoc, userId: string): EventDraft {
     beneficiaryKey: beneficiaryIdOf(event),
     background: event.background,
     people: event.participants.map(p =>
-      p.kind === 'real' && p.userId === userId
-        ? { key: p.id, kind: 'you' }
-        : { key: p.id, kind: 'member' },
+      p.kind !== 'real'
+        ? { key: p.id, kind: 'member' }
+        : p.userId === userId
+          ? { key: p.id, kind: 'you' }
+          : { key: p.id, kind: 'member', userId: p.userId },
     ),
   }
 }
@@ -200,9 +205,13 @@ export function addPlaceholder(draft: EventDraft, name: string): EventDraft {
   }
 }
 
-// Whether a user found by search is already in the draft.
+// Whether a user found by search is already in the draft: invited by it, or
+// already taking part. One invited earlier looks like any placeholder here,
+// so only the server can turn them down (`alreadyInEvent`).
 export const hasUser = (draft: EventDraft, userId: string) =>
-  draft.people.some(p => p.kind === 'invited' && p.userId === userId)
+  draft.people.some(
+    p => (p.kind === 'invited' || p.kind === 'member') && p.userId === userId,
+  )
 
 // Adds a user found by search, once. They're invited, not added: they join
 // only by accepting.
@@ -301,6 +310,26 @@ export function removePerson(draft: EventDraft, key: string): EventDraft {
   }
 }
 
+type NewPersonInput = AddParticipantsArgs['participants'][number]
+
+// Someone the draft adds, as sent, or undefined for one already there.
+const newPersonInput = (p: DraftPerson): NewPersonInput | undefined => {
+  if (p.kind === 'invited') {
+    return { kind: 'invited', userId: p.userId, color: p.color }
+  }
+  if (p.kind !== 'placeholder') return undefined
+  if (p.photo?.kind === 'local') {
+    throw new Error('A photo must be uploaded before saving')
+  }
+  return {
+    kind: 'placeholder',
+    name: p.name,
+    color: p.color,
+    ...(p.avatar ? { avatar: p.avatar } : {}),
+    ...(p.photo ? { photo: p.photo.id } : {}),
+  }
+}
+
 /**
  * The `events.create` payload. Every person is sent, the host as a `real`
  * entry, so `beneficiaryIndex` can point at anyone, the host included.
@@ -312,24 +341,8 @@ export function toCreateEventArgs(
   const participants = draft.people.flatMap<CreateEventArgs['participants'][0]>(
     p => {
       if (p.kind === 'you') return [{ kind: 'real', userId }]
-      if (p.kind === 'invited') {
-        return [{ kind: 'invited', userId: p.userId, color: p.color }]
-      }
-      if (p.kind === 'placeholder') {
-        if (p.photo?.kind === 'local') {
-          throw new Error('A photo must be uploaded before saving')
-        }
-        return [
-          {
-            kind: 'placeholder',
-            name: p.name,
-            color: p.color,
-            ...(p.avatar ? { avatar: p.avatar } : {}),
-            ...(p.photo ? { photo: p.photo.id } : {}),
-          },
-        ]
-      }
-      return []
+      const input = newPersonInput(p)
+      return input ? [input] : []
     },
   )
   const background = savedImage(draft.background)
@@ -349,6 +362,19 @@ export function toCreateEventArgs(
     }
   }
   return { ...base, type: 'many-to-many' }
+}
+
+// The `events.addParticipants` payload: the people the draft added, or null
+// when it added nobody.
+export function toAddParticipantsArgs(
+  eventId: string,
+  draft: EventDraft,
+): AddParticipantsArgs | null {
+  const participants = draft.people.flatMap(p => {
+    const input = newPersonInput(p)
+    return input ? [input] : []
+  })
+  return participants.length > 0 ? { eventId, participants } : null
 }
 
 /**

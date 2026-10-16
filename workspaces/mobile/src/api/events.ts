@@ -1,4 +1,5 @@
 import type {
+  AddParticipantsArgs,
   CreateEventArgs,
   EventDoc,
   JoinEventArgs,
@@ -34,7 +35,13 @@ export function updateEvent(args: UpdateEventArgs): Promise<void> {
   return call('events.update', args)
 }
 
-// `6a`'s picture for a placeholder added by name (docs/spec.md §1.11).
+// `6a`'s add: people by name and users found by search.
+export function addParticipants(args: AddParticipantsArgs): Promise<void> {
+  return call('events.addParticipants', args)
+}
+
+// `6a`'s name and picture for a placeholder added by name (docs/spec.md
+// §1.11).
 export function updateParticipant(args: UpdateParticipantArgs): Promise<void> {
   return call('events.updateParticipant', args)
 }

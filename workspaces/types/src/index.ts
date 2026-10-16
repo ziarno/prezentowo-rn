@@ -269,11 +269,20 @@ export type UpdateEventArgs = {
 // placeholder.
 export type RemoveParticipantArgs = { eventId: string; participantId: string }
 
-// The creator's edit of a placeholder's picture (docs/spec.md §1.11). Like
-// `UpdateUserArgs`: picking a stock avatar sends `{ avatar, photo: null }`.
+// `6a`'s add: placeholders by name and users found by search, appended
+// like `events.create`'s. Nobody is made a real participant this way.
+export type AddParticipantsArgs = {
+  eventId: string
+  participants: Exclude<EventParticipantInput, { kind: 'real' }>[]
+}
+
+// The creator's edit of a placeholder's name and picture (docs/spec.md
+// §1.11). Like `UpdateUserArgs`: picking a stock avatar sends
+// `{ avatar, photo: null }`.
 export type UpdateParticipantArgs = {
   eventId: string
   participantId: string
+  name?: string
   // A stock avatar key, e.g. "f3".
   avatar?: string
   // An upload id. null clears it; undefined leaves it unchanged.

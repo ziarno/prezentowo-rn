@@ -464,7 +464,12 @@
   "editEvent": {
     "changePicture": "Zmień zdjęcie: {{name}}",
     "pictureFailed": "Nie udało się zapisać zdjęcia: {{name}}. Spróbuj ponownie.",
-    "placeholderReserved": "{{name}} – zaproszenie z Prezentowo, więc widać zdjęcie z profilu tej osoby.",
+    "placeholderReserved": "{{name}} – zaproszenie z Prezentowo, więc widać imię i zdjęcie z profilu tej osoby.",
+    "rename": "Zmień imię: {{name}}",
+    "nameOf": "Imię: {{name}}",
+    "renameFailed": "Nie udało się zmienić imienia: {{name}}. Spróbuj ponownie.",
+    "addPeople": "Dodaj osoby",
+    "alreadyInEvent": "Ktoś z wybranych osób jest już zaproszony. Usuń tę osobę i zapisz ponownie.",
     "background": "Tło",
     "changeBackground": "Zmień",
     "type": "Rodzaj",

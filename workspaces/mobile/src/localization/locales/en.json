@@ -438,7 +438,12 @@
   "editEvent": {
     "changePicture": "Change {{name}}'s picture",
     "pictureFailed": "Couldn't save {{name}}'s picture. Try again.",
-    "placeholderReserved": "{{name}} was invited from Prezentowo, so they show their own picture.",
+    "placeholderReserved": "{{name}} was invited from Prezentowo, so they show their own name and picture.",
+    "rename": "Rename {{name}}",
+    "nameOf": "{{name}}'s name",
+    "renameFailed": "Couldn't rename {{name}}. Try again.",
+    "addPeople": "Add people",
+    "alreadyInEvent": "Someone you picked is already invited. Remove them and save again.",
     "background": "Background",
     "changeBackground": "Change",
     "type": "Type",
