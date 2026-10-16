@@ -10,6 +10,7 @@ import {
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
 import { usePersonName } from '@/hooks/usePersonName'
+import { BuyerSeal } from '@/ui/components/BuyerSeal'
 import { FAILED_KEY } from '@/ui/components/GiftRow'
 import { PersonAvatar } from '@/ui/components/PersonAvatar'
 import { PresentTile } from '@/ui/components/PresentTile'
@@ -61,6 +62,12 @@ export function GiftTag({
   const failed = write?.state === 'failed'
   const viewerClaim = viewerClaimOf(write)
   const buyerNames = (buyers ?? []).map(nameOf)
+  // Someone is buying it (the viewer's queued claim included), and the
+  // viewer may know.
+  const sealed =
+    !!buyers &&
+    write?.kind !== 'add' &&
+    (buyerNames.length > 0 || viewerClaim === 'waiting')
 
   return (
     <Pressable
@@ -123,7 +130,7 @@ export function GiftTag({
         ) : null}
         {buyers && write?.kind !== 'add' ? (
           <Text
-            className="mt-1 text-[11px] font-semibold text-garland-ink-60"
+            className={`mt-1 text-[11px] font-semibold text-garland-ink-60 ${sealed ? 'mr-7' : ''}`}
             numberOfLines={1}
           >
             {buyerNames.length > 0 ? `🛍 ${buyerNames.join(', ')}` : null}
@@ -149,7 +156,9 @@ export function GiftTag({
           </Text>
         ) : null}
         {write ? (
-          <View className="mt-1 flex-row flex-wrap items-center gap-x-2">
+          <View
+            className={`mt-1 flex-row flex-wrap items-center gap-x-2 ${sealed ? 'mr-7' : ''}`}
+          >
             <Text
               className={`text-[11px] font-semibold ${
                 failed ? 'text-garland-berry' : 'text-garland-amber'
@@ -171,6 +180,11 @@ export function GiftTag({
           </View>
         ) : null}
       </View>
+      {sealed ? (
+        <View className="absolute bottom-2 right-2">
+          <BuyerSeal />
+        </View>
+      ) : null}
     </Pressable>
   )
 }

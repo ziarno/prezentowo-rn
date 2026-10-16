@@ -35,6 +35,7 @@ import { usePersonName } from '@/hooks/usePersonName'
 import { useQueuedWrites } from '@/hooks/useQueuedWrites'
 import { errorMessage } from '@/localization/errorMessage'
 import { discardWrite } from '@/sync'
+import { BuyerSeal } from '@/ui/components/BuyerSeal'
 import { ChatRecapBox } from '@/ui/components/ChatRecapBox'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { FAILED_KEY } from '@/ui/components/GiftRow'
@@ -188,6 +189,14 @@ export function PresentDetailScreen({
               derivative={1000}
               pending={queuedAdd && write.state === 'pending'}
             />
+            {/* Same rule as the buyers chip below. */}
+            {action &&
+            !queuedAdd &&
+            (buyers.length > 0 || viewerClaimOf(write) === 'waiting') ? (
+              <View className="absolute -bottom-4 -right-4">
+                <BuyerSeal size={64} />
+              </View>
+            ) : null}
           </View>
         </View>
 
