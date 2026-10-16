@@ -5,13 +5,14 @@ import { useAccountStage } from '@/hooks/useAccountStage'
 import { useAuth } from '@/hooks/useAuth'
 // Opens the connection (and the offline cache) at app start.
 import '@/hooks/useConnection'
+import { loadLastEvent } from '@/store/lastEvent'
 import { useAuthStore } from '@/store/useAuthStore'
 import { cacheReady, sessionToken, useTracker } from '@/sync'
 
 SplashScreen.preventAutoHideAsync()
 
-// True once fonts, onboarding state, the offline cache and the signed-in
-// user's document are ready — not the server: an offline cold start renders
+// True once fonts, onboarding state, the last open event, the offline cache
+// and the signed-in user's document are ready — not the server: an offline cold start renders
 // from the cache. Stays true from then on, so a later sign-in waiting for its
 // user document doesn't unmount the app.
 export function useLaunchReady(fontsLoaded: boolean): boolean {
@@ -24,17 +25,23 @@ export function useLaunchReady(fontsLoaded: boolean): boolean {
   const stage = useAccountStage()
   const hasCompletedOnboarding = useAuthStore(s => s.hasCompletedOnboarding)
   const loadPersistedState = useAuthStore(s => s.loadPersistedState)
+  const [lastEventLoaded, setLastEventLoaded] = useState(false)
   const [launched, setLaunched] = useState(false)
 
   useEffect(() => {
     loadPersistedState()
   }, [loadPersistedState])
 
+  useEffect(() => {
+    loadLastEvent().then(() => setLastEventLoaded(true))
+  }, [])
+
   const ready =
     cacheLoaded &&
     !resuming &&
     stage !== 'loading' &&
     hasCompletedOnboarding !== null &&
+    lastEventLoaded &&
     fontsLoaded
   if (ready && !launched) setLaunched(true)
   return ready || launched

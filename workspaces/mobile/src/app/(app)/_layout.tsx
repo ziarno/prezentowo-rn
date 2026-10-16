@@ -1,6 +1,10 @@
-import { Stack } from 'expo-router'
+import * as Notifications from 'expo-notifications'
+import { Stack, router, usePathname } from 'expo-router'
+import { useEffect } from 'react'
 
+import { findEventById } from '@/api/events'
 import { useAppBadge } from '@/hooks/useAppBadge'
+import { takeLastEvent } from '@/store/lastEvent'
 import { OfflineBanner } from '@/ui/components/OfflineBanner'
 import { PushPrePromptSheet } from '@/ui/components/PushPrePromptSheet'
 
@@ -22,6 +26,7 @@ const modal = {
 // opens over whichever screen is up.
 export default function AppLayout() {
   useAppBadge()
+  useReopenLastEvent()
   return (
     <OfflineBanner>
       <Stack
@@ -44,4 +49,25 @@ export default function AppLayout() {
       <PushPrePromptSheet />
     </OfflineBanner>
   )
+}
+
+// A cold start that lands on Home reopens the event that was open when the
+// app was left, over Home, still behind the splash. Not when the app was
+// opened by a link or a push — those go where they point — nor when the
+// event is no longer the user's.
+function useReopenLastEvent() {
+  const pathname = usePathname()
+  useEffect(() => {
+    // Taken once, so a later navigation doesn't reopen it.
+    const eventId = takeLastEvent()
+    if (
+      !eventId ||
+      pathname !== '/' ||
+      Notifications.getLastNotificationResponse() ||
+      !findEventById(eventId)
+    ) {
+      return
+    }
+    router.push({ pathname: '/event/[eventId]', params: { eventId } })
+  }, [pathname])
 }
