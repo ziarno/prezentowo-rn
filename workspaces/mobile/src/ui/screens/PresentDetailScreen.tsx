@@ -1,9 +1,16 @@
-import { router } from 'expo-router'
-import { useState } from 'react'
+import { router, useFocusEffect } from 'expo-router'
+import { setStatusBarStyle } from 'expo-status-bar'
+import { useCallback, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Linking, Pressable, ScrollView, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import {
+  Linking,
+  Pressable,
+  ScrollView,
+  View,
+  useWindowDimensions,
+} from 'react-native'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { addedGiftId, claimGift, unclaimGift } from '@/api/gifts'
 import {
@@ -23,7 +30,7 @@ import {
   isHiddenFrom,
   isOwnWish,
 } from '@/api/presentLists'
-import { LinkIcon, PencilIcon } from '@/components/ui/icon'
+import { BackIcon, LinkIcon, PencilIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
@@ -52,6 +59,13 @@ const CTA_KEY: Record<ClaimAction, string> = {
 
 const hrefOf = (url: string) =>
   /^https?:\/\//i.test(url) ? url : `https://${url}`
+
+// The link's site, for its tag: `https://www.onet.pl/x` → `onet.pl`.
+const hostOf = (url: string) =>
+  url
+    .replace(/^https?:\/\//i, '')
+    .replace(/^www\./i, '')
+    .split(/[/?#]/)[0]
 
 // `1e`: a present's photo or illustration, who it's for and who added it,
 // its description and link, and — for everyone but its recipient — who is
@@ -87,6 +101,23 @@ export function PresentDetailScreen({
 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const insets = useSafeAreaInsets()
+  const { width } = useWindowDimensions()
+
+  // A light status bar while it's over the picture's coloured backdrop,
+  // dark again once that has scrolled away under it.
+  const tile = Math.min(width - 96, 300)
+  const heroHeight = insets.top + 64 + tile + 56
+  const [overHero, setOverHero] = useState(true)
+  const shown =
+    !!gift && !!event && !!user && !isHiddenFrom(event, gift, user._id)
+  const light = shown && overHero
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle(light ? 'light' : 'dark')
+      return () => setStatusBarStyle('dark')
+    }, [light]),
+  )
 
   // A suggestion for the viewer (a stale local copy) reads as missing.
   if (!gift || !event || !user || isHiddenFrom(event, gift, user._id)) {
@@ -140,50 +171,46 @@ export function PresentDetailScreen({
     if (!serverGift) router.back()
   }
 
+  const showBuyers =
+    !!action && !queuedAdd && (buyers.length > 0 || !!viewerClaimOf(write))
+
   return (
-    <SafeAreaView className="flex-1 bg-garland-paper">
-      <ScreenHeader
-        title={recipient?.name ?? nameOf(recipient)}
-        leading={avatarOf(recipient, 32)}
-        variant="back"
-        right={
-          canEditGift(gift, user._id) && serverGift ? (
-            <Pressable
-              onPress={edit}
-              disabled={offline}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: offline }}
-              className={`flex-row items-center gap-1.5 active:opacity-60 ${offline ? 'opacity-40' : ''}`}
-            >
-              <PencilIcon width={16} height={16} color={garland.ink} />
-              <Text className="text-sm font-bold text-garland-ink">
-                {t('present.edit')}
-              </Text>
-            </Pressable>
-          ) : undefined
-        }
-      />
+    <View className="flex-1 bg-garland-paper">
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 48 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 48 }}
+        scrollEventThrottle={32}
+        onScroll={e =>
+          setOverHero(
+            e.nativeEvent.contentOffset.y < heroHeight - insets.top - 10,
+          )
+        }
       >
-        <View className="flex-row flex-wrap gap-2 px-[22px] pt-4">
-          <Tag label={t('present.for')}>
-            <TagPerson avatar={avatarOf(recipient)} name={nameOf(recipient)} />
-          </Tag>
-          <Tag label={t('present.addedBy')}>
-            <TagPerson avatar={avatarOf(creator)} name={nameOf(creator)} />
-          </Tag>
-        </View>
-
-        <View className="items-center px-[22px] pt-8">
-          {/* Framed in the tone's colour, as on the person's list. */}
+        {/* The picture on the tone's colour, edge to edge. */}
+        <View
+          className="items-center"
+          style={{
+            backgroundColor: tone,
+            paddingTop: insets.top + 64,
+            paddingBottom: 56,
+          }}
+        >
+          {/* Above the top, so pulling down past it (iOS bounce) shows the
+              colour carrying on rather than the paper behind. */}
           <View
-            className="rounded-[28px] p-1"
+            pointerEvents="none"
+            className="absolute inset-x-0 -top-[1000px] h-[1000px]"
+            style={{ backgroundColor: tone }}
+          />
+          <View
             style={[
-              { backgroundColor: tone },
+              {
+                shadowColor: '#000',
+                shadowOpacity: 0.25,
+                shadowRadius: 18,
+                shadowOffset: { width: 0, height: 10 },
+              },
               queuedAdd && write.state === 'pending'
                 ? { opacity: 0.55 }
                 : undefined,
@@ -191,30 +218,44 @@ export function PresentDetailScreen({
           >
             <PresentTile
               gift={gift}
-              size={220}
-              imageSize={190}
-              radius={24}
+              size={tile}
+              imageSize={Math.round(tile * 0.84)}
+              radius={28}
               derivative={1000}
               pending={queuedAdd && write.state === 'pending'}
             />
-            {/* Same rule as the buyers chip below. */}
-            {action &&
-            !queuedAdd &&
-            (buyers.length > 0 || viewerClaimOf(write) === 'waiting') ? (
-              <View className="absolute -bottom-4 -right-4">
-                <BuyerSeal size={64} />
-              </View>
-            ) : null}
           </View>
         </View>
+        <Perforation width={width} />
 
-        <View className="px-[22px] pt-10">
-          <Text className="text-center font-garland-display text-[30px] leading-[36px] text-garland-ink">
+        <View className="px-6 pt-5">
+          <Text
+            className="text-[11px] font-bold uppercase tracking-[2px]"
+            style={{ color: tone }}
+          >
+            {isOwnWish(event, gift)
+              ? t('present.ownWish')
+              : t('present.suggestion')}
+          </Text>
+          <Text className="mt-2 font-garland-display text-[34px] leading-[40px] text-garland-ink">
             {gift.title}
           </Text>
 
+          <View className="mt-4 flex-row flex-wrap items-center gap-x-4 gap-y-2">
+            <MetaPerson
+              label={t('present.for')}
+              avatar={avatarOf(recipient, 20)}
+              name={nameOf(recipient)}
+            />
+            <MetaPerson
+              label={t('present.addedBy')}
+              avatar={avatarOf(creator, 20)}
+              name={nameOf(creator)}
+            />
+          </View>
+
           {gift.description ? (
-            <Text className="mt-8 text-base leading-[24px] text-garland-ink">
+            <Text className="mt-6 text-base leading-[25px] text-garland-ink">
               {gift.description}
             </Text>
           ) : null}
@@ -223,52 +264,54 @@ export function PresentDetailScreen({
             <Pressable
               onPress={() => void Linking.openURL(hrefOf(gift.url!))}
               accessibilityRole="link"
+              accessibilityLabel={gift.url}
               hitSlop={6}
-              className="mt-6 flex-row items-center gap-1.5 active:opacity-60"
+              className="mt-5 max-w-full flex-row items-center gap-2 self-start rounded-full border border-dashed border-garland-green px-4 py-2 active:opacity-60"
             >
               <LinkIcon width={14} height={14} color={garland.green} />
               <Text
-                className="flex-1 text-[15px] font-bold text-garland-green"
+                className="shrink text-[14px] font-bold text-garland-green"
                 numberOfLines={1}
               >
-                {gift.url}
+                {hostOf(gift.url)}
               </Text>
             </Pressable>
           ) : null}
 
+          {/* Buyers coordinate in the recipient's thread, which the
+              recipient is never sent: on their own present it's absent. */}
+          <ChatRecapBox
+            eventId={eventId}
+            participantId={gift.forParticipantId}
+            label={t('chat.presentRecap', { name: nameOf(recipient) })}
+            labelLeading={avatarOf(recipient, 24)}
+            withAvatars
+            className="mt-8"
+          />
+
           {/* Not for the recipient (claim-quietly rule), and not at all
               while nobody is buying it. */}
-          {action &&
-          !queuedAdd &&
-          (buyers.length > 0 || viewerClaimOf(write)) ? (
-            <View className="mt-6 flex-row justify-end">
-              <Tag label={t('present.buying')} strong wrap>
-                {buyers.map((buyer, i) => (
-                  <TagPerson
-                    key={i}
-                    avatar={avatarOf(buyer)}
-                    name={nameOf(buyer)}
-                    strong
-                  />
-                ))}
-                {viewerClaimOf(write) ? (
-                  <TagPerson
-                    avatar={avatarOf(resolveUser(user._id))}
-                    name={
-                      viewerClaimOf(write) === 'failed'
-                        ? t('person.you')
-                        : `${t('person.you')} · ⏱`
-                    }
-                    className={
-                      viewerClaimOf(write) === 'failed'
-                        ? 'text-garland-berry line-through'
-                        : 'text-garland-green'
-                    }
-                    strong
-                  />
-                ) : null}
-              </Tag>
-            </View>
+          {showBuyers ? (
+            <BuyersStamp label={t('present.buying')}>
+              {buyers.map((buyer, i) => (
+                <Text key={i} className="text-sm font-bold text-garland-ink">
+                  {nameOf(buyer)}
+                </Text>
+              ))}
+              {viewerClaimOf(write) ? (
+                <Text
+                  className={`text-sm font-bold ${
+                    viewerClaimOf(write) === 'failed'
+                      ? 'text-garland-berry line-through'
+                      : 'text-garland-green'
+                  }`}
+                >
+                  {viewerClaimOf(write) === 'failed'
+                    ? t('person.you')
+                    : `${t('person.you')} · ⏱`}
+                </Text>
+              ) : null}
+            </BuyersStamp>
           ) : null}
 
           {queuedAdd ? (
@@ -289,7 +332,7 @@ export function PresentDetailScreen({
                 // Claiming works offline too: it's queued.
                 <GarlandButton
                   variant={action === 'unclaim' ? 'outline' : 'solid'}
-                  className="mt-10"
+                  className="mt-8"
                   loading={submitting}
                   onPress={toggleClaim}
                 >
@@ -304,82 +347,126 @@ export function PresentDetailScreen({
               ) : null}
             </>
           ) : null}
-
-          {/* Buyers coordinate in the recipient's thread, which the
-              recipient is never sent: on their own present it's absent. */}
-          <ChatRecapBox
-            eventId={eventId}
-            participantId={gift.forParticipantId}
-            label={t('chat.presentRecap', { name: nameOf(recipient) })}
-            labelLeading={avatarOf(recipient, 24)}
-            withAvatars
-            className="mt-12"
-          />
         </View>
       </ScrollView>
-    </SafeAreaView>
-  )
-}
 
-// A chip: "Label: <avatar> Name …". `strong` for the buyers, so who is
-// buying it stands out.
-// One line, its name cut short when it can't fit. `wrap` lets several
-// people break onto more lines instead, e.g. everyone buying.
-function Tag({
-  label,
-  strong = false,
-  wrap = false,
-  children,
-}: {
-  label: string
-  strong?: boolean
-  wrap?: boolean
-  children: ReactNode
-}) {
-  return (
-    <View
-      className={`max-w-full flex-row items-center gap-x-1.5 gap-y-1 rounded-full py-1 pl-2.5 pr-2.5 ${
-        wrap ? 'flex-wrap' : ''
-      } ${
-        strong
-          ? 'border-[1.5px] border-garland-ink-40'
-          : 'border border-garland-ink-15'
-      }`}
-    >
-      <Text
-        className={`text-[12px] ${strong ? 'font-bold text-garland-ink' : 'font-semibold text-garland-ink-60'}`}
+      {/* Over the picture, so round buttons rather than a header bar. */}
+      <View
+        pointerEvents="box-none"
+        className="absolute inset-x-0 flex-row items-center justify-between px-5"
+        style={{ top: insets.top + 8 }}
       >
-        {label}
-      </Text>
-      {children}
+        <RoundButton
+          onPress={() => router.back()}
+          accessibilityLabel={t('shell.back')}
+        >
+          <BackIcon width={20} height={20} color={garland.ink} />
+        </RoundButton>
+        {canEditGift(gift, user._id) && serverGift ? (
+          <RoundButton
+            onPress={edit}
+            disabled={offline}
+            accessibilityLabel={t('present.edit')}
+          >
+            <PencilIcon width={18} height={18} color={garland.ink} />
+          </RoundButton>
+        ) : null}
+      </View>
     </View>
   )
 }
 
-function TagPerson({
+// The tear-off edge under the picture: a row of paper-coloured holes
+// straddling it, as between a gift tag's stub and its details.
+function Perforation({ width }: { width: number }) {
+  return (
+    <View className="flex-row justify-between px-1">
+      {Array.from({ length: Math.floor(width / 17) }, (_, i) => (
+        <View
+          key={i}
+          className="-mt-[5px] h-2.5 w-2.5 rounded-full bg-garland-paper"
+        />
+      ))}
+    </View>
+  )
+}
+
+function MetaPerson({
+  label,
   avatar,
   name,
-  strong = false,
-  className,
 }: {
+  label: string
   avatar: ReactNode
   name: string
-  strong?: boolean
-  // Overrides the name's colour.
-  className?: string
 }) {
   return (
-    <View className="min-w-0 shrink flex-row items-center gap-1">
+    <View className="max-w-full flex-row items-center gap-1.5">
+      <Text className="text-[13px] text-garland-ink-60">{label}</Text>
       {avatar}
       <Text
+        className="shrink text-[13px] font-bold text-garland-ink"
         numberOfLines={1}
-        className={`shrink text-[12px] ${strong ? 'font-bold' : 'font-semibold'} ${
-          className ?? (strong ? 'text-garland-ink' : 'text-garland-ink-60')
-        }`}
       >
         {name}
       </Text>
     </View>
+  )
+}
+
+// Who is buying it, as a rubber stamp: the seal, the label, a name a line.
+function BuyersStamp({
+  label,
+  children,
+}: {
+  label: string
+  children: ReactNode
+}) {
+  return (
+    <View
+      className="mt-8 max-w-[80%] flex-row items-center gap-3 self-end rounded-xl border-2 border-dashed border-garland-ink-40 px-3 py-2"
+      style={{ transform: [{ rotate: '-3deg' }] }}
+    >
+      <BuyerSeal size={34} />
+      <View className="shrink">
+        <Text className="text-[10px] font-bold uppercase tracking-[1.5px] text-garland-ink-60">
+          {label}
+        </Text>
+        {children}
+      </View>
+    </View>
+  )
+}
+
+function RoundButton({
+  onPress,
+  disabled = false,
+  accessibilityLabel,
+  children,
+}: {
+  onPress: () => void
+  disabled?: boolean
+  accessibilityLabel: string
+  children: ReactNode
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled }}
+      className={`h-11 w-11 items-center justify-center rounded-full bg-garland-paper active:opacity-70 ${disabled ? 'opacity-40' : ''}`}
+      style={{
+        shadowColor: '#000',
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 2 },
+      }}
+    >
+      {children}
+    </Pressable>
   )
 }
 
