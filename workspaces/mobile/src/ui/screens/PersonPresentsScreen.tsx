@@ -19,18 +19,16 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useEventById } from '@/hooks/useEventById'
 import { useEventGifts } from '@/hooks/useEventGifts'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
-import { usePersonName } from '@/hooks/usePersonName'
 import { useQueuedWrites } from '@/hooks/useQueuedWrites'
 import { discardWrite } from '@/sync'
-import { ChatRecapBox } from '@/ui/components/ChatRecapBox'
-import { GiftRow } from '@/ui/components/GiftRow'
-import { LockNote } from '@/ui/components/LockNote'
+import { GiftTag, type GiftTone, TONE_COLOR } from '@/ui/components/GiftTag'
 import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
 
 // A person's presents: `3e` for the viewer's own list, `3f` for anyone else's.
-// Writes still in the offline queue show in place (docs/spec.md §6.4): a
-// queued present in its group, a queued claim on its present.
+// Their own wishes are green, others' suggestions berry. Writes still in the
+// offline queue show in place (docs/spec.md §6.4): a queued present in its
+// group, a queued claim on its present.
 export function PersonPresentsScreen({
   eventId,
   participantId,
@@ -44,7 +42,6 @@ export function PersonPresentsScreen({
   const { gifts: serverGifts, ready: giftsReady } = useEventGifts(eventId)
   const writes = useQueuedWrites()
   const { resolve, resolveUser } = useEventParticipants(eventId)
-  const nameOf = usePersonName()
 
   const person = resolve(participantId)
   const ready = eventReady && giftsReady
@@ -71,22 +68,22 @@ export function PersonPresentsScreen({
       params: { eventId, giftId: gift._id },
     })
 
-  const rows = (items: ShownGift[], withBuyers: boolean) =>
+  const tags = (items: ShownGift[], tone: GiftTone, withBuyers: boolean) =>
     items.map(gift => {
       const write = giftWrite(writes, gift._id)
       return (
-        <GiftRow
+        <GiftTag
           key={gift._id}
           gift={gift}
-          showDescription
+          tone={tone}
           buyers={
             withBuyers
-              ? shownBuyers(gift, write, user?._id).map(userId =>
-                  nameOf(resolveUser(userId)),
-                )
+              ? shownBuyers(gift, write, user?._id).map(resolveUser)
               : undefined
           }
-          topBorder
+          suggestedBy={
+            tone === 'suggested' ? resolveUser(gift.createdBy) : undefined
+          }
           write={write}
           onDiscard={write ? () => discardWrite(write.id) : undefined}
           onPress={() => openGift(gift)}
@@ -94,88 +91,41 @@ export function PersonPresentsScreen({
       )
     })
 
-  const giftCount =
-    list.kind === 'mine'
-      ? list.gifts.length
-      : list.ownWishes.length + list.suggested.length
-  const withBuyerCount =
-    list.kind === 'mine'
-      ? 0
-      : [...list.ownWishes, ...list.suggested].filter(
-          g => (g.claimedBy?.length ?? 0) > 0,
-        ).length
-
   // Only someone who gets presents in this event has a list to add to.
   // Adding works offline too: it's queued.
-  const addPresent = recipientOptions(event).includes(participantId) ? (
-    <Pressable
-      onPress={() =>
-        router.push({
-          pathname: '/event/[eventId]/add-gift',
-          params: { eventId, forParticipantId: participantId },
-        })
-      }
-      hitSlop={12}
-      accessibilityRole="button"
-      accessibilityLabel={t('shell.addPresent')}
-    >
-      <PlusIcon width={22} height={22} color={garland.ink} />
-    </Pressable>
-  ) : undefined
+  const canAdd = recipientOptions(event).includes(participantId)
 
   return (
     <SafeAreaView className="flex-1 bg-garland-paper">
-      <ScreenHeader title={event.title} right={addPresent} />
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 32 }}
-      >
-        <View className="flex-row items-center gap-4 px-[22px] pb-4 pt-2">
+      <ScreenHeader
+        title={person.name}
+        leading={
           <ParticipantAvatar
             name={person.name}
             avatarKey={person.avatarKey}
             photo={person.photo}
             color={person.color}
-            size={64}
+            size={32}
           />
-          <View className="min-w-0 flex-1">
-            <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-              {list.kind === 'mine'
-                ? t('person.yourList')
-                : t('person.theirList', { name: person.name })}
-            </Text>
-            <Text
-              className="mt-1 font-garland-display text-[26px] leading-[30px] text-garland-ink"
-              numberOfLines={1}
-            >
-              {person.name}
-            </Text>
-            <Text className="mt-1 text-xs text-garland-ink-60">
-              {list.kind === 'mine'
-                ? t('person.presentCount', { count: giftCount })
-                : t('person.presentsWithBuyer', {
-                    count: giftCount,
-                    withBuyer: withBuyerCount,
-                  })}
-            </Text>
-          </View>
-        </View>
-
-        <ChatRecapBox
-          eventId={eventId}
-          participantId={participantId}
-          label={t('chat.personRecap', { name: person.name })}
-          className="mx-[22px] mb-2"
-        />
-
+        }
+      />
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: canAdd ? 112 : 32 }}
+      >
         {list.kind === 'mine' ? (
           <>
-            <LockNote className="mx-[22px] mb-3">
-              {t('person.ownListNote')}
-            </LockNote>
+            <View className="px-[22px] pb-4 pt-2">
+              <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
+                {t('person.yourList')}
+              </Text>
+              <Text className="mt-1 text-xs text-garland-ink-60">
+                {t('person.presentCount', { count: list.gifts.length })}
+              </Text>
+            </View>
             {list.gifts.length > 0 ? (
-              rows(list.gifts, false)
+              tags(list.gifts, 'own', false)
             ) : (
               <Empty>{t('person.emptyMine')}</Empty>
             )}
@@ -185,11 +135,11 @@ export function PersonPresentsScreen({
             {/* A placeholder can't add presents, so has no wishes group. */}
             {person.isPlaceholder ? null : (
               <>
-                <SectionTitle>
+                <SectionTitle tone="own">
                   {t('person.ownWishes', { name: person.name })}
                 </SectionTitle>
                 {list.ownWishes.length > 0 ? (
-                  rows(list.ownWishes, true)
+                  tags(list.ownWishes, 'own', true)
                 ) : (
                   <Empty>
                     {t('person.emptyOwnWishes', { name: person.name })}
@@ -197,35 +147,67 @@ export function PersonPresentsScreen({
                 )}
               </>
             )}
-            <SectionTitle>{t('person.suggested')}</SectionTitle>
-            {person.isPlaceholder ? null : (
-              <LockNote className="mx-[22px] mb-3">
-                {t('person.suggestedNote', { name: person.name })}
-              </LockNote>
-            )}
+            <SectionTitle tone="suggested">
+              {t('person.suggested')}
+            </SectionTitle>
             {list.suggested.length > 0 ? (
-              rows(list.suggested, true)
+              tags(list.suggested, 'suggested', true)
             ) : (
               <Empty>{t('person.emptySuggested')}</Empty>
             )}
           </>
         )}
       </ScrollView>
+      {canAdd ? (
+        <View
+          className="absolute bottom-10 left-0 right-0 items-center"
+          pointerEvents="box-none"
+        >
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: '/event/[eventId]/add-gift',
+                params: { eventId, forParticipantId: participantId },
+              })
+            }
+            accessibilityRole="button"
+            accessibilityLabel={t('shell.addPresent')}
+            className="h-14 w-14 items-center justify-center rounded-full bg-garland-ink shadow-md active:opacity-70"
+          >
+            <PlusIcon width={24} height={24} color={garland.paper} />
+          </Pressable>
+        </View>
+      ) : null}
     </SafeAreaView>
   )
 }
 
-function SectionTitle({ children }: { children: ReactNode }) {
+function SectionTitle({
+  tone,
+  children,
+}: {
+  tone: GiftTone
+  children: ReactNode
+}) {
   return (
-    <Text className="mb-2 mt-6 px-[22px] text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-      {children}
-    </Text>
+    <View className="mb-2.5 mt-5 flex-row items-center gap-2 px-[22px]">
+      <View
+        className="h-2 w-2 rounded-full"
+        style={{ backgroundColor: TONE_COLOR[tone] }}
+      />
+      <Text
+        className="flex-1 text-[11px] font-bold uppercase tracking-[1.1px]"
+        style={{ color: TONE_COLOR[tone] }}
+      >
+        {children}
+      </Text>
+    </View>
   )
 }
 
 function Empty({ children }: { children: ReactNode }) {
   return (
-    <Text className="border-t border-garland-ink-08 px-[22px] py-4 text-sm text-garland-ink-60">
+    <Text className="px-[22px] pb-2 text-sm text-garland-ink-60">
       {children}
     </Text>
   )

@@ -21,6 +21,7 @@ import {
   canEditGift,
   claimAction,
   isHiddenFrom,
+  isOwnWish,
 } from '@/api/presentLists'
 import { LinkIcon, PencilIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
@@ -34,10 +35,10 @@ import { usePersonName } from '@/hooks/usePersonName'
 import { useQueuedWrites } from '@/hooks/useQueuedWrites'
 import { errorMessage } from '@/localization/errorMessage'
 import { discardWrite } from '@/sync'
-import { BuyerChips } from '@/ui/components/BuyerChips'
 import { ChatRecapBox } from '@/ui/components/ChatRecapBox'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { FAILED_KEY } from '@/ui/components/GiftRow'
+import { TONE_COLOR } from '@/ui/components/GiftTag'
 import { LockNote } from '@/ui/components/LockNote'
 import { PersonAvatar } from '@/ui/components/PersonAvatar'
 import { PresentTile } from '@/ui/components/PresentTile'
@@ -104,6 +105,8 @@ export function PresentDetailScreen({
   const recipient = resolve(gift.forParticipantId)
   const creator = resolveUser(gift.createdBy)
   const action = claimAction(event, gift, user._id)
+  // Green for the recipient's own wish, berry for someone's suggestion.
+  const tone = TONE_COLOR[isOwnWish(event, gift) ? 'own' : 'suggested']
   // Only ever resolved for a viewer who may see them (claim-quietly rule).
   const buyers = action
     ? shownBuyers(gift, write, user._id).map(id => resolveUser(id))
@@ -167,12 +170,15 @@ export function PresentDetailScreen({
         contentContainerStyle={{ paddingBottom: 32 }}
       >
         <View className="items-center px-[22px] pt-2">
+          {/* Framed in the tone's colour, as on the person's list. */}
           <View
-            style={
+            className="rounded-[28px] p-1"
+            style={[
+              { backgroundColor: tone },
               queuedAdd && write.state === 'pending'
                 ? { opacity: 0.55 }
-                : undefined
-            }
+                : undefined,
+            ]}
           >
             <PresentTile
               gift={gift}
@@ -191,17 +197,50 @@ export function PresentDetailScreen({
           </Text>
 
           <View className="mt-3 flex-row flex-wrap gap-1.5">
-            <Tag avatar={avatarOf(recipient)}>
-              {recipient?.isYou
-                ? t('present.forYou')
-                : t('present.forName', { name: nameOf(recipient) })}
+            <Tag label={t('present.for')}>
+              <TagPerson
+                avatar={avatarOf(recipient)}
+                name={nameOf(recipient)}
+              />
             </Tag>
-            <Tag avatar={avatarOf(creator)}>
-              {creator?.isYou
-                ? t('present.addedByYou')
-                : t('present.addedBy', { name: nameOf(creator) })}
+            <Tag label={t('present.addedBy')}>
+              <TagPerson avatar={avatarOf(creator)} name={nameOf(creator)} />
             </Tag>
           </View>
+          {/* Not for the recipient (claim-quietly rule), and not at all
+              while nobody is buying it. */}
+          {action &&
+          !queuedAdd &&
+          (buyers.length > 0 || viewerClaimOf(write)) ? (
+            <View className="mt-1.5 flex-row">
+              <Tag label={t('present.buying')} strong>
+                {buyers.map((buyer, i) => (
+                  <TagPerson
+                    key={i}
+                    avatar={avatarOf(buyer)}
+                    name={nameOf(buyer)}
+                    strong
+                  />
+                ))}
+                {viewerClaimOf(write) ? (
+                  <TagPerson
+                    avatar={avatarOf(resolveUser(user._id))}
+                    name={
+                      viewerClaimOf(write) === 'failed'
+                        ? t('person.you')
+                        : `${t('person.you')} · ⏱`
+                    }
+                    className={
+                      viewerClaimOf(write) === 'failed'
+                        ? 'text-garland-berry line-through'
+                        : 'text-garland-green'
+                    }
+                    strong
+                  />
+                ) : null}
+              </Tag>
+            </View>
+          ) : null}
 
           {gift.description ? (
             <Text className="mt-4 text-sm leading-[21px] text-garland-ink-60">
@@ -236,21 +275,6 @@ export function PresentDetailScreen({
             )
           ) : action ? (
             <>
-              <Text className="mb-2 mt-6 text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-                {t('present.buying')}
-              </Text>
-              {buyers.length > 0 || viewerClaimOf(write) ? (
-                <BuyerChips
-                  names={buyers.map(nameOf)}
-                  avatars={buyers.map(b => avatarOf(b))}
-                  viewerClaim={viewerClaimOf(write)}
-                  viewerAvatar={avatarOf(resolveUser(user._id))}
-                />
-              ) : (
-                <Text className="text-sm text-garland-ink-60">
-                  {t('present.nobodyBuying')}
-                </Text>
-              )}
               {write?.state === 'failed' ? (
                 <FailedWrite write={write} onDiscard={() => discard(write)} />
               ) : write ? (
@@ -290,12 +314,56 @@ export function PresentDetailScreen({
   )
 }
 
-function Tag({ children, avatar }: { children: string; avatar: ReactNode }) {
+// A chip: "Label: <avatar> Name …". `strong` for the buyers, so who is
+// buying it stands out.
+function Tag({
+  label,
+  strong = false,
+  children,
+}: {
+  label: string
+  strong?: boolean
+  children: ReactNode
+}) {
   return (
-    <View className="flex-row items-center gap-1.5 rounded-full border border-garland-ink-15 py-1 pl-1 pr-2.5">
+    <View
+      className={`flex-row flex-wrap items-center gap-x-1.5 gap-y-1 rounded-full py-1 pl-2.5 pr-2.5 ${
+        strong
+          ? 'border-[1.5px] border-garland-ink-40'
+          : 'border border-garland-ink-15'
+      }`}
+    >
+      <Text
+        className={`text-[11px] ${strong ? 'font-bold text-garland-ink' : 'font-semibold text-garland-ink-60'}`}
+      >
+        {label}
+      </Text>
+      {children}
+    </View>
+  )
+}
+
+function TagPerson({
+  avatar,
+  name,
+  strong = false,
+  className,
+}: {
+  avatar: ReactNode
+  name: string
+  strong?: boolean
+  // Overrides the name's colour.
+  className?: string
+}) {
+  return (
+    <View className="flex-row items-center gap-1">
       {avatar}
-      <Text className="text-[11px] font-semibold text-garland-ink-60">
-        {children}
+      <Text
+        className={`text-[11px] ${strong ? 'font-bold' : 'font-semibold'} ${
+          className ?? (strong ? 'text-garland-ink' : 'text-garland-ink-60')
+        }`}
+      >
+        {name}
       </Text>
     </View>
   )

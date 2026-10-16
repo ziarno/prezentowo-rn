@@ -38,6 +38,11 @@ export const isHiddenFrom = (
 ): boolean =>
   isRecipient(event, gift, viewerUserId) && gift.createdBy !== viewerUserId
 
+// Whether the recipient added it themselves (a wish), rather than someone
+// else suggesting it. The two are told apart by colour: green and berry.
+export const isOwnWish = (event: EventDoc, gift: GiftOwnership): boolean =>
+  gift.createdBy === ownerUserIdOf(event, gift.forParticipantId)
+
 // A person's presents as the viewer may see them.
 // - `mine` (`3e`): the viewer's own list, only the gifts they added
 //   themselves, shown without claim state.
