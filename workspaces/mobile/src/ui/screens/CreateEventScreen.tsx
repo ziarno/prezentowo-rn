@@ -295,8 +295,14 @@ function EventWizard({
     }
   }
 
+  // Editing the background alone, its heading becomes the screen's title.
+  const backgroundOnly = mode === 'edit' && step === 'background'
   const title =
-    mode === 'create' ? t('shell.createEvent') : t('shell.editEvent')
+    mode === 'create'
+      ? t('shell.createEvent')
+      : backgroundOnly
+        ? t('createEvent.background.heading')
+        : t('shell.editEvent')
   const primaryLabel = !isLast
     ? t('wizard.next')
     : mode === 'create'
@@ -333,6 +339,7 @@ function EventWizard({
               draft={draft}
               onChange={setDraft}
               removable={mode === 'edit'}
+              heading={!backgroundOnly}
             />
           ) : step === 'people' ? (
             <PeopleStep draft={draft} onChange={setDraft} viewOf={viewOf} />
@@ -465,15 +472,19 @@ function BackgroundStep({
   draft,
   onChange,
   removable,
+  heading,
 }: {
   draft: EventDraft
   onChange: (draft: EventDraft) => void
   removable: boolean
+  heading: boolean
 }) {
   const { t } = useTranslation()
   return (
     <>
-      <StepHeading>{t('createEvent.background.heading')}</StepHeading>
+      {heading ? (
+        <StepHeading>{t('createEvent.background.heading')}</StepHeading>
+      ) : null}
       <ImagePickerGrid
         art="background"
         value={draft.background}
