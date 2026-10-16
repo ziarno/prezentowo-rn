@@ -229,8 +229,8 @@
     "emptyOwnWishes": "{{name}} nie ma jeszcze żadnych życzeń.",
     "suggested": "Propozycje innych",
     "emptySuggested": "Nikt jeszcze niczego nie zaproponował.",
-    "byName": "dodane przez: {{name}}",
-    "byYou": "dodane przez ciebie",
+    "addedBy": "Dodane przez:",
+    "buyers": "Kupujący:",
     "nobodyBuying": "Nikt jeszcze nie kupuje"
   },
   "present": {

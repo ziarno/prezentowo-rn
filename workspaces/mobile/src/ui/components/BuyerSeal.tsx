@@ -53,3 +53,18 @@ export function BuyerSeal({ size = 26 }: { size?: number }) {
     </View>
   )
 }
+
+// The seal's `$` on its own, e.g. beside "I'll buy it".
+export function DollarIcon({
+  size = 18,
+  color = garland.ink,
+}: {
+  size?: number
+  color?: string
+}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" accessible={false}>
+      <Path d={DOLLAR} fill={color} />
+    </Svg>
+  )
+}

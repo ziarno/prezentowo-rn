@@ -225,8 +225,8 @@
     "emptyOwnWishes": "{{name}} hasn't added anything yet.",
     "suggested": "Suggested by others",
     "emptySuggested": "Nobody has suggested anything yet.",
-    "byName": "by {{name}}",
-    "byYou": "by you",
+    "addedBy": "Added by:",
+    "buyers": "Buying:",
     "nobodyBuying": "Nobody buying yet"
   },
   "present": {

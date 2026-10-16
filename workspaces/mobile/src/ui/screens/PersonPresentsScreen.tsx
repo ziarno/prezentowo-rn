@@ -84,6 +84,7 @@ export function PersonPresentsScreen({
           suggestedBy={
             tone === 'suggested' ? resolveUser(gift.createdBy) : undefined
           }
+          viewer={user ? resolveUser(user._id) : undefined}
           write={write}
           onDiscard={write ? () => discardWrite(write.id) : undefined}
           onPress={() => openGift(gift)}

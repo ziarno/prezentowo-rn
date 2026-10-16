@@ -31,8 +31,10 @@ type GiftTagProps = {
   // The people buying it, or undefined where the viewer may not see claim
   // state (`3e`).
   buyers?: (ResolvedParticipant | undefined)[]
-  // A suggestion's author, shown as "by …" with their avatar.
+  // A suggestion's author, shown as "Added by:" with their avatar.
   suggestedBy?: ResolvedParticipant
+  // The viewer, shown among the buyers while their claim is queued.
+  viewer?: ResolvedParticipant
   // The viewer's write on it still in the offline queue (docs/spec.md §6.4).
   write?: GiftWrite
   // Drops a failed `write`.
@@ -53,6 +55,7 @@ export function GiftTag({
   onPress,
   buyers,
   suggestedBy,
+  viewer,
   write,
   onDiscard,
 }: GiftTagProps) {
@@ -61,13 +64,12 @@ export function GiftTag({
   const pendingAdd = write?.kind === 'add' && write.state === 'pending'
   const failed = write?.state === 'failed'
   const viewerClaim = viewerClaimOf(write)
-  const buyerNames = (buyers ?? []).map(nameOf)
   // Someone is buying it (the viewer's queued claim included), and the
   // viewer may know.
   const sealed =
     !!buyers &&
     write?.kind !== 'add' &&
-    (buyerNames.length > 0 || viewerClaim === 'waiting')
+    (buyers.length > 0 || viewerClaim === 'waiting')
 
   return (
     <Pressable
@@ -81,15 +83,15 @@ export function GiftTag({
       style={pendingAdd ? { opacity: 0.55 } : undefined}
     >
       <View
-        className="w-[88px] items-center justify-center py-3"
+        className="w-[104px] items-center justify-center py-3"
         style={{ backgroundColor: TONE_COLOR[tone] }}
       >
         <View className="absolute left-2 top-2 h-2 w-2 rounded-full bg-garland-paper" />
         <View className="rounded-xl bg-garland-paper">
           <PresentTile
             gift={gift}
-            size={58}
-            imageSize={52}
+            size={76}
+            imageSize={68}
             pending={pendingAdd}
           />
         </View>
@@ -105,55 +107,55 @@ export function GiftTag({
 
       <View className="min-w-0 flex-1 justify-center py-3 pl-2 pr-3.5">
         <Text
-          className="text-sm font-bold leading-[18px] text-garland-ink"
-          numberOfLines={1}
+          className="text-base font-bold leading-5 text-garland-ink"
+          numberOfLines={2}
         >
           {gift.title}
         </Text>
-        {gift.description ? (
-          <Text className="text-xs text-garland-ink-60" numberOfLines={1}>
-            {gift.description}
-          </Text>
-        ) : null}
         {suggestedBy ? (
           <View className="mt-1 flex-row items-center gap-1.5">
-            <PersonAvatar person={suggestedBy} size={16} />
-            <Text
-              className="flex-1 text-[11px] font-semibold text-garland-ink-60"
-              numberOfLines={1}
-            >
-              {suggestedBy.isYou
-                ? t('person.byYou')
-                : t('person.byName', { name: nameOf(suggestedBy) })}
+            <Text className="text-[11px] font-semibold text-garland-ink-40">
+              {t('person.addedBy')}
             </Text>
+            <PersonChip person={suggestedBy} name={nameOf(suggestedBy)} />
           </View>
         ) : null}
         {buyers && write?.kind !== 'add' ? (
-          <Text
-            className={`mt-1 text-[11px] font-semibold text-garland-ink-60 ${sealed ? 'mr-7' : ''}`}
-            numberOfLines={1}
-          >
-            {buyerNames.length > 0 ? `🛍 ${buyerNames.join(', ')}` : null}
-            {viewerClaim ? (
-              <Text
-                className={
-                  viewerClaim === 'failed'
-                    ? 'text-garland-berry line-through'
-                    : 'text-garland-green'
-                }
-              >
-                {buyerNames.length > 0 ? ', ' : ''}
-                {t(
-                  viewerClaim === 'failed'
-                    ? 'offline.you'
-                    : 'offline.youWaiting',
-                )}
+          buyers.length > 0 || viewerClaim ? (
+            <View
+              className={`mt-1 flex-row flex-wrap items-center gap-x-2 gap-y-1 ${sealed ? 'mr-7' : ''}`}
+            >
+              <Text className="text-[11px] font-semibold text-garland-ink-40">
+                {t('person.buyers')}
               </Text>
-            ) : null}
-            {buyerNames.length === 0 && !viewerClaim
-              ? t('person.nobodyBuying')
-              : null}
-          </Text>
+              {buyers.map((buyer, i) => (
+                <PersonChip
+                  key={buyer?.id ?? i}
+                  person={buyer}
+                  name={nameOf(buyer)}
+                />
+              ))}
+              {viewerClaim ? (
+                <PersonChip
+                  person={viewer}
+                  name={
+                    viewerClaim === 'failed'
+                      ? nameOf(viewer)
+                      : `${nameOf(viewer)} ⏱`
+                  }
+                  className={
+                    viewerClaim === 'failed'
+                      ? 'text-garland-berry line-through'
+                      : 'text-garland-green'
+                  }
+                />
+              ) : null}
+            </View>
+          ) : (
+            <Text className="mt-1 text-[11px] font-semibold text-garland-ink-60">
+              {t('person.nobodyBuying')}
+            </Text>
+          )
         ) : null}
         {write ? (
           <View
@@ -186,5 +188,28 @@ export function GiftTag({
         </View>
       ) : null}
     </Pressable>
+  )
+}
+
+// A person's avatar and name, in a tag's detail line.
+function PersonChip({
+  person,
+  name,
+  className = 'text-garland-ink-60',
+}: {
+  person: ResolvedParticipant | undefined
+  name: string
+  className?: string
+}) {
+  return (
+    <View className="max-w-full flex-row items-center gap-1">
+      <PersonAvatar person={person} size={16} />
+      <Text
+        className={`shrink text-[11px] font-semibold ${className}`}
+        numberOfLines={1}
+      >
+        {name}
+      </Text>
+    </View>
   )
 }
