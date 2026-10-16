@@ -167,9 +167,9 @@ export function PresentDetailScreen({
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: 48 }}
       >
-        <View className="flex-row flex-wrap gap-2 px-[22px] pt-2">
+        <View className="flex-row flex-wrap gap-2 px-[22px] pt-4">
           <Tag label={t('present.for')}>
             <TagPerson avatar={avatarOf(recipient)} name={nameOf(recipient)} />
           </Tag>
@@ -178,7 +178,7 @@ export function PresentDetailScreen({
           </Tag>
         </View>
 
-        <View className="items-center px-[22px] pt-4">
+        <View className="items-center px-[22px] pt-8">
           {/* Framed in the tone's colour, as on the person's list. */}
           <View
             className="rounded-[28px] p-1"
@@ -208,13 +208,13 @@ export function PresentDetailScreen({
           </View>
         </View>
 
-        <View className="px-[22px] pt-8">
+        <View className="px-[22px] pt-10">
           <Text className="text-center font-garland-display text-[30px] leading-[36px] text-garland-ink">
             {gift.title}
           </Text>
 
           {gift.description ? (
-            <Text className="mt-6 text-base leading-[24px] text-garland-ink">
+            <Text className="mt-8 text-base leading-[24px] text-garland-ink">
               {gift.description}
             </Text>
           ) : null}
@@ -224,7 +224,7 @@ export function PresentDetailScreen({
               onPress={() => void Linking.openURL(hrefOf(gift.url!))}
               accessibilityRole="link"
               hitSlop={6}
-              className="mt-4 flex-row items-center gap-1.5 active:opacity-60"
+              className="mt-6 flex-row items-center gap-1.5 active:opacity-60"
             >
               <LinkIcon width={14} height={14} color={garland.green} />
               <Text
@@ -241,7 +241,7 @@ export function PresentDetailScreen({
           {action &&
           !queuedAdd &&
           (buyers.length > 0 || viewerClaimOf(write)) ? (
-            <View className="mt-4 flex-row justify-end">
+            <View className="mt-6 flex-row justify-end">
               <Tag label={t('present.buying')} strong wrap>
                 {buyers.map((buyer, i) => (
                   <TagPerson
@@ -289,7 +289,7 @@ export function PresentDetailScreen({
                 // Claiming works offline too: it's queued.
                 <GarlandButton
                   variant={action === 'unclaim' ? 'outline' : 'solid'}
-                  className="mt-8"
+                  className="mt-10"
                   loading={submitting}
                   onPress={toggleClaim}
                 >
@@ -313,7 +313,7 @@ export function PresentDetailScreen({
             label={t('chat.presentRecap', { name: nameOf(recipient) })}
             labelLeading={avatarOf(recipient, 24)}
             withAvatars
-            className="mt-10"
+            className="mt-12"
           />
         </View>
       </ScrollView>
@@ -396,7 +396,7 @@ function WaitingCta({ kind }: { kind: GiftWriteKind }) {
   return (
     <View
       accessibilityState={{ disabled: true }}
-      className="mt-8 items-center rounded-full border-[1.5px] border-dashed border-garland-green px-[18px] py-[13px] opacity-70"
+      className="mt-10 items-center rounded-full border-[1.5px] border-dashed border-garland-green px-[18px] py-[13px] opacity-70"
     >
       <Text className="text-center text-sm font-semibold text-garland-green">
         {t(WAITING_CTA_KEY[kind])}
@@ -408,7 +408,7 @@ function WaitingCta({ kind }: { kind: GiftWriteKind }) {
 // A queued present, in place of the call to action.
 function WaitingNote({ children }: { children: string }) {
   return (
-    <View className="mt-8 rounded-2xl border-[1.5px] border-dashed border-garland-amber px-3.5 py-3">
+    <View className="mt-10 rounded-2xl border-[1.5px] border-dashed border-garland-amber px-3.5 py-3">
       <Text className="text-center text-xs leading-[17px] text-garland-ink-60">
         {children}
       </Text>
@@ -427,7 +427,7 @@ function FailedWrite({
   const { t } = useTranslation()
   const reason: FailureReason = write.reason ?? 'other'
   return (
-    <View className="mt-8 items-center rounded-2xl border-[1.5px] border-garland-berry px-3.5 py-3">
+    <View className="mt-10 items-center rounded-2xl border-[1.5px] border-garland-berry px-3.5 py-3">
       <Text className="text-center text-xs font-bold leading-[17px] text-garland-berry">
         {t(FAILED_KEY[write.kind])}
       </Text>
