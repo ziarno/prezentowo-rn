@@ -66,7 +66,11 @@ export type FakeDdpServer = {
 export async function startFakeDdpServer(
   options: Options = {},
 ): Promise<FakeDdpServer> {
-  const wss = new WebSocketServer({ port: 0 })
+  // On the address the client dials, not the wildcard: macOS lets a wildcard
+  // listener share its port with another app's 127.0.0.1 listener (Steam and
+  // WebStorm keep some), and that one takes the client's connection — which
+  // then never gets `connected`.
+  const wss = new WebSocketServer({ host: '127.0.0.1', port: 0 })
   await new Promise<void>(resolve => wss.once('listening', () => resolve()))
   const { port } = wss.address() as AddressInfo
 
