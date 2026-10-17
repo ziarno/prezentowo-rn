@@ -23,6 +23,7 @@ import '../users/users.ageBand'
 import '../users/users.pushPreference'
 import { PushTokens, createPushTokenIndexes } from './push.collection'
 import './push.methods'
+import { removePushOfUnder16 } from './push.tokens'
 
 const iosDevice = (
   extra: Partial<RegisterPushArgs> = {},
@@ -437,6 +438,52 @@ describe('push', function () {
       const other = await subscribeAsUser(bartek, ownAccount)
       assert.strictEqual(other.docs('users').has(ola), false)
       other.stop()
+    })
+  })
+
+  describe('the startup sweep of devices held by accounts under 16', function () {
+    let kid: string
+    let unanswered: string
+
+    beforeEach(async function () {
+      kid = await createUser('Kasia')
+      unanswered = await createUser('Wiktor')
+      await setAgeBand('16+', kid, unanswered)
+      await register(ola, iosDevice())
+      await register(kid, androidDevice())
+      await register(
+        unanswered,
+        iosDevice({
+          expoToken: 'ExponentPushToken[ios-2]',
+          deviceToken: 'd4e5f6',
+        }),
+      )
+      // Accounts from before the age question, or answered 13-15 since.
+      await Meteor.users.updateAsync(kid, { $set: { ageBand: '13-15' } })
+      await Meteor.users.updateAsync(unanswered, { $unset: { ageBand: 1 } })
+    })
+
+    it('removes the devices of everyone but 16+, from the table and from Stream', async function () {
+      await removePushOfUnder16()
+
+      assert.deepStrictEqual(await tokensOf(kid), [])
+      assert.deepStrictEqual(await tokensOf(unanswered), [])
+      assert.deepStrictEqual(stream.devicesOf(kid), [])
+      assert.deepStrictEqual(stream.devicesOf(unanswered), [])
+    })
+
+    it('keeps the devices of a 16+ account', async function () {
+      await removePushOfUnder16()
+
+      assert.strictEqual((await tokensOf(ola)).length, 1)
+      assert.deepStrictEqual(stream.devicesOf(ola), ['a1b2c3'])
+    })
+
+    it('can be run again', async function () {
+      await removePushOfUnder16()
+      await removePushOfUnder16()
+
+      assert.strictEqual(await PushTokens.find().countAsync(), 1)
     })
   })
 

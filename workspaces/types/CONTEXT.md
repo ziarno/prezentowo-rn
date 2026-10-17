@@ -23,7 +23,11 @@ What a deleted account's place in an event becomes: a placeholder that keeps the
 _Avoid_: deleted participant, ghost
 
 **People search**:
-Finding existing Prezentowo users by name in `4d` (`users.search`): a case- and diacritic-insensitive prefix match on any word of their name, returning only name, avatar and photo. Everyone with a name is findable.
+Finding existing Prezentowo users by name in `4d` (`users.search`): a case- and diacritic-insensitive prefix match on any word of their name, returning only name, avatar and photo. Everyone with a name in the 16+ **age band** is findable; 13-15 and unanswered users never are.
+
+**Age band**:
+The one thing we keep about a user's age, asked once at first login and never a birth date: `'13-15'` or `'16+'`, as `ageBand` on the user's own document (`AGE_BANDS`, `AgeBand`; `isSixteenPlus` is the test other features use). **Under 13** is an answer, never a stored value: it ends the sign-up and the account is deleted. A **missing** band means "not answered yet" (an account from before the question), and is treated like 13-15: both are off for everything that is 16+ only, push and being found by **people search**. Asked once; a stored band is never changed by a later answer.
+_Avoid_: age, birth date, minor
 
 **Avatar** / **Photo**:
 How a user is pictured. Their **avatar** is a stock key (`f1`…`f12`, `m1`…`m12`) into avatars bundled with the app; their **photo** is an upload of their own (`profile.photo`, an upload id). The photo wins when set, else the avatar, else their initial. A user always keeps an avatar beside a photo, as its fallback and as what a **reserved placeholder** snapshots: an upload sits on one document only, so a reserved placeholder never carries a photo. A placeholder added by name is pictured the same way, with a stock avatar and a photo the event creator gives it; the photo is deleted when someone claims the placeholder.
@@ -68,7 +72,7 @@ Six kinds exist. `invite-deferred`: the user opened an invite and chose Ignore r
 _Avoid_: alert
 
 **Push**:
-A notification, or a chat message, delivered to a device through the operating system so it reaches someone outside the app. A push is only ever a second delivery of something that already exists: every inbox push mirrors one notification and never says more than that notification does, so the inbox's rules (above all claim-quietly) hold for push too. `invite-deferred` is never pushed, because the user created it themselves. Chat messages are pushed by GetStream, not by Prezentowo.
+A notification, or a chat message, delivered to a device through the operating system so it reaches someone outside the app. A push is only ever a second delivery of something that already exists: every inbox push mirrors one notification and never says more than that notification does, so the inbox's rules (above all claim-quietly) hold for push too. `invite-deferred` is never pushed, because the user created it themselves. Chat messages are pushed by GetStream, not by Prezentowo. Only the 16+ **age band** has push (the one processing that rests on consent, which under 16 would need a parent): everyone else has no push token and no Stream device.
 _Avoid_: notification (on its own, that means the inbox record)
 
 **Push token**:

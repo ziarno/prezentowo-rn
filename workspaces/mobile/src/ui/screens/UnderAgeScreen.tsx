@@ -8,7 +8,7 @@ import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LanguageChangeButton } from '@/ui/components/LanguageChangeButton'
 
 // What first-login shows after an "under 13" answer (docs/spec.md §1.15): no
-// account was made, nothing was kept. Back signs out of the dead session and
+// account was made, and the age was not kept. Back signs out of the dead session and
 // returns to the welcome screen.
 export function UnderAgeScreen() {
   const { t } = useTranslation()

@@ -38,16 +38,13 @@ const register = async function (
     $or: [{ expoToken }, { deviceToken }],
   }).fetchAsync()
   const mayPush = await mayHavePush(userId)
-  await dropDevices(
-    mayPush
-      ? held.filter(
-          t =>
-            t.userId !== userId ||
-            t.expoToken !== expoToken ||
-            t.deviceToken !== deviceToken,
-        )
-      : held,
-  )
+  const isThisDevicesOwn = (t: PushTokenDoc) =>
+    t.userId === userId &&
+    t.expoToken === expoToken &&
+    t.deviceToken === deviceToken
+  // Someone who may have no push keeps no doc here at all, this device's own
+  // included.
+  await dropDevices(mayPush ? held.filter(t => !isThisDevicesOwn(t)) : held)
   // Under 16, or not answered yet: the device goes to no one, with nothing
   // registered anywhere (docs/spec.md §10.5).
   if (!mayPush) return

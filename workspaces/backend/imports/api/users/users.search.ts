@@ -1,4 +1,5 @@
 import {
+  SIXTEEN_PLUS,
   type UserSearchArgs,
   type UserSearchResult,
   isSearchableQuery,
@@ -39,7 +40,7 @@ const searchUsers = async function (
   const selector = {
     _id: { $ne: this.userId },
     // 13–15 and users who have not answered yet are never found (§1.15).
-    ageBand: '16+',
+    ageBand: SIXTEEN_PLUS,
     'profile.name': { $type: 'string', $ne: '' },
     $and: tokens.map(token => ({
       nameTokens: { $regex: `^${escapeRegExp(token)}` },

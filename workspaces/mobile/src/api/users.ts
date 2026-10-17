@@ -3,6 +3,7 @@ import type {
   AgeBand,
   PushPreferences,
   SetAgeBandArgs,
+  SetAgeBandResult,
   SetPushPreferenceArgs,
   UpdateUserArgs,
   UserStats,
@@ -46,9 +47,9 @@ export function updateUser(args: UpdateUserArgs): Promise<void> {
 }
 
 // First-login's age question (docs/spec.md §1.15). A band is stored; under-13
-// deletes the account on the server, so the caller ends the session after it.
-// Online-only, never queued.
-export function setAgeBand(answer: AgeAnswer): Promise<void> {
+// deletes the account on the server, which the answer says (`deleted`), so
+// the caller ends the session only then. Online-only, never queued.
+export function setAgeBand(answer: AgeAnswer): Promise<SetAgeBandResult> {
   return call('users.setAgeBand', { answer } satisfies SetAgeBandArgs)
 }
 

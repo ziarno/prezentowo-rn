@@ -23,7 +23,9 @@ export const chatMessageActions = (params: MessageActionsParams) =>
     ownCapabilities: { ...params.ownCapabilities, flagMessage: true },
   })
 
-const blockedIdsOf = (state: { userIds: string[] }) =>
+// `useStateStore` selector: the viewer's blocked user ids, in a fresh object
+// each time, which the store compares by value.
+const selectBlockedUserIds = (state: { userIds: string[] }) =>
   ({ userIds: state.userIds }) as const
 
 // A message from someone the viewer blocked is replaced by one line, which
@@ -32,7 +34,7 @@ const blockedIdsOf = (state: { userIds: string[] }) =>
 function ChatMessage(props: MessageProps) {
   const { t } = useTranslation()
   const { client } = useChatContext()
-  const { userIds } = useStateStore(client.blockedUsers, blockedIdsOf)
+  const { userIds } = useStateStore(client.blockedUsers, selectBlockedUserIds)
   const { user } = props.message
   if (!user || !isFromBlockedUser(userIds, props.message)) {
     return <StreamMessage {...props} />

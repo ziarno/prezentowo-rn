@@ -198,7 +198,10 @@ export async function deleteCallersAccount(
   method: Meteor.MethodThisType,
   deleter: (userId: string) => Promise<void> = deleteAccountFor,
 ): Promise<void> {
-  const userId = method.userId!
+  const userId = method.userId
+  if (!userId) {
+    throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
+  }
   // Removing the user closes every connection logged in as them, this one
   // too, possibly before the answer is sent; the client would then resend
   // the call signed out. So detach this connection from its login token

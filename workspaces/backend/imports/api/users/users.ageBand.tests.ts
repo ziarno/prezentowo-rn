@@ -49,6 +49,28 @@ describe('users.setAgeBand', function () {
     )
   })
 
+  it('says whether it deleted the account', async function () {
+    const child = await justSignedIn('child@example.com')
+    const ola = await createUser('Ola')
+    const bartek = await createUser('Bartek')
+    await callAsUser(bartek, 'users.setAgeBand', { answer: '13-15' })
+
+    assert.deepStrictEqual(
+      await callAsUser(child, 'users.setAgeBand', { answer: 'under-13' }),
+      { deleted: true },
+    )
+    assert.deepStrictEqual(
+      await callAsUser(ola, 'users.setAgeBand', { answer: '16+' }),
+      { deleted: false },
+    )
+    // Already answered: nothing is deleted, whatever is said now.
+    assert.deepStrictEqual(
+      await callAsUser(bartek, 'users.setAgeBand', { answer: 'under-13' }),
+      { deleted: false },
+    )
+    assert.ok(await exists(bartek))
+  })
+
   it('deletes the account of someone under 13, keeping no band', async function () {
     const child = await justSignedIn('child@example.com')
 

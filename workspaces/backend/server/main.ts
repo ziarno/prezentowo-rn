@@ -8,6 +8,7 @@ import '../imports/startup/server/capitalize'
 import '../imports/startup/server/chat.freeze'
 import '../imports/startup/server/images.sweep'
 import '../imports/startup/server/push.receipts'
+import '../imports/startup/server/push.under16'
 import '../imports/startup/server/retention'
 
 Meteor.startup(async () => {})

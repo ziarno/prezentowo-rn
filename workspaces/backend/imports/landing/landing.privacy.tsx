@@ -289,7 +289,8 @@ const pl: LegalDoc = {
           <b>Konta, na które nikt się nie zalogował:</b> wpisanie adresu e-mail
           w aplikacji od razu zakłada dla niego konto, żeby dało się wysłać link
           do logowania. Jeśli nikt się na nie nie zaloguje, usuwamy je po 7
-          dniach.
+          dniach. Jeśli ktoś odpowie przy pierwszym logowaniu, że ma poniżej 13
+          lat, konto jest usuwane od razu.
         </li>
         <li>
           <b>Logi serwera i proxy:</b> 14 dni.
@@ -655,7 +656,9 @@ const en: LegalDoc = {
         <li>
           <b>Accounts nobody signed in to:</b> typing an email address into the
           app creates an account for it right away, so the sign-in link can be
-          sent. If nobody signs in with it, it is deleted after 7 days.
+          sent. If nobody signs in with it, it is deleted after 7 days. If
+          someone answers at first sign-in that they are under 13, the account
+          is deleted at once.
         </li>
         <li>
           <b>Server and proxy logs:</b> 14 days.

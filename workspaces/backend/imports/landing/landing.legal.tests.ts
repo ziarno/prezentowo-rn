@@ -237,6 +237,19 @@ describe('legal pages', function () {
       }
     })
 
+    it('says an unconfirmed account goes after 7 days, and at once on an under-13 answer', async function () {
+      for (const [lang, sevenDays, atOnce] of [
+        ['pl', /po 7 dniach/, /poniżej 13 lat.*od razu/],
+        ['en', /after 7 days/, /under 13.*at once/],
+      ] as const) {
+        const { html } = await get(`/privacy?lang=${lang}`)
+        const keeping = textBetween(html, /<h2[^>]*>7\./, /<h2[^>]*>8\./)
+
+        assert.match(keeping, sevenDays, `${lang} 7 days`)
+        assert.match(keeping, atOnce, `${lang} under 13`)
+      }
+    })
+
     it('does not give 16 as the minimum age anywhere', async function () {
       const minimum16 =
         /osoby od 16 lat|ukończyły 16 lat|aged 16 and over|be 16 or older|anyone under 16/

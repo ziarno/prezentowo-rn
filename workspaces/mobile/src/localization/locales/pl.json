@@ -88,7 +88,7 @@
   },
   "underAge": {
     "title": "Prezentowo jest dla osób od 13 lat",
-    "body": "Nie możesz jeszcze założyć konta, więc niczego nie zachowaliśmy: ani imienia, ani wieku, ani adresu e-mail. Wróć, gdy skończysz 13 lat.",
+    "body": "Nie możesz jeszcze założyć konta, więc go nie założyliśmy i nie zachowaliśmy Twojego wieku. Wróć, gdy skończysz 13 lat.",
     "back": "Wróć"
   },
   "avatarPicker": {

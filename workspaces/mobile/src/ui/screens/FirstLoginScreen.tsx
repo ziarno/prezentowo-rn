@@ -6,6 +6,7 @@ import { KeyboardAvoidingView, Platform, Pressable, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import * as Yup from 'yup'
 
+import { answerAgeQuestion } from '@/api/ageBand'
 import { uploadImage } from '@/api/images'
 import { setAgeBand, updateUser } from '@/api/users'
 import { Text } from '@/components/ui/text'
@@ -31,6 +32,23 @@ const AGE_LABEL_KEYS: Record<AgeAnswer, string> = {
   '16+': 'firstLogin.age16plus',
 }
 
+// The heading: the name-and-photo copy for a new account, the age-only copy
+// for an account from before the age question, which already has a name.
+const HEADINGS = {
+  nameAndPhoto: {
+    eyebrow: 'firstLogin.eyebrow',
+    titleLine1: 'firstLogin.titleLine1',
+    titleLine2: 'firstLogin.titleLine2',
+    subtitle: 'firstLogin.subtitle',
+  },
+  ageOnly: {
+    eyebrow: 'firstLogin.ageEyebrow',
+    titleLine1: 'firstLogin.ageTitleLine1',
+    titleLine2: 'firstLogin.ageTitleLine2',
+    subtitle: 'firstLogin.ageSubtitle',
+  },
+} as const
+
 export function FirstLoginScreen() {
   const [selected, setSelected] = useState<AvatarKey>('f1')
   // A photo's local uri: it previews here and uploads on Continue.
@@ -39,13 +57,16 @@ export function FirstLoginScreen() {
   const photoPrompt = usePhotoPrompt(setLocalPhoto, { square: true })
   const { t } = useTranslation()
   const setUnderAge = useAuthStore(s => s.setUnderAge)
-  // What this person still has to give, fixed when the screen opens: a new
-  // account has neither, an account from before the age question has a name
-  // and is asked the age once (docs/spec.md §1.15). Saving one field must not
-  // make the screen drop it mid-submit.
+  // What this person still has to give: a new account has neither, an account
+  // from before the age question has a name and is asked the age once
+  // (docs/spec.md §1.15). The name is fixed when the screen opens, so saving
+  // it can't make the screen drop it mid-submit; the age follows the user
+  // document, so a band that is already stored (an earlier try got that far)
+  // is never asked for again.
   const user = useCurrentUser()
   const [needsName] = useState(() => !user?.profile?.name?.trim())
-  const [needsAge] = useState(() => !user?.ageBand)
+  const needsAge = !user?.ageBand
+  const heading = HEADINGS[needsName ? 'nameAndPhoto' : 'ageOnly']
 
   const validationSchema = Yup.object({
     name: needsName
@@ -77,22 +98,21 @@ export function FirstLoginScreen() {
     // The stock avatar is saved with a photo too, as its fallback
     // (docs/spec.md §1.10).
     onSubmit: async (formValues, { setSubmitting, setFieldError }) => {
+      let failedField: 'name' | 'age' = 'age'
       try {
         if (needsAge) {
-          const answer = formValues.age as AgeAnswer
           // Under 13, nothing is saved: not even the name typed above. The
           // server deletes the account, and the stop message takes over
           // before the document going away can move the guards.
-          if (answer === 'under-13') setUnderAge(true)
-          try {
-            await setAgeBand(answer)
-          } catch (err) {
-            setUnderAge(false)
-            throw err
-          }
-          if (answer === 'under-13') return
+          const outcome = await answerAgeQuestion(
+            formValues.age as AgeAnswer,
+            setAgeBand,
+            setUnderAge,
+          )
+          if (outcome === 'stopped') return
         }
         if (!needsName) return
+        failedField = 'name'
         const photo = localPhoto
           ? (await uploadImage(localPhoto)).id
           : undefined
@@ -103,7 +123,7 @@ export function FirstLoginScreen() {
         })
       } catch (err) {
         setFieldError(
-          needsName ? 'name' : 'age',
+          failedField,
           errorMessage(err, t('common.somethingWentWrong')),
         )
       } finally {
@@ -128,105 +148,53 @@ export function FirstLoginScreen() {
 
           <View className="pt-1.5">
             <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-              {t(needsName ? 'firstLogin.eyebrow' : 'firstLogin.ageEyebrow')}
+              {t(heading.eyebrow)}
             </Text>
             <Text className="mt-2 font-garland-display text-[34px] leading-[35px] text-garland-ink">
-              {t(
-                needsName
-                  ? 'firstLogin.titleLine1'
-                  : 'firstLogin.ageTitleLine1',
-              )}
+              {t(heading.titleLine1)}
               {'\n'}
-              {t(
-                needsName
-                  ? 'firstLogin.titleLine2'
-                  : 'firstLogin.ageTitleLine2',
-              )}
+              {t(heading.titleLine2)}
             </Text>
             <Text className="mt-2.5 text-sm leading-[21px] text-garland-ink-60">
-              {t(needsName ? 'firstLogin.subtitle' : 'firstLogin.ageSubtitle')}
+              {t(heading.subtitle)}
             </Text>
           </View>
 
           {needsName ? (
-            <View className="mt-6">
-              <AuthField
-                label={t('firstLogin.nameLabel')}
-                placeholder={t('firstLogin.namePlaceholder')}
-                value={values.name}
-                onChangeText={handleChange('name')}
-                onBlur={handleBlur('name')}
-                autoCapitalize="words"
-                textContentType="name"
-                errorMessage={
-                  touched.name && errors.name ? errors.name : undefined
-                }
-              />
-            </View>
-          ) : null}
-
-          {needsName ? (
-            <View className="mt-6">
-              <Text className="mb-3 text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-                {t('firstLogin.profilePicture')}
-              </Text>
-              <View className="flex-row items-center gap-3.5">
-                <Pressable
-                  onPress={() => avatarPickerRef.current?.present()}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('avatarPicker.title')}
-                  style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-                >
-                  <Avatar
-                    source={localPhoto ? { uri: localPhoto } : avatar(selected)}
-                    size={72}
-                  />
-                </Pressable>
-                <PhotoUploadTile onPress={photoPrompt.prompt} size={72} />
-                <Text className="flex-1 text-xs leading-[18px] text-garland-ink-40">
-                  <Trans
-                    i18nKey="firstLogin.uploadHint"
-                    components={[
-                      <Text
-                        key="plus"
-                        className="font-bold text-garland-ink"
-                      />,
-                    ]}
-                  />
-                </Text>
+            <>
+              <View className="mt-6">
+                <AuthField
+                  label={t('firstLogin.nameLabel')}
+                  placeholder={t('firstLogin.namePlaceholder')}
+                  value={values.name}
+                  onChangeText={handleChange('name')}
+                  onBlur={handleBlur('name')}
+                  autoCapitalize="words"
+                  textContentType="name"
+                  errorMessage={
+                    touched.name && errors.name ? errors.name : undefined
+                  }
+                />
               </View>
-              {photoPrompt.error ? (
-                <Text className="mt-2 text-xs text-garland-berry">
-                  {t(`photoPicker.errors.${photoPrompt.error}`)}
-                </Text>
-              ) : null}
-            </View>
+              <ProfilePictureField
+                avatarKey={selected}
+                localPhoto={localPhoto}
+                onAvatarPress={() => avatarPickerRef.current?.present()}
+                onPhotoPress={photoPrompt.prompt}
+                error={photoPrompt.error}
+              />
+            </>
           ) : null}
 
           {needsAge ? (
-            <View className="mt-6 gap-2">
-              <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-                {t('firstLogin.ageLabel')}
-              </Text>
-              <SelectHorizontal
-                options={AGE_ANSWERS.map(value => ({
-                  value,
-                  label: t(AGE_LABEL_KEYS[value]),
-                }))}
-                value={(values.age as AgeAnswer) || null}
-                onChange={value => {
-                  void setFieldValue('age', value)
-                  void setFieldTouched('age', true, false)
-                }}
-              />
-              {touched.age && errors.age ? (
-                <Text className="text-xs text-garland-berry">{errors.age}</Text>
-              ) : (
-                <Text className="text-[11px] text-garland-ink-40">
-                  {t('firstLogin.ageHint')}
-                </Text>
-              )}
-            </View>
+            <AgeField
+              value={(values.age as AgeAnswer) || null}
+              error={touched.age ? errors.age : undefined}
+              onChange={value => {
+                void setFieldValue('age', value)
+                void setFieldTouched('age', true, false)
+              }}
+            />
           ) : null}
 
           <View className="flex-1" />
@@ -253,5 +221,92 @@ export function FirstLoginScreen() {
         }}
       />
     </SafeAreaView>
+  )
+}
+
+// The picture row: the stock avatar (tap to choose another), the upload tile
+// and a hint, with the photo picker's error under it.
+function ProfilePictureField({
+  avatarKey,
+  localPhoto,
+  onAvatarPress,
+  onPhotoPress,
+  error,
+}: {
+  avatarKey: AvatarKey
+  localPhoto: string | undefined
+  onAvatarPress: () => void
+  onPhotoPress: () => void
+  error: string | undefined | null
+}) {
+  const { t } = useTranslation()
+  return (
+    <View className="mt-6">
+      <Text className="mb-3 text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
+        {t('firstLogin.profilePicture')}
+      </Text>
+      <View className="flex-row items-center gap-3.5">
+        <Pressable
+          onPress={onAvatarPress}
+          accessibilityRole="button"
+          accessibilityLabel={t('avatarPicker.title')}
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+        >
+          <Avatar
+            source={localPhoto ? { uri: localPhoto } : avatar(avatarKey)}
+            size={72}
+          />
+        </Pressable>
+        <PhotoUploadTile onPress={onPhotoPress} size={72} />
+        <Text className="flex-1 text-xs leading-[18px] text-garland-ink-40">
+          <Trans
+            i18nKey="firstLogin.uploadHint"
+            components={[
+              <Text key="plus" className="font-bold text-garland-ink" />,
+            ]}
+          />
+        </Text>
+      </View>
+      {error ? (
+        <Text className="mt-2 text-xs text-garland-berry">
+          {t(`photoPicker.errors.${error}`)}
+        </Text>
+      ) : null}
+    </View>
+  )
+}
+
+// The age question: a select with nothing picked until the person picks.
+function AgeField({
+  value,
+  error,
+  onChange,
+}: {
+  value: AgeAnswer | null
+  error: string | undefined
+  onChange: (value: AgeAnswer) => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <View className="mt-6 gap-2">
+      <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
+        {t('firstLogin.ageLabel')}
+      </Text>
+      <SelectHorizontal
+        options={AGE_ANSWERS.map(answer => ({
+          value: answer,
+          label: t(AGE_LABEL_KEYS[answer]),
+        }))}
+        value={value}
+        onChange={onChange}
+      />
+      {error ? (
+        <Text className="text-xs text-garland-berry">{error}</Text>
+      ) : (
+        <Text className="text-[11px] text-garland-ink-40">
+          {t('firstLogin.ageHint')}
+        </Text>
+      )}
+    </View>
   )
 }

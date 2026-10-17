@@ -53,3 +53,16 @@ export async function mayHavePush(userId: string) {
     await Meteor.users.findOneAsync(userId, { fields: { ageBand: 1 } }),
   )
 }
+
+/**
+ * Removes the devices of every account that may not have push, from the
+ * table and from Stream: the accounts from before the age question, which
+ * kept theirs until they answered (docs/spec.md §10.5). Idempotent. Mobile
+ * registers again once the person answers 16+.
+ */
+export async function removePushOfUnder16() {
+  const held = await PushTokens.find({}, { fields: { userId: 1 } }).fetchAsync()
+  for (const userId of new Set(held.map(token => token.userId))) {
+    if (!(await mayHavePush(userId))) await removePushTokensOf(userId)
+  }
+}

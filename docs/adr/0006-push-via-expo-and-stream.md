@@ -14,3 +14,4 @@ Supersedes [ADR 0003](0003-no-push-notifications.md). Prezentowo pushes. With a 
 - A push only ever mirrors an inbox notification, so the claim-quietly rule needs no extra guard. `invite-deferred` is never pushed.
 - Retiring a chat thread mutes push for every member who loses access, before the freeze, and the freeze is retried. A retired thread keeps its members, so a failed freeze would otherwise leak pushes.
 - The app-icon badge counts the inbox only. Stream's push template must not set it.
+- Push is 16+ only: it is the one processing that rests on consent, which under 16 would need a parent (GDPR Art. 8; Poland's age is 16). A user who isn't in the 16+ age band has no `PushTokens` doc and no Stream device, and is sent nothing by either route. See docs/spec.md §10.5.

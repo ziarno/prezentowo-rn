@@ -25,14 +25,24 @@ export type AgeBand = (typeof AGE_BANDS)[number]
 export const AGE_ANSWERS = ['under-13', ...AGE_BANDS] as const
 export type AgeAnswer = (typeof AGE_ANSWERS)[number]
 
+// The one spelling of each answer, for code that names one.
+export const UNDER_13 = 'under-13' satisfies AgeAnswer
+export const THIRTEEN_TO_FIFTEEN = '13-15' satisfies AgeBand
+export const SIXTEEN_PLUS = '16+' satisfies AgeBand
+
 // `users.setAgeBand`: the answer to the first-login age question.
 export type SetAgeBandArgs = { answer: AgeAnswer }
+
+// What `users.setAgeBand` did: `deleted` is true only when the account went
+// (an under-13 answer to a question still open). An account that already
+// has a band is left alone and answers `deleted: false`.
+export type SetAgeBandResult = { deleted: boolean }
 
 // Whether a user document is in the 16+ band. Both the 13-15 band and "no
 // band yet" are false, so a feature that is only for 16+ (push, being found
 // by search) stays off until the person has answered.
 export function isSixteenPlus(user: { ageBand?: AgeBand } | null | undefined) {
-  return user?.ageBand === '16+'
+  return user?.ageBand === SIXTEEN_PLUS
 }
 
 // `users.deleteAccount` (docs/spec.md §1.12): the account's own email,

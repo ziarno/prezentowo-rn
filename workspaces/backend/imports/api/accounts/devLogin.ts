@@ -1,3 +1,4 @@
+import { SIXTEEN_PLUS } from '@prezentowo/types'
 import { Accounts } from 'meteor/accounts-base'
 import { Meteor } from 'meteor/meteor'
 
@@ -8,7 +9,6 @@ import '../users/users.nameTokens'
 // ever registered in development; see registerDevLogin.
 export const DEV_LOGIN_EMAIL = 'dev@prezentowo.local'
 export const DEV_LOGIN_NAME = 'Dev'
-const DEV_LOGIN_AGE_BAND = '16+'
 
 type DevLoginOptions = { devLogin?: unknown }
 
@@ -18,7 +18,7 @@ async function findOrCreateDevUser() {
     // A dev user from before the age question gets its band now.
     if (!existing.ageBand) {
       await Meteor.users.updateAsync(existing._id, {
-        $set: { ageBand: DEV_LOGIN_AGE_BAND },
+        $set: { ageBand: SIXTEEN_PLUS },
       })
     }
     return existing._id
@@ -30,7 +30,7 @@ async function findOrCreateDevUser() {
     profile: { name: DEV_LOGIN_NAME },
   })
   await Meteor.users.updateAsync(userId, {
-    $set: { ageBand: DEV_LOGIN_AGE_BAND },
+    $set: { ageBand: SIXTEEN_PLUS },
   })
   return userId
 }
