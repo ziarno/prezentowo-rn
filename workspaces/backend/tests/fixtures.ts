@@ -1,5 +1,6 @@
-import type { EventDoc, EventParticipant } from '@prezentowo/types'
+import type { AgeBand, EventDoc, EventParticipant } from '@prezentowo/types'
 import { Accounts } from 'meteor/accounts-base'
+import { Meteor } from 'meteor/meteor'
 import { Random } from 'meteor/random'
 
 import { syncChatThreads } from '../imports/api/chat/chat.sync'
@@ -10,11 +11,13 @@ import '../imports/api/gifts/gifts.methods'
 import '../imports/api/users/users.nameTokens'
 import { callAsUser } from './helpers'
 
-export async function createUser(name: string) {
-  return Accounts.createUserAsync({
+export async function createUser(name: string, ageBand?: AgeBand) {
+  const userId = await Accounts.createUserAsync({
     email: `${name.toLowerCase()}@example.com`,
     profile: { name },
   })
+  if (ageBand) await Meteor.users.updateAsync(userId, { $set: { ageBand } })
+  return userId
 }
 
 /**

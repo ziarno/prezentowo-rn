@@ -14,7 +14,7 @@ const MAX_RESULTS = 10
 // Longer than any name; bounds how many regexes one call can ask for.
 const MAX_QUERY_LENGTH = 100
 
-// `4d`'s people search: anyone with a name whose words start with every word
+// `4d`'s people search: any 16+ user with a name whose words start with every word
 // of the query, found by name and returned by name and avatar only — never
 // an email. Online-only; the client never queues or caches it.
 const searchUsers = async function (
@@ -38,6 +38,8 @@ const searchUsers = async function (
   // Anchored, so each one can use the `nameTokens` index.
   const selector = {
     _id: { $ne: this.userId },
+    // 13–15 and users who have not answered yet are never found (§1.15).
+    ageBand: '16+',
     'profile.name': { $type: 'string', $ne: '' },
     $and: tokens.map(token => ({
       nameTokens: { $regex: `^${escapeRegExp(token)}` },

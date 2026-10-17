@@ -54,11 +54,28 @@ describe('nameTokens', function () {
     assert.deepStrictEqual(await tokensOf(userId), ['goska', 'kakol'])
   })
 
-  it('has a multikey index', async function () {
+  it('has a multikey index led by the age band the search filters on', async function () {
     await createUserIndexes()
 
     const indexes = await Meteor.users.rawCollection().indexes()
-    assert.ok(indexes.some(i => i.key.nameTokens === 1))
+    assert.ok(
+      indexes.some(
+        i =>
+          Object.keys(i.key).join() === 'ageBand,nameTokens' &&
+          i.key.ageBand === 1 &&
+          i.key.nameTokens === 1,
+      ),
+    )
+  })
+
+  it('drops the earlier index on nameTokens alone', async function () {
+    const users = Meteor.users.rawCollection()
+    await users.createIndex({ nameTokens: 1 })
+
+    await createUserIndexes()
+
+    const indexes = await users.indexes()
+    assert.ok(!indexes.some(i => Object.keys(i.key).join() === 'nameTokens'))
   })
 
   it('is never published with a profile', async function () {
@@ -87,13 +104,16 @@ describe('users.search', function () {
   const search = (query: string, as: string | null = caller) =>
     callAsUser<UserSearchResult[]>(as, 'users.search', { query })
 
+  // Only 16+ users are searchable (§1.15, §2.2).
+  const createAdult = (name: string) => createUser(name, '16+')
+
   const namesFor = async (query: string) =>
     (await search(query)).map(r => r.name)
 
   it('matches the start of any word of a name, ignoring case and diacritics', async function () {
-    await createUser('Łukasz Żółć')
-    await createUser('Anna-Maria Kowalska')
-    await createUser('Bartek')
+    await createAdult('Łukasz Żółć')
+    await createAdult('Anna-Maria Kowalska')
+    await createAdult('Bartek')
 
     assert.deepStrictEqual(await namesFor('łuk'), ['Łukasz Żółć'])
     assert.deepStrictEqual(await namesFor('LUK'), ['Łukasz Żółć'])
@@ -104,8 +124,8 @@ describe('users.search', function () {
   })
 
   it('needs every query word to match', async function () {
-    await createUser('Anna Kowalska')
-    await createUser('Anna Nowak')
+    await createAdult('Anna Kowalska')
+    await createAdult('Anna Nowak')
 
     assert.deepStrictEqual(await namesFor('anna kow'), ['Anna Kowalska'])
     assert.deepStrictEqual(await namesFor('ann now'), ['Anna Nowak'])
@@ -113,7 +133,7 @@ describe('users.search', function () {
   })
 
   it('searches nothing under 3 folded characters', async function () {
-    await createUser('Al Bo')
+    await createAdult('Al Bo')
 
     assert.deepStrictEqual(await namesFor('Ł'), [])
     assert.deepStrictEqual(await namesFor('al'), [])
@@ -122,14 +142,14 @@ describe('users.search', function () {
   })
 
   it('treats regex characters literally', async function () {
-    await createUser('Abcd')
+    await createAdult('Abcd')
 
     assert.deepStrictEqual(await namesFor('a.c'), [])
     assert.deepStrictEqual(await namesFor('ab.*'), [])
   })
 
   it('leaves out the caller and users without a name', async function () {
-    await createUser('Callum')
+    await createAdult('Callum')
     const nameless = await Accounts.createUserAsync({
       email: 'nameless@example.com',
     })
@@ -145,7 +165,7 @@ describe('users.search', function () {
     const ids: Record<string, string> = {}
     for (const n of [12, 3, 7, 1, 10, 5, 11, 2, 9, 4, 8, 6]) {
       const name = `Zosia ${String(n).padStart(2, '0')}`
-      ids[name] = await createUser(name)
+      ids[name] = await createAdult(name)
     }
     await Meteor.users.updateAsync(ids['Zosia 01']!, {
       $set: { 'profile.avatar': 'f2', 'profile.photo': 'photo-id' },
@@ -170,6 +190,14 @@ describe('users.search', function () {
       userId: ids['Zosia 02'],
       name: 'Zosia 02',
     })
+  })
+
+  it('never returns a 13–15 user or one who has not answered the age question', async function () {
+    await createAdult('Mira Adult')
+    await createUser('Mira Teen', '13-15')
+    await createUser('Mira Unanswered')
+
+    assert.deepStrictEqual(await namesFor('mira'), ['Mira Adult'])
   })
 
   it('requires a signed-in caller', async function () {
