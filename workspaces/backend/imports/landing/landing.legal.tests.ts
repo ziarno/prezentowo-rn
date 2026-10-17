@@ -23,6 +23,16 @@ async function get(path: string, headers: Record<string, string> = {}) {
 const headings = (html: string) =>
   [...html.matchAll(/<h2[^>]*>([^<]*)<\/h2>/g)].map(([, text]) => text)
 
+// The page's text between two markers, tags stripped.
+const textBetween = (html: string, from: RegExp, to: RegExp) => {
+  const start = html.search(from)
+  const rest = html.slice(start)
+  return rest
+    .slice(0, rest.search(to))
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+}
+
 // The links in the page's footer.
 const footer = (html: string) =>
   [
@@ -157,6 +167,90 @@ describe('legal pages', function () {
       }
     })
 
+    it('opens with a short summary for young readers, above the sections', async function () {
+      const summary = async (lang: string) =>
+        textBetween(
+          (await get(`/privacy?lang=${lang}`)).html,
+          /<aside[^>]*class="[^"]*summary/,
+          /<h2/,
+        )
+
+      const pl = await summary('pl')
+      assert.match(pl, /od 13 lat/)
+      assert.match(pl, /poniżej 16 lat/)
+      assert.match(pl, /push/)
+      assert.match(pl, /po imieniu/)
+      assert.match(pl, /rodzic lub opiekun/)
+
+      const en = await summary('en')
+      assert.match(en, /13 or older/)
+      assert.match(en, /under 16/i)
+      assert.match(en, /push/)
+      assert.match(en, /by name/)
+      assert.match(en, /parent or guardian/)
+    })
+
+    it('says accounts start at 13, and what changes under 16, in the children section', async function () {
+      const section = async (lang: string) =>
+        textBetween(
+          (await get(`/privacy?lang=${lang}`)).html,
+          /<h2[^>]*>10\./,
+          /<h2[^>]*>11\./,
+        )
+
+      const pl = await section('pl')
+      assert.match(pl, /od 13 lat/)
+      assert.match(pl, /poniżej 13 lat nie zakładamy konta/)
+      assert.match(pl, /usuwamy/)
+      assert.match(pl, /nie dostają powiadomień push/)
+      assert.match(pl, /nie mogą ich znaleźć po imieniu/)
+      assert.match(pl, /nie zapisujemy daty urodzenia|nie zapisujemy jej/)
+
+      const en = await section('en')
+      assert.match(en, /aged 13 and over/)
+      assert.match(en, /under 13 we don’t make an account/)
+      assert.match(en, /delete/)
+      assert.match(en, /get no push notifications/)
+      assert.match(en, /can’t find them by name/)
+      assert.match(en, /never store a birth date|don’t store a birth date/)
+    })
+
+    it('says only people from 16 can be found by name, and get push', async function () {
+      for (const [lang, search, push] of [
+        [
+          'pl',
+          /(?:od|co najmniej) 16 lat.*po imieniu|po imieniu.*(?:od|co najmniej) 16 lat/,
+          /(?:od|co najmniej) 16 lat.*push/,
+        ],
+        [
+          'en',
+          /16 or older.*by name|by name.*16 or older/,
+          /16 or older.*push/,
+        ],
+      ] as const) {
+        const { html } = await get(`/privacy?lang=${lang}`)
+        const body = textBetween(html, /<h2[^>]*>2\./, /<h2[^>]*>3\./)
+        const who = textBetween(html, /<h2[^>]*>4\./, /<h2[^>]*>5\./)
+
+        assert.match(who, search, `${lang} section 4`)
+        assert.match(body, push, `${lang} section 2`)
+      }
+    })
+
+    it('does not give 16 as the minimum age anywhere', async function () {
+      const minimum16 =
+        /osoby od 16 lat|ukończyły 16 lat|aged 16 and over|be 16 or older|anyone under 16/
+      for (const path of ['/privacy', '/terms']) {
+        for (const lang of ['pl', 'en']) {
+          assert.doesNotMatch(
+            (await get(`${path}?lang=${lang}`)).html,
+            minimum16,
+            `${path} ${lang}`,
+          )
+        }
+      }
+    })
+
     it('lists what stays after deletion, as the deletion confirm does', async function () {
       const { html } = await get('/privacy?lang=en')
 
@@ -178,6 +272,25 @@ describe('legal pages', function () {
         '8. Governing law',
       ])
       assert.strictEqual(headings((await get('/terms?lang=pl')).html).length, 8)
+    })
+
+    it('say you must be 13 to have an account, and ask under-18s to check with a parent, in both languages', async function () {
+      const section = async (lang: string) =>
+        textBetween(
+          (await get(`/terms?lang=${lang}`)).html,
+          /<h2[^>]*>2\./,
+          /<h2[^>]*>3\./,
+        )
+
+      const pl = await section('pl')
+      assert.match(pl, /ukończyły 13 lat/)
+      assert.match(pl, /poniżej 18 lat/)
+      assert.match(pl, /rodzic lub opiekun/)
+
+      const en = await section('en')
+      assert.match(en, /13 or older/)
+      assert.match(en, /under 18/)
+      assert.match(en, /parent or guardian/)
     })
   })
 })

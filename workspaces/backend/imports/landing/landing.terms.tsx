@@ -29,8 +29,9 @@ const pl: LegalDoc = {
 
       <h2>2. Kto może korzystać</h2>
       <p>
-        Konto mogą mieć osoby, które ukończyły 16 lat. Na jeden adres e-mail
-        przypada jedno konto.
+        Konto mogą mieć osoby, które ukończyły 13 lat. Jeśli masz poniżej 18
+        lat, upewnij się, że rodzic lub opiekun nie ma nic przeciwko Twojemu
+        korzystaniu z Prezentowo. Na jeden adres e-mail przypada jedno konto.
       </p>
 
       <h2>3. Zasady korzystania</h2>
@@ -114,8 +115,9 @@ const en: LegalDoc = {
 
       <h2>2. Who can use it</h2>
       <p>
-        You must be 16 or older to have an account. There is one account per
-        email address.
+        You must be 13 or older to have an account. If you are under 18, make
+        sure a parent or guardian is fine with you using Prezentowo. There is
+        one account per email address.
       </p>
 
       <h2>3. Acceptable use</h2>

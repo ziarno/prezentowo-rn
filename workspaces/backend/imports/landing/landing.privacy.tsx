@@ -24,6 +24,36 @@ const pl: LegalDoc = {
         robi z Twoimi danymi osobowymi.
       </p>
 
+      <aside className="note summary">
+        <p>
+          <b>W skrócie, prostymi słowami</b>
+        </p>
+        <ul>
+          <li>
+            Konto możesz mieć od 13 lat. Nie pytamy o datę urodzenia, tylko czy
+            masz 13–15 lat, czy co najmniej 16.
+          </li>
+          <li>
+            Trzymamy Twój adres e-mail, imię, awatar albo zdjęcie i to, co
+            dodajesz w wydarzeniach. Nie mamy reklam ani śledzenia i niczego nie
+            sprzedajemy.
+          </li>
+          <li>
+            Masz poniżej 16 lat? Nie wysyłamy Ci powiadomień push, a osoby,
+            które Cię nie znają, nie znajdą Cię po imieniu. Ktoś znajomy nadal
+            może dodać Cię do wydarzenia albo wysłać Ci link z zaproszeniem.
+          </li>
+          <li>
+            Masz mniej niż 18 lat? Upewnij się, że rodzic lub opiekun wie, że
+            korzystasz z Prezentowo, i się na to zgadza.
+          </li>
+          <li>
+            Konto usuniesz sam w aplikacji (Profil → Usuń konto). Możesz też
+            napisać na <Contact />.
+          </li>
+        </ul>
+      </aside>
+
       <h2>1. Kim jesteśmy</h2>
       <p>
         Administratorem Twoich danych osobowych jest Filip Jarno, który prowadzi
@@ -46,13 +76,16 @@ const pl: LegalDoc = {
               <td>Twoje konto</td>
               <td>
                 Adres e-mail, imię, wybrany awatar albo Twoje własne zdjęcie,
-                kopia imienia przygotowana do wyszukiwania oraz tokeny
-                logowania.
+                przedział wieku (13–15 lat albo co najmniej 16, bez daty
+                urodzenia), kopia imienia przygotowana do wyszukiwania oraz
+                tokeny logowania.
               </td>
               <td>
                 Żeby logować Cię linkiem z e-maila i pokazywać Cię osobom w
-                Twoich wydarzeniach. Kopia do wyszukiwania pozwala innym znaleźć
-                Cię po imieniu (pkt 4). Umowa.
+                Twoich wydarzeniach. Przedział wieku decyduje, czy dostajesz
+                powiadomienia push i czy możesz być wyszukany (pkt 10). Kopia do
+                wyszukiwania pozwala innym znaleźć Cię po imieniu, jeśli masz co
+                najmniej 16 lat (pkt 4). Umowa.
               </td>
             </tr>
             <tr>
@@ -66,7 +99,10 @@ const pl: LegalDoc = {
               <td>To jest sama usługa. Umowa.</td>
             </tr>
             <tr>
-              <td>Twoje urządzenia, jeśli włączysz powiadomienia push</td>
+              <td>
+                Twoje urządzenia, jeśli masz co najmniej 16 lat i włączysz
+                powiadomienia push
+              </td>
               <td>
                 Tokeny push od Expo i od systemu telefonu, platforma (iOS albo
                 Android), język aplikacji i Twoje ustawienia powiadomień.
@@ -116,7 +152,8 @@ const pl: LegalDoc = {
         powiadomienia push opierają się na Twojej zgodzie (lit. a). Wyrażasz ją
         w okienku aplikacji i w uprawnieniach telefonu, a wycofujesz w każdej
         chwili przełącznikami „Powiadomienia push” w aplikacji albo w
-        ustawieniach telefonu.
+        ustawieniach telefonu. Osoby poniżej 16 lat nie mogą jej wyrazić
+        samodzielnie, więc nie dostają powiadomień push (pkt 10).
       </p>
 
       <h2>3. Osoby, które nie korzystają z aplikacji</h2>
@@ -149,9 +186,10 @@ const pl: LegalDoc = {
           uczestników.
         </li>
         <li>
-          <b>Zalogowani użytkownicy mogą znaleźć Cię po imieniu</b> i zobaczyć
-          Twój awatar i zdjęcie, ale nigdy Twój adres e-mail. Na razie nie da
-          się wyłączyć tego wyszukiwania.
+          <b>Zalogowani użytkownicy mogą znaleźć Cię po imieniu</b>, jeśli masz
+          co najmniej 16 lat, i zobaczyć Twój awatar i zdjęcie, ale nigdy Twój
+          adres e-mail. Osób w wieku 13–15 lat nie da się w ten sposób znaleźć.
+          Na razie nie da się wyłączyć tego wyszukiwania.
         </li>
         <li>
           <b>Linki do zdjęć</b> są długie i losowe, więc nie da się ich
@@ -315,9 +353,19 @@ const pl: LegalDoc = {
 
       <h2>10. Dzieci</h2>
       <p>
-        Konto mogą mieć osoby od 16 lat. Dzieci biorą udział w wydarzeniach jako
-        osoby dodane po imieniu (pkt 3). Nie prowadzimy świadomie konta osoby
-        poniżej 16 lat, a gdy się o takim dowiemy, usuwamy je.
+        Konto mogą mieć osoby od 13 lat. Przy pierwszym logowaniu pytamy, czy
+        masz mniej niż 13 lat, 13–15 lat, czy co najmniej 16. Nie pytamy o datę
+        urodzenia i nie zapisujemy daty urodzenia, tylko wybrany przedział
+        wieku, który widzisz tylko Ty. Osobom poniżej 13 lat nie zakładamy
+        konta, a gdy dowiemy się o takim koncie, usuwamy je.
+      </p>
+      <p>
+        Użytkownicy w wieku 13–15 lat nie dostają powiadomień push (zgodę na nie
+        musiałby wyrazić rodzic, art. 8 RODO) i inni użytkownicy nie mogą ich
+        znaleźć po imieniu. Kto jeszcze nie odpowiedział na pytanie o wiek, też
+        nie jest wyszukiwany. Powiadomienia w aplikacji działają u wszystkich
+        tak samo. Dzieci biorą udział w wydarzeniach także jako osoby dodane po
+        imieniu (pkt 3).
       </p>
 
       <h2>11. Czego nie robimy</h2>
@@ -354,6 +402,35 @@ const en: LegalDoc = {
         does with your personal data.
       </p>
 
+      <aside className="note summary">
+        <p>
+          <b>In short, in plain words</b>
+        </p>
+        <ul>
+          <li>
+            You can have an account if you are 13 or older. We don’t ask for
+            your birth date, only whether you are 13–15 or 16 and over.
+          </li>
+          <li>
+            We keep your email address, name, avatar or photo, and what you add
+            in events. There are no ads or tracking, and we never sell anything.
+          </li>
+          <li>
+            Under 16? We don’t send you push notifications, and people who don’t
+            know you can’t find you by name. Someone who knows you can still add
+            you to an event or send you an invite link.
+          </li>
+          <li>
+            Under 18? Make sure a parent or guardian knows you use Prezentowo
+            and is fine with it.
+          </li>
+          <li>
+            You can delete your account yourself in the app (Profile → Delete
+            account), or write to <Contact />.
+          </li>
+        </ul>
+      </aside>
+
       <h2>1. Who we are</h2>
       <p>
         Prezentowo is run by Filip Jarno, who is the controller of your personal
@@ -375,12 +452,15 @@ const en: LegalDoc = {
               <td>Your account</td>
               <td>
                 Your email address, your name, a stock avatar or your own photo,
-                a copy of your name prepared for search, and sign-in tokens.
+                an age band (13–15 or 16 and over, never a birth date), a copy
+                of your name prepared for search, and sign-in tokens.
               </td>
               <td>
                 To sign you in with an emailed link and show you to the people
-                in your events. The search copy lets others find you by name
-                (section 4). Contract.
+                in your events. The age band decides whether you get push
+                notifications and whether you can be found by name (section 10).
+                The search copy lets others find you by name if you are 16 or
+                older (section 4). Contract.
               </td>
             </tr>
             <tr>
@@ -394,7 +474,10 @@ const en: LegalDoc = {
               <td>This is the service itself. Contract.</td>
             </tr>
             <tr>
-              <td>Your devices, if you turn on push notifications</td>
+              <td>
+                Your devices, if you are 16 or older and turn on push
+                notifications
+              </td>
               <td>
                 Push tokens from Expo and from your phone’s system, your
                 platform (iOS or Android), the app’s language, and your push
@@ -439,7 +522,8 @@ const en: LegalDoc = {
         f). Only push notifications rest on your consent (point a). You give it
         through the app’s prompt and your phone’s permission, and you can
         withdraw it at any time with the Push notifications switches in the app
-        or in your phone’s settings.
+        or in your phone’s settings. People under 16 can’t give it on their own,
+        so they get no push notifications (section 10).
       </p>
 
       <h2>3. People who aren’t users</h2>
@@ -471,8 +555,9 @@ const en: LegalDoc = {
           photos.
         </li>
         <li>
-          <b>Signed-in users can find you by name</b> and see your avatar and
-          photo, but never your email address. For now there’s no way to opt out
+          <b>Signed-in users can find you by name</b> if you are 16 or older,
+          and see your avatar and photo, but never your email address. People
+          aged 13–15 can’t be found this way. For now there’s no way to opt out
           of search.
         </li>
         <li>
@@ -633,9 +718,18 @@ const en: LegalDoc = {
 
       <h2>10. Children</h2>
       <p>
-        Accounts are for people aged 16 and over. Children take part in events
-        as people added by name (section 3). We don’t knowingly hold an account
-        of anyone under 16, and we delete one when we learn of it.
+        Accounts are for people aged 13 and over. At first sign-in we ask
+        whether you are under 13, 13–15, or 16 and over. We don’t ask for a
+        birth date and never store a birth date, only the band you pick, which
+        only you can see. For anyone under 13 we don’t make an account, and we
+        delete one when we learn of it.
+      </p>
+      <p>
+        Users aged 13–15 get no push notifications (a parent would have to give
+        that consent, GDPR Art. 8), and other users can’t find them by name.
+        Anyone who hasn’t answered the age question yet can’t be found either.
+        In-app notifications work the same for everyone. Children also take part
+        in events as people added by name (section 3).
       </p>
 
       <h2>11. What we don’t do</h2>
