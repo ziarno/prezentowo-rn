@@ -133,3 +133,22 @@ export function claimCountForRemoval(
   const count = gift.claimedBy?.length ?? 0
   return count > 0 ? count : null
 }
+
+// The event's people in the drawer's order (`3d`/`3d2`): the viewer first,
+// then the beneficiary, then everyone else as the event lists them. Each
+// has a present list to open, bar in a many-to-one event (`3d2`), where only
+// the beneficiary does.
+export function peopleInOrder<P extends { id: string; isYou: boolean }>(
+  event: EventDoc,
+  participants: P[],
+): (P & { hasList: boolean })[] {
+  const beneficiaryId =
+    event.type === 'many-to-one' ? event.beneficiaryParticipantId : undefined
+  return participants
+    .map(p => ({ ...p, hasList: !beneficiaryId || p.id === beneficiaryId }))
+    .sort(
+      (a, b) =>
+        Number(b.isYou) - Number(a.isYou) ||
+        Number(b.id === beneficiaryId) - Number(a.id === beneficiaryId),
+    )
+}

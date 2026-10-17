@@ -5,8 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-import { beneficiaryIdOf } from '@/api/events'
-import { presentCounts } from '@/api/presentLists'
+import { peopleInOrder, presentCounts } from '@/api/presentLists'
 import { BackIcon, BellIcon, ChatIcon, PencilIcon } from '@/components/ui/icon'
 import { Text } from '@/components/ui/text'
 import { garland } from '@/constants/colors'
@@ -16,6 +15,7 @@ import { useEventGifts } from '@/hooks/useEventGifts'
 import { useEventParticipants } from '@/hooks/useEventParticipants'
 import { useOffline } from '@/hooks/useOffline'
 import { PeopleDrawer } from '@/ui/components/PeopleDrawer'
+import { personSectionParams } from '@/ui/screens/PersonPresentsScreen'
 
 type IconComponent = ComponentType<{
   width?: number
@@ -80,23 +80,14 @@ function EventMenu({ eventId, current, go, jumpTo }: MenuProps) {
   const { gifts } = useEventGifts(eventId)
   const user = useCurrentUser()
   const offline = useOffline()
-  // Everyone gets a count and a list in `3d`. In `3d2` (many-to-one) the
-  // beneficiary is listed first and is the only one with either.
+  // Whoever has a list gets its count: everyone in `3d`, the beneficiary
+  // alone in `3d2` (many-to-one).
   const counts = event ? presentCounts(event, gifts, user?._id) : {}
-  const beneficiaryId = event ? beneficiaryIdOf(event) : undefined
-  const people = participants
-    .map(p => ({
-      ...p,
-      presentCount:
-        !beneficiaryId || p.id === beneficiaryId ? counts[p.id] : undefined,
-      canOpen: !beneficiaryId || p.id === beneficiaryId,
-    }))
-    // The viewer is always first, then the beneficiary.
-    .sort(
-      (a, b) =>
-        Number(b.isYou) - Number(a.isYou) ||
-        Number(b.id === beneficiaryId) - Number(a.id === beneficiaryId),
-    )
+  const people = (event ? peopleInOrder(event, participants) : []).map(p => ({
+    ...p,
+    presentCount: p.hasList ? counts[p.id] : undefined,
+    canOpen: p.hasList,
+  }))
 
   return (
     <>
@@ -152,7 +143,10 @@ function EventMenu({ eventId, current, go, jumpTo }: MenuProps) {
             : undefined
         }
         onSelectPerson={participantId =>
-          jumpTo('person/[participantId]', { participantId })
+          jumpTo(
+            'person/[participantId]',
+            personSectionParams(eventId, participantId),
+          )
         }
       />
     </>
