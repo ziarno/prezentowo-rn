@@ -16,6 +16,22 @@ const Invites = collection<InviteDoc>('invites')
 export const inviteLink = (code: string) =>
   `${WEB_URL}/e/${encodeURIComponent(code)}`
 
+const escapeRegExp = (text: string) =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+// Either form of the link, with or without the scheme. Codes are
+// alphanumeric, so a sentence's closing punctuation isn't part of one.
+const INVITE_LINK = new RegExp(
+  `(?:(?:https?://)?${escapeRegExp(WEB_URL.replace(/^https?:\/\//, ''))}|prezentowo:/)/e/([A-Za-z0-9]+)`,
+  'i',
+)
+
+// `7b`: the code from the first invite link anywhere in pasted text, e.g.
+// the whole share message.
+export function inviteCodeFromText(text: string): string | null {
+  return INVITE_LINK.exec(text)?.[1] ?? null
+}
+
 export function findInvitePreview(code: string): InvitePreview | undefined {
   return InvitePreviews.findOne(code)
 }

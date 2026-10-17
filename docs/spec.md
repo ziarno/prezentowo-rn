@@ -125,6 +125,8 @@ export type InvitePreview = {
 
 `unclaimedPlaceholders` leaves out every **reserved placeholder** except the viewer's own, which carries `reservedForYou` (so signed out, and on the web landing page, none are listed). It also leaves out every **departed placeholder** (§1.12), which nobody can claim.
 
+An invite link can also be pasted into the app (`7b`, from Home) when tapping it didn't open the app; it opens the same `7a`.
+
 ### 1.4 Presents — [#12](https://github.com/ziarno/prezentowo-rn/issues/12)
 
 ```ts
@@ -588,6 +590,7 @@ src/app/
 - `https://prezentowo.jarno.pl/e/<code>`: a Universal Link / App Link, with the app's associated domains and intent filter set in `app.json`. Without the app it opens the web landing page (§3.4). The host is a subdomain of `jarno.pl` for now and may move to Prezentowo's own domain later: `WEB_URL` in `src/constants/web.ts` and the two `app.json` entries change together.
 - `prezentowo://e/<code>` still opens the app (the landing page's "Open the invite" uses it).
 - Invite share text always uses the current best form.
+- Pasted links (`7b`): `inviteCodeFromText` takes the code from the first invite link of either form anywhere in the text, with or without the scheme, and `7b` replaces itself with `/e/<code>`. A bare code isn't accepted. The clipboard is read only on Paste (iOS's native paste control, so no permission prompt).
 - Android deferred deep link: on first launch, a Play Install Referrer carrying `code=<code>` (§3.4) becomes the pending invite `{ code }`, the same hand-off as a signed-out `7a` Join. Needs `expo-application`, which means a dev-build rebuild.
 
 ---
@@ -608,7 +611,7 @@ The root guard sends a signed-in person to first-login while their own document 
 
 | Screens | Reads | Writes | Notes |
 |---|---|---|---|
-| `3a` Home | `events.mine`, `notifications.mine` (bell dot = unread count) | — | The bell shows only our notifications, never Stream's unread count. |
+| `3a` Home | `events.mine`, `notifications.mine` (bell dot = unread count) | — | The bell shows only our notifications, never Stream's unread count. "Join with an invite link" (`7b`) sits under the empty state's Create button and at the end of the list; dimmed offline, like the ＋ FAB. |
 | `3c`–`3c4` feed | `events.byId`, `gifts.byEvent`, `activity.byEvent` | — | "X of Y have a buyer" is computed client-side. |
 | `3d`/`3d2` event drawer | `events.byId`, `gifts.byEvent` (counts) | — | Counts are shown for everyone in `3d` and for the beneficiary only in `3d2`. Includes "＋ Invite people" (share link). |
 | `3e`/`3f` person | `gifts.byEvent` | `gifts.claim`/`unclaim` | `3f` groups the list into own wishes and suggested by others, by the recipient's `userId`, or `departedUserId` for a departed placeholder (§1.12). Chat recap: §7. |
@@ -617,6 +620,7 @@ The root guard sends a signed-in person to first-login while their own document 
 | `6a` edit | `invites.forEvent`, `users.search` (`4d`) | `events.update`, `events.addParticipants`, `events.updateParticipant`, `POST /api/images`, `events.removeParticipant`, `events.delete` (confirm dialog), `invites.rotate` | Type and beneficiary rows are disabled once gifts exist. Tapping a placeholder's avatar opens the same avatar sheet as `4d`; a photo uploads and saves at once, a stock avatar or "Remove photo" saves at once (§1.11). Tapping its name turns it into a field; Done or leaving it saves the new name, and a blank or unchanged one is dropped. "Add people" under the list reopens the wizard at `4d`, listing everyone already taking part (not removable there) and sending only the people added (`events.addParticipants`); a user already taking part shows the check. Members can't tell a reserved placeholder apart, so the server's `placeholderReserved` is explained in place. Online-only, dimmed with the rest of `6a`. |
 | `5a`–`5d` add | — | `gifts.importLink`, `POST /api/images`, `gifts.add` | See the link-import outcomes below. |
 | `7a` invite | `invites.byCode` | `events.join`, `invites.ignore` | Renders signed out. The placeholder list ends with "no, I'm new". A `reservedForYou` placeholder replaces the list and "no, I'm new": "{inviter} added you as {name}", with Join and Ignore, since `events.join` claims the reservation either way. Offline: a blocking error. |
+| `7b` join with a link | — | — | A modal with one field and Paste. The first invite link found in the text replaces `7b` with its `7a`; text without one says so after a paste or on submit. §4.3. |
 | Notifications | `notifications.mine`, `events.mine` (titles), `invites.deferred`, `users.inEvent` + `gifts.byEvent` per event its rows name | `notifications.markAllRead` on open | Layout per [#28](https://github.com/ziarno/prezentowo-rn/issues/28): flat inbox (New / Earlier this week / Older), same-event joins coalesced, unread styling from a snapshot taken at open. `invite-deferred` and `invited` → `7a` (code derived live from the event's `InviteDoc`; `invited` reads "{inviter} invited you to {event}"), `suggestion-claimed` → `1e` (deleted gift → `3f`, or `3c` if the recipient is gone), `participant-joined` → `3c`, `claimed-gift-removed` → `3f` ("{present} in {event} was removed"), `event-handed-over` → `3c` ("You're now the host of {event}"). An inbox push opens the same route (§10.5). |
 | `8a`/`8b` chat | `chatThreads.byEvent`, `stream.token` | Stream | Connect lazily, only when a chat screen opens. |
 | First-login | current user (`birthDate`, `profile.name`) | `users.setBirthDate`, `updateUser`, `POST /api/images` | §4.4. |

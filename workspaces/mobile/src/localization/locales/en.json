@@ -401,6 +401,7 @@
     "emptyTitle": "No events yet",
     "emptyBody": "Create one for a birthday, Christmas or anything else, then invite the people taking part.",
     "emptyAction": "Create an event",
+    "joinWithLink": "Join with an invite link",
     "people_one": "{{count}} person",
     "people_other": "{{count}} people",
     "morePeople": "+{{count}}",
@@ -450,6 +451,14 @@
     "loading": "Loading…",
     "notFound": "This event isn't here anymore.",
     "empty": "Nothing has happened here yet."
+  },
+  "join": {
+    "title": "Join an event",
+    "body": "Got an invite link that didn't open the app? Paste it here.",
+    "label": "Invite link",
+    "placeholder": "Paste the invite link",
+    "paste": "Paste",
+    "noLink": "That isn't a Prezentowo invite link."
   },
   "invite": {
     "title": "Invite",

@@ -17,6 +17,7 @@ import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
 
 const openCreateEvent = () => router.push('/create-event')
+const openJoin = () => router.push('/join')
 const openNotifications = () => router.push('/notifications')
 const openProfile = () => router.push('/profile')
 
@@ -66,7 +67,8 @@ function NotificationsBell() {
   )
 }
 
-// `3a`: the signed-in user's events, each opening its feed, and a ＋ FAB.
+// `3a`: the signed-in user's events, each opening its feed, a ＋ FAB, and
+// joining with a pasted invite link (`7b`).
 export function HomeScreen() {
   const { t } = useTranslation()
   const offline = useOffline()
@@ -92,6 +94,14 @@ export function HomeScreen() {
               <GarlandButton onPress={openCreateEvent} disabled={offline}>
                 <GarlandButtonText>{t('home.emptyAction')}</GarlandButtonText>
               </GarlandButton>
+              <GarlandButton
+                variant="outline"
+                onPress={openJoin}
+                disabled={offline}
+                className="mt-1"
+              >
+                <GarlandButtonText>{t('home.joinWithLink')}</GarlandButtonText>
+              </GarlandButton>
             </>
           ) : (
             <Text className="text-center text-sm text-garland-ink-60">
@@ -114,6 +124,16 @@ export function HomeScreen() {
               }
             />
           )}
+          ListFooterComponent={
+            <GarlandButton
+              variant="link"
+              onPress={openJoin}
+              disabled={offline}
+              className="mt-2 self-center"
+            >
+              <GarlandButtonText>{t('home.joinWithLink')}</GarlandButtonText>
+            </GarlandButton>
+          }
           contentContainerClassName="gap-3 px-[22px] pb-28 pt-2"
           showsVerticalScrollIndicator={false}
         />
