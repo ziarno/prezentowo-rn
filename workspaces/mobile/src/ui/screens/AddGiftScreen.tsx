@@ -5,7 +5,12 @@ import {
   BottomSheetModalProvider,
   BottomSheetScrollView,
 } from '@gorhom/bottom-sheet'
-import type { EventDoc, GiftDoc, ImportedFields } from '@prezentowo/types'
+import type {
+  EventDoc,
+  GiftDoc,
+  ImportedFields,
+  PresentThemeId,
+} from '@prezentowo/types'
 import { router, useNavigation } from 'expo-router'
 import { usePreventRemove } from 'expo-router/react-navigation'
 import { type ReactNode, useRef, useState } from 'react'
@@ -52,7 +57,6 @@ import { TONE_COLOR } from '@/ui/components/GiftTag'
 import { ImagePickerGrid } from '@/ui/components/ImagePickerGrid'
 import { ParticipantAvatar } from '@/ui/components/ParticipantAvatar'
 import { PresentThemePicker } from '@/ui/components/PresentThemePicker'
-import { PresentTile } from '@/ui/components/PresentTile'
 import { ScreenHeader } from '@/ui/components/ScreenHeader'
 import { SheetKeyboardAvoidingView } from '@/ui/components/SheetKeyboardAvoidingView'
 import {
@@ -60,6 +64,7 @@ import {
   WizardFooter,
   WizardProgress,
 } from '@/ui/components/Wizard'
+import { PresentHero } from '@/ui/components/presentHero/PresentHero'
 
 // `5a`–`5d`: adds a present for `forParticipantId` (the list it was opened
 // from), or, with `giftId`, edits one from `1e` on the summary, where it can
@@ -288,8 +293,8 @@ function GiftWizard({
   const isLast = index === steps.length - 1
   const error = giftStepError(step, draft)
 
-  // The theme thumbnails show this present's picture on its tag tone: green
-  // for the recipient's own wish, berry for someone's suggestion.
+  // The theme preview and thumbnails show this present's picture on its tag
+  // tone: green for the recipient's own wish, berry for someone's suggestion.
   const user = useCurrentUser()
   const tone =
     TONE_COLOR[
@@ -301,14 +306,10 @@ function GiftWizard({
         ? 'own'
         : 'suggested'
     ]
-  const themeField = (
-    <ThemeField
-      draft={draft}
-      onChange={setDraft}
-      gift={{ _id: pictureSeed ?? draft.clientId, image: draft.image }}
-      tone={tone}
-    />
-  )
+  const look: PictureLook = {
+    gift: { _id: pictureSeed ?? draft.clientId, image: draft.image },
+    tone,
+  }
 
   const goBack = () => {
     setShowError(false)
@@ -459,11 +460,7 @@ function GiftWizard({
           ) : step === 'photo' ? (
             <>
               <StepHeading>{t('addPresent.photo.heading')}</StepHeading>
-              <PresentPhoto
-                draft={draft}
-                onChange={setDraft}
-                themeField={themeField}
-              />
+              <PresentPhoto draft={draft} onChange={setDraft} look={look} />
             </>
           ) : step === 'details' ? (
             <>
@@ -486,7 +483,7 @@ function GiftWizard({
               draft={draft}
               onChange={setDraft}
               review={review}
-              themeField={themeField}
+              look={look}
               titleError={titleError}
               linkError={linkError}
               recipientError={
@@ -663,15 +660,20 @@ function LinkImport({
 function PresentPhoto({
   draft,
   onChange,
-  themeField,
-}: FieldsProps & { themeField: ReactNode }) {
+  look,
+}: FieldsProps & { look: PictureLook }) {
   const { t } = useTranslation()
   return (
     <>
-      <View className="mb-4 items-center">
-        <PhotoPreview image={draft.image} size={160} />
+      <View className="mb-5">
+        <ThemePreview theme={draft.theme} look={look} height={220} />
+        {draft.image ? null : (
+          <Text className="mt-2 text-center text-xs leading-[17px] text-garland-ink-60">
+            {t('addPresent.photo.noPhoto')}
+          </Text>
+        )}
       </View>
-      {themeField}
+      <ThemeField draft={draft} onChange={onChange} look={look} />
       <FieldLabel>{t('addPresent.photo.sheetTitle')}</FieldLabel>
       <ImagePickerGrid
         art="present"
@@ -695,12 +697,8 @@ function FieldLabel({ children }: { children: string }) {
 function ThemeField({
   draft,
   onChange,
-  gift,
-  tone,
-}: FieldsProps & {
-  gift: { _id: string; image?: DraftImage }
-  tone: string
-}) {
+  look,
+}: FieldsProps & { look: PictureLook }) {
   const { t } = useTranslation()
   return (
     <View className="mb-6">
@@ -708,49 +706,66 @@ function ThemeField({
       <PresentThemePicker
         value={draft.theme}
         onChange={theme => onChange({ ...draft, theme })}
-        gift={gift}
-        tone={tone}
+        gift={look.gift}
+        tone={look.tone}
       />
     </View>
   )
 }
 
-// How the present's picture will look, or a note when there's none.
-function PhotoPreview({
-  image,
-  size,
+// What the theme preview and thumbnails show: the present's picture (or
+// the illustration a present without one shows) on its tag tone.
+type PictureLook = {
+  gift: { _id: string; image?: DraftImage }
+  tone: string
+}
+
+// The present's picture staged in its theme, moving, as `1e` will show it.
+// A new pick replays the theme's entrance.
+function ThemePreview({
+  theme,
+  look,
+  height,
 }: {
-  image: DraftImage | undefined
-  size: number
+  theme: PresentThemeId
+  look: PictureLook
+  height: number
 }) {
-  const { t } = useTranslation()
-  return image ? (
-    <PresentTile
-      gift={{ _id: '', image }}
-      size={size}
-      radius={20}
-      derivative={1000}
-    />
-  ) : (
+  const [width, setWidth] = useState(0)
+  const tile = Math.round(height * 0.64)
+  return (
     <View
-      className="items-center justify-center rounded-[20px] border-[1.5px] border-dashed border-garland-ink-15 px-3"
-      style={{ width: size, height: size }}
+      className="overflow-hidden rounded-[20px]"
+      style={{ height }}
+      onLayout={e => setWidth(e.nativeEvent.layout.width)}
     >
-      <Text className="text-center text-[13px] leading-[19px] text-garland-ink-60">
-        {t('addPresent.photo.noPhoto')}
-      </Text>
+      {width > 0 ? (
+        <PresentHero
+          key={theme}
+          theme={theme}
+          gift={look.gift}
+          tone={look.tone}
+          tile={tile}
+          tileTop={Math.round((height - tile) / 2)}
+          width={width}
+          height={height}
+          pending={false}
+          heroStyle={{ height }}
+        />
+      ) : null}
     </View>
   )
 }
 
-// `5d`'s picture, with a ✎: tapping it opens `5b`'s picker in a sheet, which
+// `5d`'s picture in its theme, with a ✎: tapping it opens `5b`'s picker in a sheet, which
 // closes on a pick. While editing the picture can be removed, and so can an
 // imported shop photo.
 function SummaryPhoto({
   draft,
   onChange,
   mode,
-}: FieldsProps & { mode: GiftWizardMode }) {
+  look,
+}: FieldsProps & { mode: GiftWizardMode; look: PictureLook }) {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const sheetRef = useRef<BottomSheetModal>(null)
@@ -771,10 +786,10 @@ function SummaryPhoto({
         onPress={() => sheetRef.current?.present()}
         accessibilityRole="button"
         accessibilityLabel={t('addPresent.photo.change')}
-        className="self-center active:opacity-70"
+        className="active:opacity-70"
       >
-        <PhotoPreview image={draft.image} size={120} />
-        <View className="absolute -bottom-2 -right-2 h-9 w-9 items-center justify-center rounded-full border border-garland-ink-08 bg-garland-paper">
+        <ThemePreview theme={draft.theme} look={look} height={200} />
+        <View className="absolute bottom-3 right-3 h-9 w-9 items-center justify-center rounded-full border border-garland-ink-08 bg-garland-paper">
           <PencilIcon width={16} height={16} color={garland.ink} />
         </View>
       </Pressable>
@@ -825,7 +840,7 @@ function SummaryStep({
   draft,
   onChange,
   review,
-  themeField,
+  look,
   titleError,
   linkError,
   recipientError,
@@ -834,7 +849,7 @@ function SummaryStep({
   event: EventDoc
   // Set after a link import: the import review hint.
   review: Missing | null
-  themeField: ReactNode
+  look: PictureLook
   titleError?: string
   linkError?: string
   recipientError?: string
@@ -885,7 +900,12 @@ function SummaryStep({
       ) : null}
 
       <View className="my-4 pb-5">
-        <SummaryPhoto draft={draft} onChange={onChange} mode={mode} />
+        <SummaryPhoto
+          draft={draft}
+          onChange={onChange}
+          mode={mode}
+          look={look}
+        />
         {review?.includes('image') ? (
           <Text className="mt-4 text-center text-xs leading-[17px] text-garland-ink-60">
             {t('addPresent.review.image')}
@@ -893,7 +913,7 @@ function SummaryStep({
         ) : null}
       </View>
 
-      {themeField}
+      <ThemeField draft={draft} onChange={onChange} look={look} />
 
       <TitleField
         draft={draft}
