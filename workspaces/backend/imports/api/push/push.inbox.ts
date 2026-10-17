@@ -9,6 +9,7 @@ import { Meteor } from 'meteor/meteor'
 
 import { Events } from '../events/events.collection'
 import { Notifications } from '../notifications/notifications.collection'
+import { today } from '../today'
 import { type PushMessage, pushClient } from './push.client'
 import { PushTokens } from './push.collection'
 import { PUSH_COPY } from './push.copy'
@@ -77,10 +78,10 @@ export async function sendInboxPush(notification: NotificationDoc) {
   if (!client || !isInboxPushKind(kind)) return
 
   const user = await Meteor.users.findOneAsync(userId, {
-    fields: { pushPreferences: 1, ageBand: 1 },
+    fields: { pushPreferences: 1, birthDate: 1 },
   })
   // Under 16 gets no push, even with a device stored: the inbox row is all.
-  if (!user || !isSixteenPlus(user)) return
+  if (!user || !isSixteenPlus(user, today())) return
   if (user.pushPreferences?.[kind] === false) return
   const tokens = await PushTokens.find({ userId }).fetchAsync()
   if (!tokens.length) return

@@ -15,8 +15,7 @@ export type SelectHorizontalOption<T extends string> = {
 
 type Props<T extends string> = {
   options: readonly SelectHorizontalOption<T>[]
-  // null: nothing picked yet, so no segment is highlighted.
-  value: T | null
+  value: T
   onChange: (value: T) => void
 }
 
@@ -51,7 +50,7 @@ export function SelectHorizontal<T extends string>({
       onLayout={onLayout}
       className="flex-row rounded-full bg-garland-ink-08 p-1"
     >
-      {segmentWidth > 0 && value !== null && (
+      {segmentWidth > 0 && (
         <Animated.View
           pointerEvents="none"
           style={[

@@ -1,4 +1,8 @@
-import type { AgeBand, EventDoc, EventParticipant } from '@prezentowo/types'
+import {
+  type EventDoc,
+  type EventParticipant,
+  latestBirthDateAtAge,
+} from '@prezentowo/types'
 import { Accounts } from 'meteor/accounts-base'
 import { Meteor } from 'meteor/meteor'
 import { Random } from 'meteor/random'
@@ -7,16 +11,30 @@ import { syncChatThreads } from '../imports/api/chat/chat.sync'
 import { Events } from '../imports/api/events/events.collection'
 import '../imports/api/events/events.methods'
 import '../imports/api/gifts/gifts.methods'
+import { today } from '../imports/api/today'
 // Gives every user created here its `nameTokens`.
 import '../imports/api/users/users.nameTokens'
 import { callAsUser } from './helpers'
 
-export async function createUser(name: string, ageBand?: AgeBand) {
+/** The day `n` days after (or, negative, before) `day`, as `YYYY-MM-DD`. */
+export const addDays = (day: string, n: number) =>
+  new Date(Date.parse(day) + n * 86_400_000).toISOString().slice(0, 10)
+
+/**
+ * The birth date of someone who turns `age` today, so they are exactly that
+ * old. Relative to `today()`, so a test doesn't age as the calendar moves.
+ */
+export const bornAged = (age: number) => latestBirthDateAtAge(age, today())
+
+/** The birth date of someone who turns 16 tomorrow: 15 years, 364 days old. */
+export const turnsSixteenTomorrow = () => addDays(bornAged(16), 1)
+
+export async function createUser(name: string, birthDate?: string) {
   const userId = await Accounts.createUserAsync({
     email: `${name.toLowerCase()}@example.com`,
     profile: { name },
   })
-  if (ageBand) await Meteor.users.updateAsync(userId, { $set: { ageBand } })
+  if (birthDate) await Meteor.users.updateAsync(userId, { $set: { birthDate } })
   return userId
 }
 

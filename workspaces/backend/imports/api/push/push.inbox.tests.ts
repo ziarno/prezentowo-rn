@@ -5,13 +5,14 @@ import { Random } from 'meteor/random'
 
 import { addGiftAs, createFamilyEvent } from '../../../tests/fixtures'
 import { callAsUser, resetDatabase } from '../../../tests/helpers'
-import { setAgeBand, useFakePushClient } from '../../../tests/push'
+import { setAge, useFakePushClient } from '../../../tests/push'
 import { Invites, createInviteIndexes } from '../invites/invites.collection'
 import '../invites/invites.methods'
 import {
   Notifications,
   createNotificationIndexes,
 } from '../notifications/notifications.collection'
+import { pinToday } from '../today'
 import '../users/users.pushPreference'
 import { PushTokens, createPushTokenIndexes } from './push.collection'
 import { inboxPushesSettled, sendInboxPush } from './push.inbox'
@@ -58,7 +59,7 @@ describe('inbox push', function () {
     await resetDatabase()
     family = await createFamilyEvent()
     users = family.users
-    await setAgeBand('16+', ...Object.values(users))
+    await setAge(30, ...Object.values(users))
     await inboxPushesSettled()
   })
 
@@ -117,16 +118,16 @@ describe('inbox push', function () {
       )
     })
 
-    for (const [name, band] of [
-      ['in the 13-15 band', '13-15'],
-      ['who has not answered the age question', undefined],
+    for (const [name, age] of [
+      ['under 16', 14],
+      ['who has not given a date of birth', undefined],
     ] as const) {
       it(`sends nothing to a user ${name}, even with a device stored, still landing in the inbox`, async function () {
         await addDevice(users.bartek, 'bartek-phone')
-        if (band) await setAgeBand(band, users.bartek)
+        if (age) await setAge(age, users.bartek)
         else
           await Meteor.users.updateAsync(users.bartek, {
-            $unset: { ageBand: 1 },
+            $unset: { birthDate: 1 },
           })
 
         await claimSuggestion()
@@ -141,6 +142,26 @@ describe('inbox push', function () {
         )
       })
     }
+
+    // 15 years and 364 days old on Oct 17, 16 on Oct 18: nothing runs between.
+    it('starts sending to a user the day they turn 16', async function () {
+      await addDevice(users.bartek, 'bartek-phone')
+      await Meteor.users.updateAsync(users.bartek, {
+        $set: { birthDate: '2010-10-18' },
+      })
+      try {
+        pinToday('2026-10-17')
+        await claimSuggestion('Lego')
+        assert.deepStrictEqual(expo.sent, [])
+
+        pinToday('2026-10-18')
+        await claimSuggestion('Duplo')
+        assert.deepStrictEqual(expo.sentTo('bartek-phone').length, 1)
+        assert.strictEqual(expo.sent.length, 1)
+      } finally {
+        pinToday(null)
+      }
+    })
 
     it('still pushes a kind left on when another is off', async function () {
       await addDevice(users.bartek, 'bartek-phone')

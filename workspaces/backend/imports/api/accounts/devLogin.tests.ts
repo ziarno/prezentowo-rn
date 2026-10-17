@@ -66,14 +66,20 @@ describe('dev login', function () {
       assert.strictEqual(devLoginHandlerCount(), 1)
     })
 
-    // So the dev user skips the first-login age question as well as the name.
-    it('gives the dev user an age band, also to one made before', async function () {
+    // So the dev user skips the first-login date question as well as the name.
+    it('gives the dev user a fixed adult birth date, also to one made before', async function () {
       const { id } = await loginOverDdp({ devLogin: true })
-      assert.strictEqual((await Meteor.users.findOneAsync(id))?.ageBand, '16+')
+      assert.strictEqual(
+        (await Meteor.users.findOneAsync(id))?.birthDate,
+        '1990-01-01',
+      )
 
-      await Meteor.users.updateAsync(id, { $unset: { ageBand: '' } })
+      await Meteor.users.updateAsync(id, { $unset: { birthDate: '' } })
       await loginOverDdp({ devLogin: true })
-      assert.strictEqual((await Meteor.users.findOneAsync(id))?.ageBand, '16+')
+      assert.strictEqual(
+        (await Meteor.users.findOneAsync(id))?.birthDate,
+        '1990-01-01',
+      )
     })
 
     it('creates the dev user with a first name on first use', async function () {

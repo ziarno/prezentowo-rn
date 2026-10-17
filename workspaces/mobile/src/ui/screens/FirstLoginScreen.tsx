@@ -1,4 +1,8 @@
-import { AGE_ANSWERS, type AgeAnswer } from '@prezentowo/types'
+import {
+  birthDateProblem,
+  earliestBirthDate,
+  todayUtc,
+} from '@prezentowo/types'
 import { useFormik } from 'formik'
 import { useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
@@ -6,9 +10,9 @@ import { KeyboardAvoidingView, Platform, Pressable, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import * as Yup from 'yup'
 
-import { answerAgeQuestion } from '@/api/ageBand'
+import { answerBirthDate } from '@/api/birthDate'
 import { uploadImage } from '@/api/images'
-import { setAgeBand, updateUser } from '@/api/users'
+import { setBirthDate, updateUser } from '@/api/users'
 import { Text } from '@/components/ui/text'
 import { type AvatarKey, avatar } from '@/constants/avatars'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
@@ -21,16 +25,10 @@ import {
   AvatarPickerModal,
   type AvatarPickerModalHandle,
 } from '@/ui/components/AvatarPickerModal'
+import { DateField } from '@/ui/components/DateField'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
 import { LanguageChangeButton } from '@/ui/components/LanguageChangeButton'
 import { PhotoUploadTile } from '@/ui/components/PhotoUploadTile'
-import { SelectHorizontal } from '@/ui/components/SelectHorizontal'
-
-const AGE_LABEL_KEYS: Record<AgeAnswer, string> = {
-  'under-13': 'firstLogin.ageUnder13',
-  '13-15': 'firstLogin.age13to15',
-  '16+': 'firstLogin.age16plus',
-}
 
 // The heading: the name-and-photo copy for a new account, the age-only copy
 // for an account from before the age question, which already has a name.
@@ -61,22 +59,30 @@ export function FirstLoginScreen() {
   // from before the age question has a name and is asked the age once
   // (docs/spec.md §1.15). The name is fixed when the screen opens, so saving
   // it can't make the screen drop it mid-submit; the age follows the user
-  // document, so a band that is already stored (an earlier try got that far)
+  // document, so a date that is already stored (an earlier try got that far)
   // is never asked for again.
   const user = useCurrentUser()
   const [needsName] = useState(() => !user?.profile?.name?.trim())
-  const needsAge = !user?.ageBand
+  const needsAge = !user?.birthDate
   const heading = HEADINGS[needsName ? 'nameAndPhoto' : 'ageOnly']
 
   const validationSchema = Yup.object({
     name: needsName
       ? Yup.string().trim().required(t('common.required'))
       : Yup.string(),
-    // No default answer: nothing is picked until they pick it.
-    age: needsAge
+    // No default: nothing is picked until they pick it. Judged against the
+    // day it is submitted, with the server's own rules.
+    birthDate: needsAge
       ? Yup.string()
-          .oneOf([...AGE_ANSWERS])
-          .required(t('firstLogin.ageRequired'))
+          .required(t('firstLogin.birthDateRequired'))
+          .test('real-date', (value, context) => {
+            const problem = birthDateProblem(value, todayUtc())
+            return problem
+              ? context.createError({
+                  message: t(`firstLogin.birthDateProblem.${problem}`),
+                })
+              : true
+          })
       : Yup.string(),
   })
 
@@ -91,22 +97,23 @@ export function FirstLoginScreen() {
     setFieldValue,
     setFieldTouched,
   } = useFormik({
-    initialValues: { name: '', age: '' },
+    initialValues: { name: '', birthDate: '' },
     validationSchema,
     // Once the name is saved, the user document carries it and the root
     // guards open the app; there's no skipping it.
     // The stock avatar is saved with a photo too, as its fallback
     // (docs/spec.md §1.10).
     onSubmit: async (formValues, { setSubmitting, setFieldError }) => {
-      let failedField: 'name' | 'age' = 'age'
+      let failedField: 'name' | 'birthDate' = 'birthDate'
       try {
         if (needsAge) {
           // Under 13, nothing is saved: not even the name typed above. The
           // server deletes the account, and the stop message takes over
           // before the document going away can move the guards.
-          const outcome = await answerAgeQuestion(
-            formValues.age as AgeAnswer,
-            setAgeBand,
+          const outcome = await answerBirthDate(
+            formValues.birthDate,
+            todayUtc(),
+            setBirthDate,
             setUnderAge,
           )
           if (outcome === 'stopped') return
@@ -187,12 +194,12 @@ export function FirstLoginScreen() {
           ) : null}
 
           {needsAge ? (
-            <AgeField
-              value={(values.age as AgeAnswer) || null}
-              error={touched.age ? errors.age : undefined}
+            <BirthDateField
+              value={values.birthDate}
+              error={touched.birthDate ? errors.birthDate : undefined}
               onChange={value => {
-                void setFieldValue('age', value)
-                void setFieldTouched('age', true, false)
+                void setFieldValue('birthDate', value)
+                void setFieldTouched('birthDate', true, false)
               }}
             />
           ) : null}
@@ -276,35 +283,34 @@ function ProfilePictureField({
   )
 }
 
-// The age question: a select with nothing picked until the person picks.
-function AgeField({
+// The date of birth: empty until the person picks one, from 120 years ago to
+// today.
+function BirthDateField({
   value,
   error,
   onChange,
 }: {
-  value: AgeAnswer | null
+  value: string
   error: string | undefined
-  onChange: (value: AgeAnswer) => void
+  onChange: (value: string) => void
 }) {
   const { t } = useTranslation()
+  const today = todayUtc()
   return (
-    <View className="mt-6 gap-2">
-      <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-garland-ink-40">
-        {t('firstLogin.ageLabel')}
-      </Text>
-      <SelectHorizontal
-        options={AGE_ANSWERS.map(answer => ({
-          value: answer,
-          label: t(AGE_LABEL_KEYS[answer]),
-        }))}
+    <View className="mt-6">
+      <DateField
+        label={t('firstLogin.birthDateLabel')}
+        placeholder={t('firstLogin.birthDatePlaceholder')}
         value={value}
         onChange={onChange}
+        minimumDate={earliestBirthDate(today)}
+        maximumDate={today}
       />
       {error ? (
         <Text className="text-xs text-garland-berry">{error}</Text>
       ) : (
         <Text className="text-[11px] text-garland-ink-40">
-          {t('firstLogin.ageHint')}
+          {t('firstLogin.birthDateHint')}
         </Text>
       )}
     </View>

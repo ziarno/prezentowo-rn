@@ -1,4 +1,3 @@
-import type { AgeBand } from '@prezentowo/types'
 import type { ExpoPushReceipt, ExpoPushTicket } from 'expo-server-sdk'
 import { Meteor } from 'meteor/meteor'
 
@@ -8,6 +7,7 @@ import {
   setPushClient,
 } from '../imports/api/push/push.client'
 import { inboxPushesSettled } from '../imports/api/push/push.inbox'
+import { bornAged } from './fixtures'
 
 /**
  * An in-memory Expo Push Service: records every message it's sent and
@@ -96,14 +96,14 @@ export function useFakePushClient() {
 }
 
 /**
- * Stores `ageBand` on each of `userIds`, as the first-login question does
- * (docs/spec.md §1.15). Push is 16+ only, so a test of push seats its users
- * in that band first.
+ * Stores a `birthDate` making each of `userIds` exactly `age` years old
+ * today, as the first-login question does (docs/spec.md §1.15). Push is 16+
+ * only, so a test of push seats its users at an age first.
  */
-export async function setAgeBand(ageBand: AgeBand, ...userIds: string[]) {
+export async function setAge(age: number, ...userIds: string[]) {
   await Meteor.users.updateAsync(
     { _id: { $in: userIds } },
-    { $set: { ageBand } },
+    { $set: { birthDate: bornAged(age) } },
     { multi: true },
   )
 }

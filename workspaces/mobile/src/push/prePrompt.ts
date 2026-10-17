@@ -4,7 +4,7 @@ import type { PushPermission } from './permission'
 export const PRE_PROMPT_SHOWN_KEY = 'prezentowo.pushPrePromptShown'
 
 export type PushPrePromptDeps = {
-  // The user is in the 16+ band: push is not for anyone else.
+  // The user is 16 or over today: push is not for anyone else.
   sixteenPlus: () => boolean
   permission: () => Promise<PushPermission>
   store: {

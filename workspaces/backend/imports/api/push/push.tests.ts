@@ -7,7 +7,11 @@ import {
   useFakeChatServer,
   useStreamPushProviders,
 } from '../../../tests/chat'
-import { createEventWithMembers, createUser } from '../../../tests/fixtures'
+import {
+  bornAged,
+  createEventWithMembers,
+  createUser,
+} from '../../../tests/fixtures'
 import {
   callAsUser,
   rejectsWithReason,
@@ -15,11 +19,12 @@ import {
   subscribeAsUser,
   whileFailing,
 } from '../../../tests/helpers'
-import { setAgeBand } from '../../../tests/push'
+import { setAge } from '../../../tests/push'
 import { ownAccount } from '../accounts/accounts.publications'
 import '../chat/chat.methods'
 import { setChatServer } from '../chat/chat.server'
-import '../users/users.ageBand'
+import { pinToday } from '../today'
+import '../users/users.birthDate'
 import '../users/users.pushPreference'
 import { PushTokens, createPushTokenIndexes } from './push.collection'
 import './push.methods'
@@ -57,6 +62,12 @@ const setPreference = (userId: string | null, kind: string, enabled: boolean) =>
 
 const tokensOf = (userId: string) => PushTokens.find({ userId }).fetchAsync()
 
+const preferencesOf = async (userId: string) =>
+  (await Meteor.users.findOneAsync(userId))?.pushPreferences
+
+const answerBirthDate = (userId: string, birthDate: string) =>
+  callAsUser(userId, 'users.setBirthDate', { birthDate })
+
 describe('push', function () {
   const stream = useFakeChatServer()
   useStreamPushProviders()
@@ -72,7 +83,7 @@ describe('push', function () {
     await resetDatabase()
     ola = await createUser('Ola')
     bartek = await createUser('Bartek')
-    await setAgeBand('16+', ola, bartek)
+    await setAge(30, ola, bartek)
   })
 
   describe('push.register', function () {
@@ -267,16 +278,16 @@ describe('push', function () {
       assert.deepStrictEqual(stream.devicesOf(bartek), ['a1b2c3'])
     })
 
-    for (const [name, band] of [
-      ['in the 13-15 band', '13-15'],
-      ['who has not answered the age question', undefined],
+    for (const [name, age] of [
+      ['under 16', 14],
+      ['who has not given a date of birth', undefined],
     ] as const) {
       describe(`for a user ${name}`, function () {
         let kid: string
 
         beforeEach(async function () {
           kid = await createUser('Kasia')
-          if (band) await setAgeBand(band, kid)
+          if (age) await setAge(age, kid)
         })
 
         it('stores no token and registers nothing with Stream', async function () {
@@ -362,9 +373,6 @@ describe('push', function () {
   })
 
   describe('users.setPushPreference', function () {
-    const preferencesOf = async (userId: string) =>
-      (await Meteor.users.findOneAsync(userId))?.pushPreferences
-
     it('is for signed-in users only', async function () {
       await rejectsWithReason(
         setPreference(null, 'invited', false),
@@ -399,9 +407,9 @@ describe('push', function () {
       assert.deepStrictEqual(await preferencesOf(ola), { chat: true })
     })
 
-    it('writes nothing for a 13-15 user, chat included, and never turns Stream’s chat push on', async function () {
+    it('writes nothing for a user under 16, chat included, and never turns Stream’s chat push on', async function () {
       const kid = await createUser('Kasia')
-      await setAgeBand('13-15', kid)
+      await setAge(14, kid)
       const before = stream.calls.length
 
       await setPreference(kid, 'chat', true)
@@ -412,7 +420,7 @@ describe('push', function () {
       assert.strictEqual(await preferencesOf(kid), undefined)
     })
 
-    it('writes nothing for a user who has not answered the age question', async function () {
+    it('writes nothing for a user who has not given a date of birth', async function () {
       const kid = await createUser('Kasia')
       await setPreference(kid, 'chat', true)
       assert.strictEqual(stream.chatLevels.has(kid), false)
@@ -441,6 +449,54 @@ describe('push', function () {
     })
   })
 
+  // 15 years and 364 days old on Oct 17, 16 on Oct 18: no migration or job
+  // runs between the two checks.
+  describe('a user who turns 16 between two checks', function () {
+    let teen: string
+
+    beforeEach(async function () {
+      teen = await createUser('Kasia', '2010-10-18')
+    })
+    afterEach(() => pinToday(null))
+
+    it('registers a device from the day they turn 16, not before', async function () {
+      pinToday('2026-10-17')
+      await register(teen, iosDevice())
+      assert.deepStrictEqual(await tokensOf(teen), [])
+      assert.deepStrictEqual(stream.devicesOf(teen), [])
+
+      pinToday('2026-10-18')
+      await register(teen, iosDevice())
+      assert.strictEqual((await tokensOf(teen)).length, 1)
+      assert.deepStrictEqual(stream.devicesOf(teen), ['a1b2c3'])
+    })
+
+    it('can switch a preference, with Stream written through, from the day they turn 16', async function () {
+      pinToday('2026-10-17')
+      await setPreference(teen, 'chat', true)
+      assert.strictEqual(stream.chatLevels.has(teen), false)
+      assert.strictEqual(await preferencesOf(teen), undefined)
+
+      pinToday('2026-10-18')
+      await setPreference(teen, 'chat', true)
+      assert.strictEqual(stream.chatLevels.get(teen), 'all')
+      assert.deepStrictEqual(await preferencesOf(teen), { chat: true })
+    })
+
+    it('has the device the sweep took away only until they register again', async function () {
+      pinToday('2026-10-18')
+      await register(teen, iosDevice())
+
+      // The sweep runs on a day before the birthday: the device goes.
+      await removePushOfUnder16('2026-10-17')
+      assert.deepStrictEqual(await tokensOf(teen), [])
+
+      await register(teen, iosDevice())
+      await removePushOfUnder16()
+      assert.strictEqual((await tokensOf(teen)).length, 1)
+    })
+  })
+
   describe('the startup sweep of devices held by accounts under 16', function () {
     let kid: string
     let unanswered: string
@@ -448,7 +504,7 @@ describe('push', function () {
     beforeEach(async function () {
       kid = await createUser('Kasia')
       unanswered = await createUser('Wiktor')
-      await setAgeBand('16+', kid, unanswered)
+      await setAge(30, kid, unanswered)
       await register(ola, iosDevice())
       await register(kid, androidDevice())
       await register(
@@ -458,12 +514,14 @@ describe('push', function () {
           deviceToken: 'd4e5f6',
         }),
       )
-      // Accounts from before the age question, or answered 13-15 since.
-      await Meteor.users.updateAsync(kid, { $set: { ageBand: '13-15' } })
-      await Meteor.users.updateAsync(unanswered, { $unset: { ageBand: 1 } })
+      // Accounts from before the age question, or under 16 since.
+      await Meteor.users.updateAsync(kid, {
+        $set: { birthDate: bornAged(14) },
+      })
+      await Meteor.users.updateAsync(unanswered, { $unset: { birthDate: 1 } })
     })
 
-    it('removes the devices of everyone but 16+, from the table and from Stream', async function () {
+    it('removes the devices of everyone under 16 today, from the table and from Stream', async function () {
       await removePushOfUnder16()
 
       assert.deepStrictEqual(await tokensOf(kid), [])
@@ -487,45 +545,43 @@ describe('push', function () {
     })
   })
 
-  describe('when the age band is set on an account that has devices', function () {
+  describe('when the date of birth is set on an account that has devices', function () {
     let kid: string
 
     beforeEach(async function () {
       // An account from before the age question, with a device registered.
       kid = await createUser('Kasia')
-      await setAgeBand('16+', kid)
+      await setAge(30, kid)
       await register(kid, iosDevice())
       await register(kid, androidDevice())
-      await Meteor.users.updateAsync(kid, { $unset: { ageBand: 1 } })
+      await Meteor.users.updateAsync(kid, { $unset: { birthDate: 1 } })
     })
 
-    it('removes the devices of a 13-15 answer from the table and from Stream', async function () {
+    it('removes the devices of an under-16 date from the table and from Stream', async function () {
       assert.strictEqual((await tokensOf(kid)).length, 2)
 
-      await callAsUser(kid, 'users.setAgeBand', { answer: '13-15' })
+      await answerBirthDate(kid, bornAged(14))
 
       assert.deepStrictEqual(await tokensOf(kid), [])
       assert.deepStrictEqual(stream.devicesOf(kid), [])
     })
 
-    it('keeps the devices of a 16+ answer', async function () {
-      await callAsUser(kid, 'users.setAgeBand', { answer: '16+' })
+    it('keeps the devices of a 16+ date', async function () {
+      await answerBirthDate(kid, bornAged(30))
       assert.strictEqual((await tokensOf(kid)).length, 2)
       assert.deepStrictEqual(stream.devicesOf(kid), ['a1b2c3', 'fcm-token-1'])
     })
 
     it('keeps the question open while Stream can’t remove a device', async function () {
       await whileFailing(stream, 'removeDevice', () =>
-        assert.rejects(
-          callAsUser(kid, 'users.setAgeBand', { answer: '13-15' }),
-        ),
+        assert.rejects(answerBirthDate(kid, bornAged(14))),
       )
       assert.strictEqual(
-        (await Meteor.users.findOneAsync(kid))?.ageBand,
+        (await Meteor.users.findOneAsync(kid))?.birthDate,
         undefined,
       )
 
-      await callAsUser(kid, 'users.setAgeBand', { answer: '13-15' })
+      await answerBirthDate(kid, bornAged(14))
       assert.deepStrictEqual(await tokensOf(kid), [])
     })
   })

@@ -15,35 +15,131 @@ export type UpdateUserArgs = {
   photo?: string | null
 }
 
-// The age bands we keep (docs/spec.md §1.15), asked at first login. Never a
-// birth date. A user document with no band hasn't answered yet.
-export const AGE_BANDS = ['13-15', '16+'] as const
-export type AgeBand = (typeof AGE_BANDS)[number]
+// The date of birth, asked at first login and kept as a full `YYYY-MM-DD`
+// string on the user's own document (docs/spec.md §1.15). A document with no
+// `birthDate` hasn't answered yet. Whether someone is 13 or 16 is never
+// stored: it is computed against a day, every time, by the helpers below.
 
-// What the first-login question offers. `under-13` is never stored: it ends
-// the sign-up and the account is deleted.
-export const AGE_ANSWERS = ['under-13', ...AGE_BANDS] as const
-export type AgeAnswer = (typeof AGE_ANSWERS)[number]
-
-// The one spelling of each answer, for code that names one.
-export const UNDER_13 = 'under-13' satisfies AgeAnswer
-export const THIRTEEN_TO_FIFTEEN = '13-15' satisfies AgeBand
-export const SIXTEEN_PLUS = '16+' satisfies AgeBand
-
-// `users.setAgeBand`: the answer to the first-login age question.
-export type SetAgeBandArgs = { answer: AgeAnswer }
-
-// What `users.setAgeBand` did: `deleted` is true only when the account went
-// (an under-13 answer to a question still open). An account that already
-// has a band is left alone and answers `deleted: false`.
-export type SetAgeBandResult = { deleted: boolean }
-
-// Whether a user document is in the 16+ band. Both the 13-15 band and "no
-// band yet" are false, so a feature that is only for 16+ (push, being found
-// by search) stays off until the person has answered.
-export function isSixteenPlus(user: { ageBand?: AgeBand } | null | undefined) {
-  return user?.ageBand === SIXTEEN_PLUS
+// "Today" is the UTC calendar day, on the server and in the app alike: one
+// time zone, so both sides agree on the day someone turns 16. In Poland a
+// birthday takes effect at 01:00 or 02:00 local time, never earlier.
+export function todayUtc(now: Date = new Date()): string {
+  return now.toISOString().slice(0, 10)
 }
+
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
+
+const isLeapYear = (year: number) =>
+  (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0
+
+const daysInMonth = (year: number, month: number) =>
+  month === 2
+    ? isLeapYear(year)
+      ? 29
+      : 28
+    : [4, 6, 9, 11].includes(month)
+      ? 30
+      : 31
+
+function parseIsoDate(value: unknown) {
+  const match = typeof value === 'string' ? ISO_DATE.exec(value) : null
+  if (!match) return undefined
+  // No array destructuring: the app's Node tests would need a Babel helper
+  // that `@prezentowo/types` doesn't depend on.
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  if (month < 1 || month > 12) return undefined
+  if (day < 1 || day > daysInMonth(year, month)) return undefined
+  return { year, month, day }
+}
+
+// A real calendar day written `YYYY-MM-DD`, nothing else.
+export function isIsoDate(value: unknown): value is string {
+  return parseIsoDate(value) !== undefined
+}
+
+const pad = (n: number, width: number) => String(n).padStart(width, '0')
+
+// Whole years from `birthDate` to `today`, both `YYYY-MM-DD`. Born on Feb 29,
+// the birthday falls on Mar 1 in a year with no Feb 29: the later of the two
+// days, so the person is never taken for older than they are.
+export function ageOn(birthDate: string, today: string): number {
+  const born = parseIsoDate(birthDate)
+  const now = parseIsoDate(today)
+  if (!born || !now) throw new Error('ageOn needs two YYYY-MM-DD dates')
+  const feb29 = born.month === 2 && born.day === 29 && !isLeapYear(now.year)
+  const birthdayMonth = feb29 ? 3 : born.month
+  const birthdayDay = feb29 ? 1 : born.day
+  const passed =
+    now.month > birthdayMonth ||
+    (now.month === birthdayMonth && now.day >= birthdayDay)
+  return now.year - born.year - (passed ? 0 : 1)
+}
+
+// The latest birth date of someone who is `age` or older on `today`: `today`
+// minus `age` years. `birthDate <= latestBirthDateAtAge(16, today)` is the
+// same test as `ageOn(birthDate, today) >= 16`, as a string comparison a
+// database index can answer. A Feb 29 `today` in a year `age` years back
+// with no Feb 29 gives Feb 28.
+export function latestBirthDateAtAge(age: number, today: string): string {
+  const now = parseIsoDate(today)
+  if (!now) throw new Error('latestBirthDateAtAge needs a YYYY-MM-DD date')
+  const year = now.year - age
+  const day = Math.min(now.day, daysInMonth(year, now.month))
+  return `${pad(year, 4)}-${pad(now.month, 2)}-${pad(day, 2)}`
+}
+
+// The least age that can have an account (§1.15, §3.7), the age push and
+// being found by name start at, and the oldest a birth date may make
+// someone: past that it is taken for a typo.
+export const MIN_AGE = 13
+export const PUSH_AGE = 16
+export const MAX_AGE = 120
+
+// The earliest birth date `birthDateProblem` accepts on `today`.
+export const earliestBirthDate = (today: string) =>
+  latestBirthDateAtAge(MAX_AGE, today)
+
+export type BirthDateProblem = 'malformed' | 'future' | 'tooOld'
+
+// What is wrong with a birth date, if anything: not a real `YYYY-MM-DD` day,
+// after `today`, or more than 120 years back. Nothing else is checked: there
+// is no confirmation and no ID.
+export function birthDateProblem(
+  birthDate: unknown,
+  today: string,
+): BirthDateProblem | null {
+  if (!isIsoDate(birthDate)) return 'malformed'
+  if (birthDate > today) return 'future'
+  if (birthDate < earliestBirthDate(today)) return 'tooOld'
+  return null
+}
+
+// Whether a birth date makes someone under 13 on `today`. No date is false:
+// there is nothing to judge.
+export function isUnder13(birthDate: string | undefined, today: string) {
+  return !!birthDate && ageOn(birthDate, today) < MIN_AGE
+}
+
+// Whether a user document is 16 or over on `today`. No birth date (not
+// answered yet) is false, so a feature that is only for 16+ (push, being
+// found by search) stays off until the person has answered. Callers pass
+// the current `todayUtc()`, so it turns on by itself on the birthday.
+export function isSixteenPlus(
+  user: { birthDate?: string } | null | undefined,
+  today: string,
+) {
+  return !!user?.birthDate && ageOn(user.birthDate, today) >= PUSH_AGE
+}
+
+// `users.setBirthDate`: the answer to the first-login question. Set once.
+export type SetBirthDateArgs = { birthDate: string }
+
+// What `users.setBirthDate` did: `deleted` is true only when the account went
+// (an under-13 date to a question still open). An account that already has a
+// date is left alone and answers `deleted: false`.
+export type SetBirthDateResult = { deleted: boolean }
 
 // `users.deleteAccount` (docs/spec.md §1.12): the account's own email,
 // retyped as a deliberate-action check, matched case-insensitively.
@@ -440,11 +536,7 @@ export type UpdateGiftArgs = {
 export type ActivityDoc = {
   _id: string
   eventId: string
-  kind:
-    | 'gift-added'
-    | 'gift-claimed'
-    | 'gift-unclaimed'
-    | 'participant-joined'
+  kind: 'gift-added' | 'gift-claimed' | 'gift-unclaimed' | 'participant-joined'
   // EventParticipant.id of who did it.
   actorParticipantId: string
   createdAt: Date

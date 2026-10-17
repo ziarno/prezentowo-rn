@@ -181,6 +181,9 @@ describe('legal pages', function () {
       assert.match(pl, /push/)
       assert.match(pl, /po imieniu/)
       assert.match(pl, /rodzic lub opiekun/)
+      assert.match(pl, /datę urodzenia/)
+      assert.match(pl, /nikt inny/)
+      assert.match(pl, /w dniu 16\. urodzin/)
 
       const en = await summary('en')
       assert.match(en, /13 or older/)
@@ -188,6 +191,60 @@ describe('legal pages', function () {
       assert.match(en, /push/)
       assert.match(en, /by name/)
       assert.match(en, /parent or guardian/)
+      assert.match(en, /date of birth/)
+      assert.match(en, /no one else/)
+      assert.match(en, /on your 16th birthday/)
+    })
+
+    it('says in section 2 that the date of birth is kept, why, who sees it and that it goes with the account', async function () {
+      const section = async (lang: string) =>
+        textBetween(
+          (await get(`/privacy?lang=${lang}`)).html,
+          /<h2[^>]*>2\./,
+          /<h2[^>]*>3\./,
+        )
+
+      const pl = await section('pl')
+      assert.match(pl, /data urodzenia/)
+      assert.match(pl, /widzisz ją tylko Ty/i)
+      assert.match(pl, /usuwamy ją razem z kontem/)
+
+      const en = await section('en')
+      assert.match(en, /date of birth/)
+      assert.match(en, /only you can see it/i)
+      assert.match(en, /deleted with your account/)
+    })
+
+    it('says in section 4 that nobody else sees the date of birth', async function () {
+      const section = async (lang: string) =>
+        textBetween(
+          (await get(`/privacy?lang=${lang}`)).html,
+          /<h2[^>]*>4\./,
+          /<h2[^>]*>5\./,
+        )
+
+      const pl = await section('pl')
+      assert.match(pl, /Data urodzenia/)
+      assert.match(pl, /widzisz ją tylko Ty/i)
+      assert.match(
+        pl,
+        /w wyszukiwarce, w wydarzeniach, w aktywności ani na czacie/,
+      )
+
+      const en = await section('en')
+      assert.match(en, /Your date of birth/)
+      assert.match(en, /only you can see it/i)
+      assert.match(en, /search, events, activity or chat/)
+    })
+
+    it('no longer says that no birth date is asked or kept', async function () {
+      for (const lang of ['pl', 'en']) {
+        assert.doesNotMatch(
+          (await get(`/privacy?lang=${lang}`)).html,
+          /Nie pytamy o datę|nie zapisujemy daty urodzenia|never a birth date|never store a birth date|don’t ask for a birth date|don’t store a birth date/,
+          lang,
+        )
+      }
     })
 
     it('says accounts start at 13, and what changes under 16, in the children section', async function () {
@@ -204,7 +261,9 @@ describe('legal pages', function () {
       assert.match(pl, /usuwamy/)
       assert.match(pl, /nie dostają powiadomień push/)
       assert.match(pl, /nie mogą ich znaleźć po imieniu/)
-      assert.match(pl, /nie zapisujemy daty urodzenia|nie zapisujemy jej/)
+      assert.match(pl, /zapisujemy Twoją datę urodzenia/)
+      assert.match(pl, /widzisz ją tylko Ty/i)
+      assert.match(pl, /w dniu 16\. urodzin/)
 
       const en = await section('en')
       assert.match(en, /aged 13 and over/)
@@ -212,7 +271,9 @@ describe('legal pages', function () {
       assert.match(en, /delete/)
       assert.match(en, /get no push notifications/)
       assert.match(en, /can’t find them by name/)
-      assert.match(en, /never store a birth date|don’t store a birth date/)
+      assert.match(en, /store your date of birth/)
+      assert.match(en, /only you can see it/i)
+      assert.match(en, /on their 16th birthday/)
     })
 
     it('says only people from 16 can be found by name, and get push', async function () {

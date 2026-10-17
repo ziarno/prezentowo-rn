@@ -12,6 +12,12 @@ import { formatEventDate } from '@/localization/eventDates'
 
 const IOS = Platform.OS === 'ios'
 
+function clampDate(date: Date, min?: Date, max?: Date) {
+  if (min && date < min) return min
+  if (max && date > max) return max
+  return date
+}
+
 // A `YYYY-MM-DD` day picked natively, styled like `GarlandField`. Android
 // opens the system dialog; iOS unfolds a spinner under the field, the one
 // iOS display that honours the app language.
@@ -20,18 +26,26 @@ export function DateField({
   placeholder,
   value,
   onChange,
+  minimumDate,
+  maximumDate,
 }: {
   label: string
   placeholder: string
   value: string
   onChange: (date: string) => void
+  // `YYYY-MM-DD` limits the pickers will not go past.
+  minimumDate?: string
+  maximumDate?: string
 }) {
   const { t, i18n } = useTranslation()
   const [spinnerOpen, setSpinnerOpen] = useState(false)
   const picked = parseEventDate(value)
   const shown = picked ? formatEventDate(i18n.language, value) : undefined
-  // Where the picker opens: the current date in edit mode, else today.
-  const initial = picked ?? new Date()
+  const min = minimumDate ? parseEventDate(minimumDate) : undefined
+  const max = maximumDate ? parseEventDate(maximumDate) : undefined
+  // Where the picker opens: the current date in edit mode, else today, kept
+  // within the limits.
+  const initial = clampDate(picked ?? new Date(), min, max)
   const pick = (_event: unknown, date: Date) => onChange(toEventDate(date))
 
   const openPicker = () => {
@@ -41,6 +55,8 @@ export function DateField({
       DateTimePickerAndroid.open({
         value: initial,
         mode: 'date',
+        minimumDate: min,
+        maximumDate: max,
         onValueChange: pick,
       })
   }
@@ -78,6 +94,8 @@ export function DateField({
             value={initial}
             mode="date"
             display="spinner"
+            minimumDate={min}
+            maximumDate={max}
             locale={i18n.language}
             themeVariant="light"
             textColor={garland.ink}

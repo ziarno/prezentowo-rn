@@ -21,8 +21,8 @@ export type PushDeviceDeps = {
   }
 }
 
-// `sixteenPlus`: the user is in the 16+ band. Push is only for them, so
-// nothing registers for the 13-15 band, or while the age is unanswered or
+// `sixteenPlus`: the user is 16 or over today. Push is only for them, so
+// nothing registers for anyone younger, or while the birth date is unanswered or
 // not loaded yet (docs/spec.md §10.5).
 export type PushSession = {
   signedIn: boolean
@@ -80,7 +80,7 @@ export function createPushDevice({
     if (!session.online) return
     if (!(await sendUnsentUnregister())) return
     if (!session.signedIn || leaving || !wanted) return
-    // A registration stays due until the band is known to be 16+.
+    // A registration stays due until the user is known to be 16+.
     if (!session.sixteenPlus) return
     wanted = false
     if (!(await permissionGranted())) return

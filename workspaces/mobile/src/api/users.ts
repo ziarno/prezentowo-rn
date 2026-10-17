@@ -1,9 +1,7 @@
 import type {
-  AgeAnswer,
-  AgeBand,
   PushPreferences,
-  SetAgeBandArgs,
-  SetAgeBandResult,
+  SetBirthDateArgs,
+  SetBirthDateResult,
   SetPushPreferenceArgs,
   UpdateUserArgs,
   UserStats,
@@ -22,9 +20,9 @@ export type CurrentUser = {
   profile?: Profile
   // Which pushes the user wants; a missing kind is on (docs/spec.md §1.13).
   pushPreferences?: PushPreferences
-  // The first-login age answer; missing = not answered yet (§1.15). Only ever
-  // on the user's own document.
-  ageBand?: AgeBand
+  // The first-login date of birth, `YYYY-MM-DD`; missing = not answered yet
+  // (§1.15). Only ever on the user's own document.
+  birthDate?: string
 }
 
 export type PublicUser = {
@@ -46,11 +44,12 @@ export function updateUser(args: UpdateUserArgs): Promise<void> {
   return call('updateUser', args)
 }
 
-// First-login's age question (docs/spec.md §1.15). A band is stored; under-13
-// deletes the account on the server, which the answer says (`deleted`), so
-// the caller ends the session only then. Online-only, never queued.
-export function setAgeBand(answer: AgeAnswer): Promise<SetAgeBandResult> {
-  return call('users.setAgeBand', { answer } satisfies SetAgeBandArgs)
+// First-login's date of birth (docs/spec.md §1.15). The date is stored; an
+// under-13 date deletes the account on the server, which the answer says
+// (`deleted`), so the caller ends the session only then. Online-only, never
+// queued.
+export function setBirthDate(birthDate: string): Promise<SetBirthDateResult> {
+  return call('users.setBirthDate', { birthDate } satisfies SetBirthDateArgs)
 }
 
 // Follows the account to every phone. Online-only, never queued.

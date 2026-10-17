@@ -1,4 +1,8 @@
-import { type ApnsEnvironment, isSixteenPlus } from '@prezentowo/types'
+import {
+  type ApnsEnvironment,
+  isSixteenPlus,
+  todayUtc,
+} from '@prezentowo/types'
 import {
   ApplicationReleaseType,
   getIosApplicationReleaseTypeAsync,
@@ -93,7 +97,8 @@ export const pushPermission = createPushPermission({
 })
 
 export const pushPrePrompt = createPushPrePrompt({
-  sixteenPlus: () => isSixteenPlus(getCurrentUser()),
+  // Judged on the day it is asked, never remembered.
+  sixteenPlus: () => isSixteenPlus(getCurrentUser(), todayUtc()),
   // An unreadable permission counts as answered: the sheet stays shut.
   permission: async () => {
     await pushPermission.refresh()

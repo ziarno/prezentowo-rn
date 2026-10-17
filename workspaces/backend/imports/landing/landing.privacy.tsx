@@ -30,8 +30,8 @@ const pl: LegalDoc = {
         </p>
         <ul>
           <li>
-            Konto możesz mieć od 13 lat. Nie pytamy o datę urodzenia, tylko czy
-            masz 13–15 lat, czy co najmniej 16.
+            Konto możesz mieć od 13 lat. Przy pierwszym logowaniu pytamy o datę
+            urodzenia i ją zapisujemy. Widzisz ją tylko Ty, nikt inny.
           </li>
           <li>
             Trzymamy Twój adres e-mail, imię, awatar albo zdjęcie i to, co
@@ -40,8 +40,9 @@ const pl: LegalDoc = {
           </li>
           <li>
             Masz poniżej 16 lat? Nie wysyłamy Ci powiadomień push, a osoby,
-            które Cię nie znają, nie znajdą Cię po imieniu. Ktoś znajomy nadal
-            może dodać Cię do wydarzenia albo wysłać Ci link z zaproszeniem.
+            które Cię nie znają, nie znajdą Cię po imieniu. Zmieni się to samo w
+            dniu 16. urodzin. Ktoś znajomy nadal może dodać Cię do wydarzenia
+            albo wysłać Ci link z zaproszeniem.
           </li>
           <li>
             Masz mniej niż 18 lat? Upewnij się, że rodzic lub opiekun wie, że
@@ -76,16 +77,18 @@ const pl: LegalDoc = {
               <td>Twoje konto</td>
               <td>
                 Adres e-mail, imię, wybrany awatar albo Twoje własne zdjęcie,
-                przedział wieku (13–15 lat albo co najmniej 16, bez daty
-                urodzenia), kopia imienia przygotowana do wyszukiwania oraz
+                data urodzenia, kopia imienia przygotowana do wyszukiwania oraz
                 tokeny logowania.
               </td>
               <td>
                 Żeby logować Cię linkiem z e-maila i pokazywać Cię osobom w
-                Twoich wydarzeniach. Przedział wieku decyduje, czy dostajesz
-                powiadomienia push i czy możesz być wyszukany (pkt 10). Kopia do
-                wyszukiwania pozwala innym znaleźć Cię po imieniu, jeśli masz co
-                najmniej 16 lat (pkt 4). Umowa.
+                Twoich wydarzeniach. Datę urodzenia zapisujemy, żeby wiedzieć,
+                czy możesz mieć konto (od 13 lat) i od którego dnia dostajesz
+                powiadomienia push i możesz być wyszukany (od 16 lat, pkt 10).
+                Liczymy to z niej za każdym razem, więc zmienia się samo w dniu
+                urodzin. Widzisz ją tylko Ty, nikt inny, a usuwamy ją razem z
+                kontem. Kopia do wyszukiwania pozwala innym znaleźć Cię po
+                imieniu, jeśli masz co najmniej 16 lat (pkt 4). Umowa.
               </td>
             </tr>
             <tr>
@@ -188,8 +191,13 @@ const pl: LegalDoc = {
         <li>
           <b>Zalogowani użytkownicy mogą znaleźć Cię po imieniu</b>, jeśli masz
           co najmniej 16 lat, i zobaczyć Twój awatar i zdjęcie, ale nigdy Twój
-          adres e-mail. Osób w wieku 13–15 lat nie da się w ten sposób znaleźć.
-          Na razie nie da się wyłączyć tego wyszukiwania.
+          adres e-mail. Osób poniżej 16 lat nie da się w ten sposób znaleźć. Na
+          razie nie da się wyłączyć tego wyszukiwania.
+        </li>
+        <li>
+          <b>Data urodzenia:</b> widzisz ją tylko Ty. Nie pokazujemy jej nikomu
+          innemu, ani w wyszukiwarce, w wydarzeniach, w aktywności ani na
+          czacie.
         </li>
         <li>
           <b>Linki do zdjęć</b> są długie i losowe, więc nie da się ich
@@ -354,19 +362,21 @@ const pl: LegalDoc = {
 
       <h2>10. Dzieci</h2>
       <p>
-        Konto mogą mieć osoby od 13 lat. Przy pierwszym logowaniu pytamy, czy
-        masz mniej niż 13 lat, 13–15 lat, czy co najmniej 16. Nie pytamy o datę
-        urodzenia i nie zapisujemy daty urodzenia, tylko wybrany przedział
-        wieku, który widzisz tylko Ty. Osobom poniżej 13 lat nie zakładamy
-        konta, a gdy dowiemy się o takim koncie, usuwamy je.
+        Konto mogą mieć osoby od 13 lat. Przy pierwszym logowaniu pytamy o datę
+        urodzenia i zapisujemy Twoją datę urodzenia. Widzisz ją tylko Ty i
+        trzymamy ją do usunięcia konta. Nie sprawdzamy jej niczym poza tym, że
+        jest prawdziwą datą z ostatnich 120 lat. Osobom poniżej 13 lat nie
+        zakładamy konta i niczego o nich nie zapisujemy, a gdy dowiemy się o
+        takim koncie, usuwamy je.
       </p>
       <p>
-        Użytkownicy w wieku 13–15 lat nie dostają powiadomień push (zgodę na nie
-        musiałby wyrazić rodzic, art. 8 RODO) i inni użytkownicy nie mogą ich
-        znaleźć po imieniu. Kto jeszcze nie odpowiedział na pytanie o wiek, też
-        nie jest wyszukiwany. Powiadomienia w aplikacji działają u wszystkich
-        tak samo. Dzieci biorą udział w wydarzeniach także jako osoby dodane po
-        imieniu (pkt 3).
+        Osoby poniżej 16 lat nie dostają powiadomień push (zgodę na nie musiałby
+        wyrazić rodzic, art. 8 RODO) i inni użytkownicy nie mogą ich znaleźć po
+        imieniu. Liczymy to z daty urodzenia za każdym razem, więc jedno i
+        drugie zaczyna działać samo w dniu 16. urodzin. Kto jeszcze nie podał
+        daty urodzenia, też nie jest wyszukiwany. Powiadomienia w aplikacji
+        działają u wszystkich tak samo. Dzieci biorą udział w wydarzeniach także
+        jako osoby dodane po imieniu (pkt 3).
       </p>
 
       <h2>11. Czego nie robimy</h2>
@@ -409,8 +419,9 @@ const en: LegalDoc = {
         </p>
         <ul>
           <li>
-            You can have an account if you are 13 or older. We don’t ask for
-            your birth date, only whether you are 13–15 or 16 and over.
+            You can have an account if you are 13 or older. At first sign-in we
+            ask for your date of birth and keep it. Only you can see it, no one
+            else.
           </li>
           <li>
             We keep your email address, name, avatar or photo, and what you add
@@ -418,8 +429,9 @@ const en: LegalDoc = {
           </li>
           <li>
             Under 16? We don’t send you push notifications, and people who don’t
-            know you can’t find you by name. Someone who knows you can still add
-            you to an event or send you an invite link.
+            know you can’t find you by name. That changes by itself on your 16th
+            birthday. Someone who knows you can still add you to an event or
+            send you an invite link.
           </li>
           <li>
             Under 18? Make sure a parent or guardian knows you use Prezentowo
@@ -453,15 +465,18 @@ const en: LegalDoc = {
               <td>Your account</td>
               <td>
                 Your email address, your name, a stock avatar or your own photo,
-                an age band (13–15 or 16 and over, never a birth date), a copy
-                of your name prepared for search, and sign-in tokens.
+                your date of birth, a copy of your name prepared for search, and
+                sign-in tokens.
               </td>
               <td>
                 To sign you in with an emailed link and show you to the people
-                in your events. The age band decides whether you get push
-                notifications and whether you can be found by name (section 10).
-                The search copy lets others find you by name if you are 16 or
-                older (section 4). Contract.
+                in your events. We keep the date of birth to know whether you
+                can have an account (13 or older) and from which day you get
+                push notifications and can be found by name (16 or older,
+                section 10). It is worked out from the date every time, so it
+                changes by itself on your birthday. Only you can see it, and it
+                is deleted with your account. The search copy lets others find
+                you by name if you are 16 or older (section 4). Contract.
               </td>
             </tr>
             <tr>
@@ -558,8 +573,12 @@ const en: LegalDoc = {
         <li>
           <b>Signed-in users can find you by name</b> if you are 16 or older,
           and see your avatar and photo, but never your email address. People
-          aged 13–15 can’t be found this way. For now there’s no way to opt out
-          of search.
+          under 16 can’t be found this way. For now there’s no way to opt out of
+          search.
+        </li>
+        <li>
+          <b>Your date of birth:</b> only you can see it. We don’t show it to
+          anyone else, not in search, events, activity or chat.
         </li>
         <li>
           <b>Photo links</b> are long and random, so they can’t be guessed, but
@@ -721,18 +740,20 @@ const en: LegalDoc = {
 
       <h2>10. Children</h2>
       <p>
-        Accounts are for people aged 13 and over. At first sign-in we ask
-        whether you are under 13, 13–15, or 16 and over. We don’t ask for a
-        birth date and never store a birth date, only the band you pick, which
-        only you can see. For anyone under 13 we don’t make an account, and we
-        delete one when we learn of it.
+        Accounts are for people aged 13 and over. At first sign-in we ask for
+        your date of birth and we store your date of birth until the account is
+        deleted; only you can see it. We check nothing about it except that it
+        is a real date within the last 120 years. For anyone under 13 we don’t
+        make an account and keep nothing, and we delete one when we learn of it.
       </p>
       <p>
-        Users aged 13–15 get no push notifications (a parent would have to give
+        People under 16 get no push notifications (a parent would have to give
         that consent, GDPR Art. 8), and other users can’t find them by name.
-        Anyone who hasn’t answered the age question yet can’t be found either.
-        In-app notifications work the same for everyone. Children also take part
-        in events as people added by name (section 3).
+        This is worked out from the date of birth every time, so both start by
+        themselves on their 16th birthday. Anyone who hasn’t given a date of
+        birth yet can’t be found either. In-app notifications work the same for
+        everyone. Children also take part in events as people added by name
+        (section 3).
       </p>
 
       <h2>11. What we don’t do</h2>

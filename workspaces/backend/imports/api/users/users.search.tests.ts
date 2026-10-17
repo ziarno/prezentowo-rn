@@ -4,7 +4,12 @@ import { Accounts } from 'meteor/accounts-base'
 import { DDP } from 'meteor/ddp'
 import { Meteor } from 'meteor/meteor'
 
-import { createFamilyEvent, createUser } from '../../../tests/fixtures'
+import {
+  bornAged,
+  createFamilyEvent,
+  createUser,
+  turnsSixteenTomorrow,
+} from '../../../tests/fixtures'
 import {
   callAsUser,
   createLoginToken,
@@ -14,8 +19,9 @@ import {
 } from '../../../tests/helpers'
 import '../accounts/accounts.methods'
 import '../gifts/gifts.publications'
+import { pinToday } from '../today'
 import { createUserIndexes } from './users.indexes'
-import './users.search'
+import { searchSelector } from './users.search'
 
 const tokensOf = async (userId: string) =>
   (
@@ -54,28 +60,73 @@ describe('nameTokens', function () {
     assert.deepStrictEqual(await tokensOf(userId), ['goska', 'kakol'])
   })
 
-  it('has a multikey index led by the age band the search filters on', async function () {
+  // The search is a prefix regex on `nameTokens` plus a range on `birthDate`.
+  // The regex bounds are the selective part, so `nameTokens` leads and
+  // `birthDate` is checked on the index keys without fetching the document.
+  it('has a multikey index on nameTokens then birthDate, for the search', async function () {
     await createUserIndexes()
 
     const indexes = await Meteor.users.rawCollection().indexes()
     assert.ok(
       indexes.some(
         i =>
-          Object.keys(i.key).join() === 'ageBand,nameTokens' &&
-          i.key.ageBand === 1 &&
-          i.key.nameTokens === 1,
+          Object.keys(i.key).join() === 'nameTokens,birthDate' &&
+          i.key.nameTokens === 1 &&
+          i.key.birthDate === 1,
       ),
     )
   })
 
-  it('drops the earlier index on nameTokens alone', async function () {
+  it('drops the earlier indexes: nameTokens alone, and ageBand first', async function () {
     const users = Meteor.users.rawCollection()
     await users.createIndex({ nameTokens: 1 })
+    await users.createIndex({ ageBand: 1, nameTokens: 1 })
 
     await createUserIndexes()
 
-    const indexes = await users.indexes()
-    assert.ok(!indexes.some(i => Object.keys(i.key).join() === 'nameTokens'))
+    const keys = (await users.indexes()).map(i => Object.keys(i.key).join())
+    assert.ok(!keys.includes('nameTokens'))
+    assert.ok(!keys.includes('ageBand,nameTokens'))
+  })
+
+  it('answers the search from that index, reading few keys and one document', async function () {
+    await createUserIndexes()
+    for (let i = 0; i < 60; i++) {
+      await createUser(
+        `Filler${String(i).padStart(2, '0')} Person`,
+        bornAged(30),
+      )
+    }
+    const target = await createUser('Zuzanna Wyjatkowa', bornAged(30))
+
+    const plan = await Meteor.users
+      .rawCollection()
+      .find(
+        searchSelector('someone-else', ['zuz', 'wyj'], '2026-10-17') as never,
+      )
+      .explain('executionStats')
+
+    const stages: { stage: string; indexName?: string }[] = []
+    const walk = (node: {
+      stage: string
+      indexName?: string
+      inputStage?: unknown
+    }) => {
+      stages.push(node)
+      if (node.inputStage) walk(node.inputStage as typeof node)
+    }
+    walk(plan.queryPlanner.winningPlan)
+    assert.ok(
+      stages.some(
+        s => s.stage === 'IXSCAN' && s.indexName === 'nameTokens_1_birthDate_1',
+      ),
+      JSON.stringify(plan.queryPlanner.winningPlan),
+    )
+    assert.ok(!stages.some(s => s.stage === 'COLLSCAN'))
+    assert.ok(plan.executionStats.totalKeysExamined <= 3)
+    assert.strictEqual(plan.executionStats.totalDocsExamined, 1)
+    assert.strictEqual(plan.executionStats.nReturned, 1)
+    assert.ok(target)
   })
 
   it('is never published with a profile', async function () {
@@ -105,7 +156,7 @@ describe('users.search', function () {
     callAsUser<UserSearchResult[]>(as, 'users.search', { query })
 
   // Only 16+ users are searchable (§1.15, §2.2).
-  const createAdult = (name: string) => createUser(name, '16+')
+  const createAdult = (name: string) => createUser(name, bornAged(30))
 
   const namesFor = async (query: string) =>
     (await search(query)).map(r => r.name)
@@ -192,12 +243,40 @@ describe('users.search', function () {
     })
   })
 
-  it('never returns a 13–15 user or one who has not answered the age question', async function () {
+  it('never returns a user under 16 or one who has not given a date of birth', async function () {
     await createAdult('Mira Adult')
-    await createUser('Mira Teen', '13-15')
+    await createUser('Mira Teen', bornAged(14))
+    await createUser('Mira Fifteen', turnsSixteenTomorrow())
     await createUser('Mira Unanswered')
 
     assert.deepStrictEqual(await namesFor('mira'), ['Mira Adult'])
+  })
+
+  it('finds a user from the day they turn 16, with no job in between', async function () {
+    // 15 years and 364 days old on Oct 17; 16 on Oct 18.
+    await createUser('Mira Birthday', '2010-10-18')
+    try {
+      pinToday('2026-10-17')
+      assert.deepStrictEqual(await namesFor('mira'), [])
+
+      pinToday('2026-10-18')
+      assert.deepStrictEqual(await namesFor('mira'), ['Mira Birthday'])
+    } finally {
+      pinToday(null)
+    }
+  })
+
+  it('makes someone born on Feb 29 searchable on Feb 29 of the leap year, or Mar 1', async function () {
+    await createUser('Mira Leap', '2012-02-29')
+    try {
+      pinToday('2028-02-28')
+      assert.deepStrictEqual(await namesFor('mira'), [])
+
+      pinToday('2028-02-29')
+      assert.deepStrictEqual(await namesFor('mira'), ['Mira Leap'])
+    } finally {
+      pinToday(null)
+    }
   })
 
   it('requires a signed-in caller', async function () {

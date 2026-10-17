@@ -75,20 +75,23 @@
     "namePlaceholder": "Alex Kowalski",
     "profilePicture": "Profile picture",
     "uploadHint": "Tap the <0>+</0> to upload your own photo, or tap your avatar to pick one of ours.",
-    "ageLabel": "How old are you?",
-    "ageUnder13": "Under 13",
-    "age13to15": "13–15",
-    "age16plus": "16 or older",
-    "ageHint": "We only keep which group you're in, never your birthday.",
-    "ageRequired": "Pick one to continue",
+    "birthDateLabel": "Date of birth",
+    "birthDatePlaceholder": "Pick your date of birth",
+    "birthDateHint": "Only you can see it. We keep it to know when you're old enough for notifications and search.",
+    "birthDateRequired": "Pick your date of birth to continue",
+    "birthDateProblem": {
+      "malformed": "That isn't a real date",
+      "future": "That date hasn't happened yet",
+      "tooOld": "That's more than 120 years ago"
+    },
     "ageEyebrow": "One quick thing.",
-    "ageTitleLine1": "How old",
-    "ageTitleLine2": "are you?",
+    "ageTitleLine1": "Your date",
+    "ageTitleLine2": "of birth.",
     "ageSubtitle": "Prezentowo is for people 13 and over, so we need to ask."
   },
   "underAge": {
     "title": "Prezentowo is for ages 13 and up",
-    "body": "You can't make an account yet, so we haven't made one and haven't kept your age. Come back when you turn 13.",
+    "body": "You can't have an account yet, so we've deleted it and haven't kept your date of birth. Come back when you turn 13.",
     "back": "Back"
   },
   "avatarPicker": {
@@ -160,7 +163,7 @@
   },
   "pushSettings": {
     "title": "Push notifications",
-    "sixteenPlusOnly": "Push notifications are for people 16 and over. What happens in your events still shows in your inbox.",
+    "sixteenPlusOnly": "Push notifications are for people 16 and over, and they turn on by themselves on your 16th birthday. What happens in your events still shows in your inbox.",
     "notAsked": "Pushes aren't on yet",
     "notAskedNote": "Your phone will ask you to allow them.",
     "turnOn": "Turn on",

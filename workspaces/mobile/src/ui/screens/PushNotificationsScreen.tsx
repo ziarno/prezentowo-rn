@@ -1,4 +1,4 @@
-import { PUSH_KINDS, type PushKind, isSixteenPlus } from '@prezentowo/types'
+import { PUSH_KINDS, type PushKind } from '@prezentowo/types'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Linking, ScrollView, Switch, View } from 'react-native'
@@ -15,6 +15,7 @@ import { garland } from '@/constants/colors'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useOffline } from '@/hooks/useOffline'
 import { usePushPermission } from '@/hooks/usePushPermission'
+import { useSixteenPlus } from '@/hooks/useToday'
 import { errorMessage } from '@/localization/errorMessage'
 import { pushPermission } from '@/push'
 import { GarlandButton, GarlandButtonText } from '@/ui/components/GarlandButton'
@@ -27,6 +28,9 @@ export function PushNotificationsScreen() {
   const offline = useOffline()
   const permission = usePushPermission()
   const user = useCurrentUser()
+  // Judged against today, again on each app focus: turning 16 shows the
+  // switches without a reinstall.
+  const sixteenPlus = useSixteenPlus()
   // A flipped switch shows its new value until the user document does.
   const [toggled, setToggled] = useState<PushToggles>({})
   const preferences = user?.pushPreferences
@@ -56,7 +60,7 @@ export function PushNotificationsScreen() {
 
   // Push is 16+ only (docs/spec.md §1.15, §10.2): nothing to turn on or off,
   // and no way to ask the OS for it.
-  if (!isSixteenPlus(user)) {
+  if (!sixteenPlus) {
     return (
       <SafeAreaView className="flex-1 bg-garland-paper">
         <ScreenHeader title={t('pushSettings.title')} variant="back" />

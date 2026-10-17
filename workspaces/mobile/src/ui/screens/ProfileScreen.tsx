@@ -1,4 +1,3 @@
-import { isSixteenPlus } from '@prezentowo/types'
 import * as Application from 'expo-application'
 import { router } from 'expo-router'
 import type { ComponentType, ReactNode } from 'react'
@@ -41,6 +40,7 @@ import { useOpenLegalPage } from '@/hooks/useOpenLegalPage'
 import { usePhotoPrompt } from '@/hooks/usePhotoPrompt'
 import { usePushPermission } from '@/hooks/usePushPermission'
 import { useSignOut } from '@/hooks/useSignOut'
+import { useSixteenPlus } from '@/hooks/useToday'
 import { useUserStats } from '@/hooks/useUserStats'
 import { useLanguageModal } from '@/localization/LanguageModalProvider'
 import { errorMessage } from '@/localization/errorMessage'
@@ -95,6 +95,7 @@ export function ProfileScreen() {
   const [savingPhoto, setSavingPhoto] = useState(false)
 
   const user = useCurrentUser()
+  const sixteenPlus = useSixteenPlus()
   const stats = useUserStats()
   const permission = usePushPermission()
 
@@ -164,11 +165,7 @@ export function ProfileScreen() {
     permission && user
       ? t(
           PUSH_SUMMARY_KEY[
-            pushSummary(
-              permission,
-              user.pushPreferences ?? {},
-              isSixteenPlus(user),
-            )
+            pushSummary(permission, user.pushPreferences ?? {}, sixteenPlus)
           ],
         )
       : undefined
