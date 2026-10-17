@@ -167,7 +167,7 @@
   },
   "pushSettings": {
     "title": "Powiadomienia push",
-    "sixteenPlusOnly": "Powiadomienia push są dla osób od 16 lat i włączą się same w dniu Twoich 16. urodzin. To, co dzieje się w Twoich wydarzeniach, nadal zobaczysz w skrzynce.",
+    "sixteenPlusOnly": "Powiadomienia push są dla osób od 16 lat. Możesz je włączyć od dnia swoich 16. urodzin. To, co dzieje się w Twoich wydarzeniach, nadal zobaczysz w skrzynce.",
     "notAsked": "Powiadomienia nie są jeszcze włączone",
     "notAskedNote": "Telefon zapyta, czy na nie pozwolić.",
     "turnOn": "Włącz",

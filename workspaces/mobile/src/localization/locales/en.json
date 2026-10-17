@@ -163,7 +163,7 @@
   },
   "pushSettings": {
     "title": "Push notifications",
-    "sixteenPlusOnly": "Push notifications are for people 16 and over, and they turn on by themselves on your 16th birthday. What happens in your events still shows in your inbox.",
+    "sixteenPlusOnly": "Push notifications are for people 16 and over. You can turn them on from your 16th birthday. What happens in your events still shows in your inbox.",
     "notAsked": "Pushes aren't on yet",
     "notAskedNote": "Your phone will ask you to allow them.",
     "turnOn": "Turn on",

@@ -183,7 +183,10 @@ describe('legal pages', function () {
       assert.match(pl, /rodzic lub opiekun/)
       assert.match(pl, /datę urodzenia/)
       assert.match(pl, /nikt inny/)
-      assert.match(pl, /w dniu 16\. urodzin/)
+      assert.match(
+        pl,
+        /Od dnia 16\. urodzin\s+możesz włączyć powiadomienia push/,
+      )
 
       const en = await summary('en')
       assert.match(en, /13 or older/)
@@ -193,7 +196,10 @@ describe('legal pages', function () {
       assert.match(en, /parent or guardian/)
       assert.match(en, /date of birth/)
       assert.match(en, /no one else/)
-      assert.match(en, /on your 16th birthday/)
+      assert.match(
+        en,
+        /From your 16th birthday you can turn\s+push notifications on/,
+      )
     })
 
     it('says in section 2 that the date of birth is kept, why, who sees it and that it goes with the account', async function () {
@@ -263,7 +269,8 @@ describe('legal pages', function () {
       assert.match(pl, /nie mogą ich znaleźć po imieniu/)
       assert.match(pl, /zapisujemy Twoją datę urodzenia/)
       assert.match(pl, /widzisz ją tylko Ty/i)
-      assert.match(pl, /w dniu 16\. urodzin/)
+      assert.match(pl, /od dnia\s+16\. urodzin/)
+      assert.match(pl, /mogą same włączyć powiadomienia push/)
 
       const en = await section('en')
       assert.match(en, /aged 13 and over/)
@@ -273,7 +280,8 @@ describe('legal pages', function () {
       assert.match(en, /can’t find them by name/)
       assert.match(en, /store your date of birth/)
       assert.match(en, /only you can see it/i)
-      assert.match(en, /on their 16th birthday/)
+      assert.match(en, /from their 16th\s+birthday/)
+      assert.match(en, /can turn push notifications on/)
     })
 
     it('says only people from 16 can be found by name, and get push', async function () {

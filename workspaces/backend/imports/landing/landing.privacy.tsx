@@ -40,9 +40,10 @@ const pl: LegalDoc = {
           </li>
           <li>
             Masz poniżej 16 lat? Nie wysyłamy Ci powiadomień push, a osoby,
-            które Cię nie znają, nie znajdą Cię po imieniu. Zmieni się to samo w
-            dniu 16. urodzin. Ktoś znajomy nadal może dodać Cię do wydarzenia
-            albo wysłać Ci link z zaproszeniem.
+            które Cię nie znają, nie znajdą Cię po imieniu. Od dnia 16. urodzin
+            możesz włączyć powiadomienia push i można Cię wyszukać. Ktoś znajomy
+            nadal może dodać Cię do wydarzenia albo wysłać Ci link z
+            zaproszeniem.
           </li>
           <li>
             Masz mniej niż 18 lat? Upewnij się, że rodzic lub opiekun wie, że
@@ -83,12 +84,12 @@ const pl: LegalDoc = {
               <td>
                 Żeby logować Cię linkiem z e-maila i pokazywać Cię osobom w
                 Twoich wydarzeniach. Datę urodzenia zapisujemy, żeby wiedzieć,
-                czy możesz mieć konto (od 13 lat) i od którego dnia dostajesz
-                powiadomienia push i możesz być wyszukany (od 16 lat, pkt 10).
-                Liczymy to z niej za każdym razem, więc zmienia się samo w dniu
-                urodzin. Widzisz ją tylko Ty, nikt inny, a usuwamy ją razem z
-                kontem. Kopia do wyszukiwania pozwala innym znaleźć Cię po
-                imieniu, jeśli masz co najmniej 16 lat (pkt 4). Umowa.
+                czy możesz mieć konto (od 13 lat) i od którego dnia możesz
+                dostawać powiadomienia push i możesz być wyszukany (od 16 lat,
+                pkt 10). Liczymy to z niej za każdym razem, więc zmienia się
+                samo w dniu urodzin. Widzisz ją tylko Ty, nikt inny, a usuwamy
+                ją razem z kontem. Kopia do wyszukiwania pozwala innym znaleźć
+                Cię po imieniu, jeśli masz co najmniej 16 lat (pkt 4). Umowa.
               </td>
             </tr>
             <tr>
@@ -372,11 +373,12 @@ const pl: LegalDoc = {
       <p>
         Osoby poniżej 16 lat nie dostają powiadomień push (zgodę na nie musiałby
         wyrazić rodzic, art. 8 RODO) i inni użytkownicy nie mogą ich znaleźć po
-        imieniu. Liczymy to z daty urodzenia za każdym razem, więc jedno i
-        drugie zaczyna działać samo w dniu 16. urodzin. Kto jeszcze nie podał
-        daty urodzenia, też nie jest wyszukiwany. Powiadomienia w aplikacji
-        działają u wszystkich tak samo. Dzieci biorą udział w wydarzeniach także
-        jako osoby dodane po imieniu (pkt 3).
+        imieniu. Liczymy to z daty urodzenia za każdym razem, więc od dnia 16.
+        urodzin można je wyszukać i mogą same włączyć powiadomienia push
+        (telefon nadal zapyta o zgodę). Kto jeszcze nie podał daty urodzenia,
+        też nie jest wyszukiwany. Powiadomienia w aplikacji działają u
+        wszystkich tak samo. Dzieci biorą udział w wydarzeniach także jako osoby
+        dodane po imieniu (pkt 3).
       </p>
 
       <h2>11. Czego nie robimy</h2>
@@ -429,9 +431,9 @@ const en: LegalDoc = {
           </li>
           <li>
             Under 16? We don’t send you push notifications, and people who don’t
-            know you can’t find you by name. That changes by itself on your 16th
-            birthday. Someone who knows you can still add you to an event or
-            send you an invite link.
+            know you can’t find you by name. From your 16th birthday you can
+            turn push notifications on and people can find you. Someone who
+            knows you can still add you to an event or send you an invite link.
           </li>
           <li>
             Under 18? Make sure a parent or guardian knows you use Prezentowo
@@ -471,7 +473,7 @@ const en: LegalDoc = {
               <td>
                 To sign you in with an emailed link and show you to the people
                 in your events. We keep the date of birth to know whether you
-                can have an account (13 or older) and from which day you get
+                can have an account (13 or older) and from which day you can get
                 push notifications and can be found by name (16 or older,
                 section 10). It is worked out from the date every time, so it
                 changes by itself on your birthday. Only you can see it, and it
@@ -749,11 +751,12 @@ const en: LegalDoc = {
       <p>
         People under 16 get no push notifications (a parent would have to give
         that consent, GDPR Art. 8), and other users can’t find them by name.
-        This is worked out from the date of birth every time, so both start by
-        themselves on their 16th birthday. Anyone who hasn’t given a date of
-        birth yet can’t be found either. In-app notifications work the same for
-        everyone. Children also take part in events as people added by name
-        (section 3).
+        This is worked out from the date of birth every time, so from their 16th
+        birthday they can be found by name and can turn push notifications on
+        themselves (the phone still asks for permission). Anyone who hasn’t
+        given a date of birth yet can’t be found either. In-app notifications
+        work the same for everyone. Children also take part in events as people
+        added by name (section 3).
       </p>
 
       <h2>11. What we don’t do</h2>
