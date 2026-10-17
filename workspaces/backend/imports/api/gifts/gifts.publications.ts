@@ -1,4 +1,4 @@
-import type { GiftDoc } from '@prezentowo/types'
+import type { EventDoc, GiftDoc } from '@prezentowo/types'
 import { check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 
@@ -74,25 +74,105 @@ Meteor.publish('gifts.byEvent', async function (eventId: string) {
   this.onStop(() => handle.stop())
 })
 
+// Meteor.users' cursors have `observeChangesAsync` too, under the same lag.
+type AsyncObservableUsers = {
+  observeChangesAsync: (callbacks: {
+    added?: (id: string, fields: Record<string, unknown>) => void
+    changed?: (id: string, fields: Record<string, unknown>) => void
+    removed?: (id: string) => void
+  }) => Promise<{ stop: () => void }>
+}
+
+const PROFILE_FIELDS = {
+  'profile.name': 1,
+  'profile.avatar': 1,
+  'profile.photo': 1,
+}
+
+const realUserIds = (event: EventDoc) =>
+  event.participants.flatMap(p => (p.kind === 'real' ? [p.userId] : []))
+
 // Minimal profiles (name, avatar, photo) for the real participants of an
 // event, so the client can render their names and pictures in the
 // event/people screens.
+// Follows the participant list while it runs: someone joining has their
+// profile added, someone leaving it taken back.
 // Only while the viewer stays a member: their removal ends it.
 Meteor.publish('users.inEvent', async function (eventId: string) {
   check(eventId, String)
   if (!this.userId) return this.ready()
 
-  const event = await watchMembership(this, eventId, this.userId)
+  // One observer per real participant. `live` drops callbacks from an
+  // observer already let go of; `sent` says whether its profile is out.
+  type Follow = {
+    live: boolean
+    sent: boolean
+    handle: Promise<{ stop: () => void }>
+  }
+  const follows = new Map<string, Follow>()
+  let latest: EventDoc | undefined
+  let started = false
+  let stopped = false
+
+  const follow = (userId: string): Follow => {
+    const f = { live: true, sent: false } as Follow
+    const cursor = Meteor.users.find(
+      { _id: userId },
+      { fields: PROFILE_FIELDS },
+    ) as unknown as AsyncObservableUsers
+    f.handle = cursor.observeChangesAsync({
+      added: (id, fields) => {
+        if (!f.live) return
+        f.sent = true
+        this.added('users', id, fields)
+      },
+      changed: (id, fields) => {
+        if (f.live) this.changed('users', id, fields)
+      },
+      removed: id => {
+        if (!f.live) return
+        f.sent = false
+        this.removed('users', id)
+      },
+    })
+    return f
+  }
+
+  const letGo = (f: Follow) => {
+    f.live = false
+    void f.handle.then(h => h.stop())
+  }
+
+  // Always against the newest event seen, so a change that lands before the
+  // first read is in hand isn't undone by it.
+  const sync = () => {
+    if (!started || stopped || !latest) return
+    const userIds = new Set(realUserIds(latest))
+    for (const [userId, f] of follows) {
+      if (userIds.has(userId)) continue
+      follows.delete(userId)
+      letGo(f)
+      if (f.sent) this.removed('users', userId)
+    }
+    for (const userId of userIds) {
+      if (!follows.has(userId)) follows.set(userId, follow(userId))
+    }
+  }
+
+  this.onStop(() => {
+    stopped = true
+    follows.forEach(letGo)
+  })
+
+  const event = await watchMembership(this, eventId, this.userId, doc => {
+    latest = doc
+    sync()
+  })
   if (!event) return this.ready()
 
-  const userIds = event.participants
-    .filter((p): p is typeof p & { userId: string } => p.kind === 'real')
-    .map(p => p.userId)
-
-  return Meteor.users.find(
-    { _id: { $in: userIds } },
-    {
-      fields: { 'profile.name': 1, 'profile.avatar': 1, 'profile.photo': 1 },
-    },
-  )
+  latest ??= event
+  started = true
+  sync()
+  await Promise.all([...follows.values()].map(f => f.handle))
+  this.ready()
 })

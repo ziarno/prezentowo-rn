@@ -44,12 +44,14 @@ type ObservableEvents = {
  * just at subscribe time. Resolves with the event as first read, or null when
  * `userId` isn't a member (`sub` is left to the caller). Once they stop being
  * one — `events.removeParticipant` — or the event is deleted, `sub` is
- * stopped, which takes everything it published back off their client.
+ * stopped, which takes everything it published back off their client. Every
+ * other change to the event goes to `onChange`, if given.
  */
 export async function watchMembership(
   sub: Subscription,
   eventId: string,
   userId: string,
+  onChange?: (event: EventDoc) => void,
 ): Promise<EventDoc | null> {
   let event = null as EventDoc | null
   const handle = await (
@@ -58,6 +60,7 @@ export async function watchMembership(
     added: doc => void (event = doc),
     changed: doc => {
       if (!isMemberOf(doc, userId)) sub.stop()
+      else onChange?.(doc)
     },
     removed: () => sub.stop(),
   })

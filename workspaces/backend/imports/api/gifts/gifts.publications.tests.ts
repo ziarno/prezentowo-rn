@@ -1,7 +1,12 @@
 import assert from 'assert'
 import { Meteor } from 'meteor/meteor'
 
-import { addGiftAs, createFamilyEvent } from '../../../tests/fixtures'
+import {
+  addGiftAs,
+  createFamilyEvent,
+  createUser,
+  seatMembers,
+} from '../../../tests/fixtures'
 import {
   callAsUser,
   resetDatabase,
@@ -312,6 +317,55 @@ describe('users.inEvent', function () {
     assert.deepStrictEqual(sub.docs('users').get(users.bartek), {
       profile: { name: 'Bartek', avatar: 'm2', photo: 'photo-id' },
     })
+  })
+
+  it('sends the profile of someone who joins while subscribed, and their later changes', async function () {
+    const { users, eventId } = family
+    const sub = await subscribe(users.celina)
+    const newcomer = await createUser('Oliwka')
+
+    await seatMembers(eventId, [newcomer])
+    await waitFor(() => sub.docs('users').has(newcomer))
+    assert.deepStrictEqual(sub.docs('users').get(newcomer), {
+      profile: { name: 'Oliwka' },
+    })
+
+    await Meteor.users.updateAsync(newcomer, {
+      $set: { 'profile.avatar': 'f3' },
+    })
+    await waitFor(
+      () =>
+        (sub.docs('users').get(newcomer)?.profile as { avatar?: string })
+          ?.avatar === 'f3',
+    )
+  })
+
+  it('takes back the profile of a participant removed while subscribed, and sends none of their later changes', async function () {
+    const { users, participants, eventId } = family
+    const sub = await subscribe(users.celina)
+    assert.ok(sub.docs('users').has(users.bartek))
+
+    await callAsUser(users.ola, 'events.removeParticipant', {
+      eventId,
+      participantId: participants.bartek,
+    })
+    await waitFor(() => !sub.docs('users').has(users.bartek))
+    const sentAboutBartek = () =>
+      sub.messages.filter(m => m.id === users.bartek).length
+    const sentBefore = sentAboutBartek()
+
+    await Meteor.users.updateAsync(users.bartek, {
+      $set: { 'profile.name': 'Bartosz' },
+    })
+    // Writes reach the observers in order: once a later joiner shows up, the
+    // rename has been through too.
+    const newcomer = await createUser('Oliwka')
+    await seatMembers(eventId, [newcomer])
+    await waitFor(() => sub.docs('users').has(newcomer))
+
+    assert.strictEqual(sub.stopped(), false)
+    assert.strictEqual(sentAboutBartek(), sentBefore)
+    assert.strictEqual(sub.docs('users').has(users.bartek), false)
   })
 
   it('takes the profiles back from a participant once they are removed', async function () {
