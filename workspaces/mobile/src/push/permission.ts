@@ -5,13 +5,21 @@ import { PUSH_KINDS, type PushPreferences } from '@prezentowo/types'
 export type PushPermission = 'undetermined' | 'granted' | 'denied'
 
 // Profile's Push notifications subtitle (docs/spec.md §10.1): from the
-// toggles, unless the OS isn't delivering anything.
-export type PushSummary = 'on' | 'some' | 'off' | 'offInSettings'
+// toggles, unless the OS isn't delivering anything, or the user is under 16
+// and has no push at all (§1.15).
+export type PushSummary =
+  | 'on'
+  | 'some'
+  | 'off'
+  | 'offInSettings'
+  | 'sixteenPlus'
 
 export function pushSummary(
   permission: PushPermission,
   preferences: PushPreferences,
+  sixteenPlus: boolean,
 ): PushSummary {
+  if (!sixteenPlus) return 'sixteenPlus'
   if (permission !== 'granted') return 'offInSettings'
   const on = PUSH_KINDS.filter(kind => preferences[kind] !== false).length
   return on === PUSH_KINDS.length ? 'on' : on === 0 ? 'off' : 'some'

@@ -65,7 +65,7 @@ describe('createPushDevice', () => {
   describe('registering', () => {
     it('registers on start once signed in and connected', async () => {
       const { device, calls } = setup()
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
       expect(calls).toEqual([registered()])
     })
@@ -73,14 +73,33 @@ describe('createPushDevice', () => {
     it('registers nothing without permission', async () => {
       const { phone, device, calls } = setup()
       phone.granted = false
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
       expect(calls).toEqual([])
     })
 
+    it('registers nothing for a user under 16, or one who has not answered the age question', async () => {
+      const { device, calls } = setup()
+      device.setSession({ signedIn: true, online: true, sixteenPlus: false })
+      device.register()
+      await device.idle()
+      expect(calls).toEqual([])
+    })
+
+    it('registers once the user turns out to be 16+', async () => {
+      const { device, calls } = setup()
+      device.setSession({ signedIn: true, online: true, sixteenPlus: false })
+      await device.idle()
+      expect(calls).toEqual([])
+
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
+      await device.idle()
+      expect(calls).toEqual([registered()])
+    })
+
     it('registers nothing while signed out', async () => {
       const { device, calls } = setup()
-      device.setSession({ signedIn: false, online: true })
+      device.setSession({ signedIn: false, online: true, sixteenPlus: true })
       device.register()
       await device.idle()
       expect(calls).toEqual([])
@@ -88,28 +107,28 @@ describe('createPushDevice', () => {
 
     it('waits offline for the connection', async () => {
       const { device, calls } = setup()
-      device.setSession({ signedIn: true, online: false })
+      device.setSession({ signedIn: true, online: false, sixteenPlus: true })
       await device.idle()
       expect(calls).toEqual([])
 
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
       expect(calls).toEqual([registered()])
     })
 
     it('registers once per start, not on every reconnect', async () => {
       const { device, calls } = setup()
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
-      device.setSession({ signedIn: true, online: false })
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: false, sixteenPlus: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
       expect(calls).toEqual([registered()])
     })
 
     it('registers again when asked: after a grant, a new token or a language change', async () => {
       const { phone, device, calls } = setup()
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
 
       phone.locale = 'en'
@@ -121,8 +140,8 @@ describe('createPushDevice', () => {
 
     it('registers after a sign-in', async () => {
       const { device, calls } = setup()
-      device.setSession({ signedIn: false, online: true })
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: false, online: true, sixteenPlus: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
       expect(calls).toEqual([registered()])
     })
@@ -130,13 +149,13 @@ describe('createPushDevice', () => {
     it('tries a failed registration again on the next connection', async () => {
       const { server, device, calls } = setup()
       server.reachable = false
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
       expect(calls).toEqual([])
 
       server.reachable = true
-      device.setSession({ signedIn: true, online: false })
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: false, sixteenPlus: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
       expect(calls).toEqual([registered()])
     })
@@ -145,7 +164,7 @@ describe('createPushDevice', () => {
   describe('signing out', () => {
     it('unregisters this device', async () => {
       const { device, calls } = setup()
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
 
       await device.signOut()
@@ -155,15 +174,19 @@ describe('createPushDevice', () => {
 
     it('unregisters a device registered on an earlier start', async () => {
       const first = setup()
-      first.device.setSession({ signedIn: true, online: true })
+      first.device.setSession({
+        signedIn: true,
+        online: true,
+        sixteenPlus: true,
+      })
       await first.device.idle()
 
       // The next start, on the same phone, signs out offline before its own
       // registration could run.
       const { device, calls } = setup(first.phone.store)
-      device.setSession({ signedIn: true, online: false })
+      device.setSession({ signedIn: true, online: false, sixteenPlus: true })
       await device.signOut()
-      device.setSession({ signedIn: false, online: true })
+      device.setSession({ signedIn: false, online: true, sixteenPlus: true })
       await device.idle()
 
       expect(calls).toEqual([unregistered()])
@@ -172,7 +195,7 @@ describe('createPushDevice', () => {
     it('does nothing for a device that never registered', async () => {
       const { phone, device, calls } = setup()
       phone.granted = false
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
 
       await device.signOut()
@@ -182,54 +205,54 @@ describe('createPushDevice', () => {
 
     it('keeps the token offline and sends it on the next connection, signed out', async () => {
       const { device, calls, methods } = setup()
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
-      device.setSession({ signedIn: true, online: false })
+      device.setSession({ signedIn: true, online: false, sixteenPlus: true })
 
       await device.signOut()
-      device.setSession({ signedIn: false, online: false })
+      device.setSession({ signedIn: false, online: false, sixteenPlus: true })
       expect(methods()).toEqual(['push.register'])
 
-      device.setSession({ signedIn: false, online: true })
+      device.setSession({ signedIn: false, online: true, sixteenPlus: true })
       await device.idle()
       expect(calls).toEqual([registered(), unregistered()])
 
       // Sent once.
-      device.setSession({ signedIn: false, online: false })
-      device.setSession({ signedIn: false, online: true })
+      device.setSession({ signedIn: false, online: false, sixteenPlus: true })
+      device.setSession({ signedIn: false, online: true, sixteenPlus: true })
       await device.idle()
       expect(methods()).toEqual(['push.register', 'push.unregister'])
     })
 
     it('keeps the token when the unregister fails, and never fails the sign-out', async () => {
       const { server, device, calls } = setup()
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
 
       server.reachable = false
       await expect(device.signOut()).resolves.toBeUndefined()
-      device.setSession({ signedIn: false, online: true })
+      device.setSession({ signedIn: false, online: true, sixteenPlus: true })
       await device.idle()
 
       server.reachable = true
-      device.setSession({ signedIn: false, online: false })
-      device.setSession({ signedIn: false, online: true })
+      device.setSession({ signedIn: false, online: false, sixteenPlus: true })
+      device.setSession({ signedIn: false, online: true, sixteenPlus: true })
       await device.idle()
       expect(calls).toEqual([registered(), unregistered()])
     })
 
     it('sends a kept token before the next account registers', async () => {
       const { phone, device, calls } = setup()
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
-      device.setSession({ signedIn: true, online: false })
+      device.setSession({ signedIn: true, online: false, sixteenPlus: true })
       await device.signOut()
 
       // Someone else signs in on this phone, still offline, then connects.
       phone.locale = 'en'
-      device.setSession({ signedIn: false, online: false })
-      device.setSession({ signedIn: true, online: false })
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: false, online: false, sixteenPlus: true })
+      device.setSession({ signedIn: true, online: false, sixteenPlus: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
 
       expect(calls).toEqual([
@@ -241,7 +264,7 @@ describe('createPushDevice', () => {
 
     it('ignores a registration asked for while signing out', async () => {
       const { device, calls } = setup()
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
 
       const signingOut = device.signOut()
@@ -255,12 +278,12 @@ describe('createPushDevice', () => {
 
     it('registers again after signing back in', async () => {
       const { device, calls } = setup()
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
       await device.signOut()
-      device.setSession({ signedIn: false, online: true })
+      device.setSession({ signedIn: false, online: true, sixteenPlus: true })
 
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
 
       expect(calls).toEqual([registered(), unregistered(), registered()])
@@ -270,7 +293,7 @@ describe('createPushDevice', () => {
       const { server, device, calls } = setup()
       // The server took it, but the answer never came back.
       server.reachable = false
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
 
       server.reachable = true
@@ -281,9 +304,9 @@ describe('createPushDevice', () => {
 
     it('drops a registration still waiting for the connection', async () => {
       const { device, calls } = setup()
-      device.setSession({ signedIn: true, online: false })
+      device.setSession({ signedIn: true, online: false, sixteenPlus: true })
       await device.signOut()
-      device.setSession({ signedIn: false, online: true })
+      device.setSession({ signedIn: false, online: true, sixteenPlus: true })
       await device.idle()
       expect(calls).toEqual([])
     })
@@ -292,7 +315,7 @@ describe('createPushDevice', () => {
   describe('forgetting', () => {
     it('forgets the device without a call, once the account is gone', async () => {
       const { device, calls } = setup()
-      device.setSession({ signedIn: true, online: true })
+      device.setSession({ signedIn: true, online: true, sixteenPlus: true })
       await device.idle()
 
       await device.forget()

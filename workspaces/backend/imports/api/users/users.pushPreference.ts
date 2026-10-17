@@ -4,6 +4,7 @@ import { Meteor } from 'meteor/meteor'
 
 import { chatServer } from '../chat/chat.server'
 import { upsertStreamUsers } from '../chat/chat.users'
+import { mayHavePush } from '../push/push.tokens'
 
 const setPushPreference = async function (
   this: Meteor.MethodThisType,
@@ -14,6 +15,9 @@ const setPushPreference = async function (
     throw new Meteor.Error('notAuthorized', 'mustBeLoggedIn')
   }
   const { kind, enabled } = args
+  // Under 16 has no push to set, and the chat write-through would switch
+  // Stream's push on for them (docs/spec.md §10.5).
+  if (!(await mayHavePush(this.userId))) return
 
   // Chat pushes are Stream's, so the switch is too. Stream can't be read
   // back, so Mongo holds the truth, written once Stream has taken it.

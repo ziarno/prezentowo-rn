@@ -125,6 +125,7 @@
     "pushSome": "Some",
     "pushOff": "Off",
     "pushOffInSettings": "Off in Settings",
+    "pushSixteenPlus": "For 16 and over",
     "about": "About",
     "version": "Version",
     "privacy": "Privacy policy",
@@ -159,6 +160,7 @@
   },
   "pushSettings": {
     "title": "Push notifications",
+    "sixteenPlusOnly": "Push notifications are for people 16 and over. What happens in your events still shows in your inbox.",
     "notAsked": "Pushes aren't on yet",
     "notAskedNote": "Your phone will ask you to allow them.",
     "turnOn": "Turn on",

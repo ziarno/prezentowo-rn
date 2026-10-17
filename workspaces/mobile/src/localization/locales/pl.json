@@ -125,6 +125,7 @@
     "pushSome": "Niektóre",
     "pushOff": "Wyłączone",
     "pushOffInSettings": "Wyłączone w Ustawieniach",
+    "pushSixteenPlus": "Od 16 lat",
     "about": "O aplikacji",
     "version": "Wersja",
     "privacy": "Polityka prywatności",
@@ -163,6 +164,7 @@
   },
   "pushSettings": {
     "title": "Powiadomienia push",
+    "sixteenPlusOnly": "Powiadomienia push są dla osób od 16 lat. To, co dzieje się w Twoich wydarzeniach, nadal zobaczysz w skrzynce.",
     "notAsked": "Powiadomienia nie są jeszcze włączone",
     "notAskedNote": "Telefon zapyta, czy na nie pozwolić.",
     "turnOn": "Włącz",

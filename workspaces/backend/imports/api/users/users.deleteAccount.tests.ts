@@ -26,6 +26,7 @@ import {
   whileFailing,
 } from '../../../tests/helpers'
 import { isStored, uploadAs, useImagesSandbox } from '../../../tests/images'
+import { setAgeBand } from '../../../tests/push'
 import { Activity } from '../activity/activity.collection'
 import { ChatThreads } from '../chat/chat.collection'
 import '../chat/chat.methods'
@@ -740,6 +741,7 @@ describe('users.deleteAccount', function () {
 
     it('removes their Stream devices, then deletes their push tokens', async function () {
       const { ola, bartek } = family.users
+      await setAgeBand('16+', ola, bartek)
       const device = (n: number, platform: 'ios' | 'android') => ({
         expoToken: `ExponentPushToken[${n}]`,
         deviceToken: `device-${n}`,
@@ -763,6 +765,7 @@ describe('users.deleteAccount', function () {
 
     it('keeps the push tokens, and the account, while Stream can’t remove a device', async function () {
       const { bartek } = family.users
+      await setAgeBand('16+', bartek)
       await callAsUser(bartek, 'push.register', {
         expoToken: 'ExponentPushToken[1]',
         deviceToken: 'device-1',

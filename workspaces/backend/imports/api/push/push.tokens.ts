@@ -1,4 +1,4 @@
-import type { ApnsEnvironment } from '@prezentowo/types'
+import { type ApnsEnvironment, isSixteenPlus } from '@prezentowo/types'
 import { Meteor } from 'meteor/meteor'
 
 import { type PushProviderType, chatServer } from '../chat/chat.server'
@@ -41,3 +41,15 @@ export async function dropDevices(tokens: PushTokenDoc[]) {
  */
 export const removePushTokensOf = async (userId: string) =>
   dropDevices(await PushTokens.find({ userId }).fetchAsync())
+
+/**
+ * Whether `userId` may have push at all: only the 16+ band, since push is the
+ * one processing that rests on consent, which under 16 would need a parent
+ * (docs/spec.md §1.15, §10.5). The 13-15 band and "not answered yet" are both
+ * no. Every path that registers a device or sends a push asks this.
+ */
+export async function mayHavePush(userId: string) {
+  return isSixteenPlus(
+    await Meteor.users.findOneAsync(userId, { fields: { ageBand: 1 } }),
+  )
+}

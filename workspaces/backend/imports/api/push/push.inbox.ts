@@ -3,6 +3,7 @@ import {
   type InboxPushData,
   type NotificationDoc,
   PUSH_KINDS,
+  isSixteenPlus,
 } from '@prezentowo/types'
 import { Meteor } from 'meteor/meteor'
 
@@ -67,8 +68,8 @@ const inboxPushData = (
 
 /**
  * Sends `notification` as an inbox push to each of its recipient's devices,
- * in each device's language, unless its kind never pushes or the recipient
- * turned it off (docs/spec.md §2.5). Call it once the notification is in.
+ * in each device's language, unless its kind never pushes, the recipient
+ * turned it off, or they're under 16 (docs/spec.md §2.5, §10.5). Call it once the notification is in.
  */
 export async function sendInboxPush(notification: NotificationDoc) {
   const client = pushClient()
@@ -76,9 +77,11 @@ export async function sendInboxPush(notification: NotificationDoc) {
   if (!client || !isInboxPushKind(kind)) return
 
   const user = await Meteor.users.findOneAsync(userId, {
-    fields: { pushPreferences: 1 },
+    fields: { pushPreferences: 1, ageBand: 1 },
   })
-  if (!user || user.pushPreferences?.[kind] === false) return
+  // Under 16 gets no push, even with a device stored: the inbox row is all.
+  if (!user || !isSixteenPlus(user)) return
+  if (user.pushPreferences?.[kind] === false) return
   const tokens = await PushTokens.find({ userId }).fetchAsync()
   if (!tokens.length) return
   // A deleted event takes its notifications with it.

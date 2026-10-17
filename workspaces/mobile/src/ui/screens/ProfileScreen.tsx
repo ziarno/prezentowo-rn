@@ -1,3 +1,4 @@
+import { isSixteenPlus } from '@prezentowo/types'
 import * as Application from 'expo-application'
 import { router } from 'expo-router'
 import type { ComponentType, ReactNode } from 'react'
@@ -70,6 +71,7 @@ const PUSH_SUMMARY_KEY = {
   some: 'profile.pushSome',
   off: 'profile.pushOff',
   offInSettings: 'profile.pushOffInSettings',
+  sixteenPlus: 'profile.pushSixteenPlus',
 } as const satisfies Record<PushSummary, string>
 
 const VERSION = versionLabel(
@@ -160,7 +162,15 @@ export function ProfileScreen() {
   // wrong guess.
   const pushLabel =
     permission && user
-      ? t(PUSH_SUMMARY_KEY[pushSummary(permission, user.pushPreferences ?? {})])
+      ? t(
+          PUSH_SUMMARY_KEY[
+            pushSummary(
+              permission,
+              user.pushPreferences ?? {},
+              isSixteenPlus(user),
+            )
+          ],
+        )
       : undefined
   const localeLabel =
     LOCALES.find(l => l.code === i18n.language)?.label ?? 'English'

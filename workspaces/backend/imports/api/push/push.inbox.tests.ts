@@ -1,10 +1,11 @@
 import type { AppLanguage, NotificationDoc } from '@prezentowo/types'
 import assert from 'assert'
+import { Meteor } from 'meteor/meteor'
 import { Random } from 'meteor/random'
 
 import { addGiftAs, createFamilyEvent } from '../../../tests/fixtures'
 import { callAsUser, resetDatabase } from '../../../tests/helpers'
-import { useFakePushClient } from '../../../tests/push'
+import { setAgeBand, useFakePushClient } from '../../../tests/push'
 import { Invites, createInviteIndexes } from '../invites/invites.collection'
 import '../invites/invites.methods'
 import {
@@ -57,6 +58,7 @@ describe('inbox push', function () {
     await resetDatabase()
     family = await createFamilyEvent()
     users = family.users
+    await setAgeBand('16+', ...Object.values(users))
     await inboxPushesSettled()
   })
 
@@ -114,6 +116,31 @@ describe('inbox push', function () {
         1,
       )
     })
+
+    for (const [name, band] of [
+      ['in the 13-15 band', '13-15'],
+      ['who has not answered the age question', undefined],
+    ] as const) {
+      it(`sends nothing to a user ${name}, even with a device stored, still landing in the inbox`, async function () {
+        await addDevice(users.bartek, 'bartek-phone')
+        if (band) await setAgeBand(band, users.bartek)
+        else
+          await Meteor.users.updateAsync(users.bartek, {
+            $unset: { ageBand: 1 },
+          })
+
+        await claimSuggestion()
+
+        assert.deepStrictEqual(expo.sent, [])
+        assert.strictEqual(
+          await Notifications.find({
+            userId: users.bartek,
+            kind: 'suggestion-claimed',
+          }).countAsync(),
+          1,
+        )
+      })
+    }
 
     it('still pushes a kind left on when another is off', async function () {
       await addDevice(users.bartek, 'bartek-phone')

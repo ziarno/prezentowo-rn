@@ -1,6 +1,8 @@
+import { isSixteenPlus } from '@prezentowo/types'
 import { useEffect } from 'react'
 import { AppState } from 'react-native'
 
+import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { pushDevice, pushPermission } from '@/push'
 import { sessionToken, useSyncStatus, useTracker } from '@/sync'
 
@@ -12,10 +14,12 @@ import { sessionToken, useSyncStatus, useTracker } from '@/sync'
 export function usePushRegistration() {
   const signedIn = useTracker(() => sessionToken() !== null)
   const online = useSyncStatus() === 'connected'
+  // Push is for 16+ only; until the user document says so, nothing registers.
+  const sixteenPlus = isSixteenPlus(useCurrentUser())
 
   useEffect(() => {
-    pushDevice.setSession({ signedIn, online })
-  }, [signedIn, online])
+    pushDevice.setSession({ signedIn, online, sixteenPlus })
+  }, [signedIn, online, sixteenPlus])
 
   useEffect(() => {
     void pushPermission.refresh()

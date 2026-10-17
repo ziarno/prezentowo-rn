@@ -15,9 +15,11 @@ import {
   subscribeAsUser,
   whileFailing,
 } from '../../../tests/helpers'
+import { setAgeBand } from '../../../tests/push'
 import { ownAccount } from '../accounts/accounts.publications'
 import '../chat/chat.methods'
 import { setChatServer } from '../chat/chat.server'
+import '../users/users.ageBand'
 import '../users/users.pushPreference'
 import { PushTokens, createPushTokenIndexes } from './push.collection'
 import './push.methods'
@@ -69,6 +71,7 @@ describe('push', function () {
     await resetDatabase()
     ola = await createUser('Ola')
     bartek = await createUser('Bartek')
+    await setAgeBand('16+', ola, bartek)
   })
 
   describe('push.register', function () {
@@ -263,6 +266,57 @@ describe('push', function () {
       assert.deepStrictEqual(stream.devicesOf(bartek), ['a1b2c3'])
     })
 
+    for (const [name, band] of [
+      ['in the 13-15 band', '13-15'],
+      ['who has not answered the age question', undefined],
+    ] as const) {
+      describe(`for a user ${name}`, function () {
+        let kid: string
+
+        beforeEach(async function () {
+          kid = await createUser('Kasia')
+          if (band) await setAgeBand(band, kid)
+        })
+
+        it('stores no token and registers nothing with Stream', async function () {
+          const before = stream.calls.length
+
+          await register(kid, iosDevice())
+
+          assert.strictEqual(await PushTokens.find().countAsync(), 0)
+          assert.deepStrictEqual(stream.calls.slice(before), [])
+          assert.deepStrictEqual(stream.devicesOf(kid), [])
+        })
+
+        it('still takes the device from the account that held it', async function () {
+          await register(ola, iosDevice())
+
+          await register(kid, iosDevice())
+
+          assert.deepStrictEqual(await tokensOf(ola), [])
+          assert.deepStrictEqual(stream.devicesOf(ola), [])
+          assert.strictEqual(await PushTokens.find().countAsync(), 0)
+        })
+
+        it('drops a token it already holds, even while chat is off', async function () {
+          await PushTokens.insertAsync({
+            _id: 'old',
+            userId: kid,
+            expoToken: 'ExponentPushToken[ios-1]',
+            deviceToken: 'a1b2c3',
+            platform: 'ios',
+            locale: 'pl',
+            updatedAt: new Date(),
+          })
+          setChatServer(null)
+
+          await register(kid, iosDevice())
+
+          assert.deepStrictEqual(await tokensOf(kid), [])
+        })
+      })
+    }
+
     it('stores the device while chat is off', async function () {
       setChatServer(null)
       await register(ola, iosDevice())
@@ -344,6 +398,26 @@ describe('push', function () {
       assert.deepStrictEqual(await preferencesOf(ola), { chat: true })
     })
 
+    it('writes nothing for a 13-15 user, chat included, and never turns Stream’s chat push on', async function () {
+      const kid = await createUser('Kasia')
+      await setAgeBand('13-15', kid)
+      const before = stream.calls.length
+
+      await setPreference(kid, 'chat', true)
+      await setPreference(kid, 'invited', true)
+
+      assert.deepStrictEqual(stream.calls.slice(before), [])
+      assert.strictEqual(stream.chatLevels.has(kid), false)
+      assert.strictEqual(await preferencesOf(kid), undefined)
+    })
+
+    it('writes nothing for a user who has not answered the age question', async function () {
+      const kid = await createUser('Kasia')
+      await setPreference(kid, 'chat', true)
+      assert.strictEqual(stream.chatLevels.has(kid), false)
+      assert.strictEqual(await preferencesOf(kid), undefined)
+    })
+
     it('changes nothing for chat while Stream fails', async function () {
       await whileFailing(stream, 'setPushPreferences', () =>
         assert.rejects(setPreference(ola, 'chat', false)),
@@ -363,6 +437,49 @@ describe('push', function () {
       const other = await subscribeAsUser(bartek, ownAccount)
       assert.strictEqual(other.docs('users').has(ola), false)
       other.stop()
+    })
+  })
+
+  describe('when the age band is set on an account that has devices', function () {
+    let kid: string
+
+    beforeEach(async function () {
+      // An account from before the age question, with a device registered.
+      kid = await createUser('Kasia')
+      await setAgeBand('16+', kid)
+      await register(kid, iosDevice())
+      await register(kid, androidDevice())
+      await Meteor.users.updateAsync(kid, { $unset: { ageBand: 1 } })
+    })
+
+    it('removes the devices of a 13-15 answer from the table and from Stream', async function () {
+      assert.strictEqual((await tokensOf(kid)).length, 2)
+
+      await callAsUser(kid, 'users.setAgeBand', { answer: '13-15' })
+
+      assert.deepStrictEqual(await tokensOf(kid), [])
+      assert.deepStrictEqual(stream.devicesOf(kid), [])
+    })
+
+    it('keeps the devices of a 16+ answer', async function () {
+      await callAsUser(kid, 'users.setAgeBand', { answer: '16+' })
+      assert.strictEqual((await tokensOf(kid)).length, 2)
+      assert.deepStrictEqual(stream.devicesOf(kid), ['a1b2c3', 'fcm-token-1'])
+    })
+
+    it('keeps the question open while Stream can’t remove a device', async function () {
+      await whileFailing(stream, 'removeDevice', () =>
+        assert.rejects(
+          callAsUser(kid, 'users.setAgeBand', { answer: '13-15' }),
+        ),
+      )
+      assert.strictEqual(
+        (await Meteor.users.findOneAsync(kid))?.ageBand,
+        undefined,
+      )
+
+      await callAsUser(kid, 'users.setAgeBand', { answer: '13-15' })
+      assert.deepStrictEqual(await tokensOf(kid), [])
     })
   })
 })

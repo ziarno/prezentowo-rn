@@ -4,6 +4,8 @@ import type { PushPermission } from './permission'
 export const PRE_PROMPT_SHOWN_KEY = 'prezentowo.pushPrePromptShown'
 
 export type PushPrePromptDeps = {
+  // The user is in the 16+ band: push is not for anyone else.
+  sixteenPlus: () => boolean
   permission: () => Promise<PushPermission>
   store: {
     get: (key: string) => Promise<string | null>
@@ -14,11 +16,16 @@ export type PushPrePromptDeps = {
 /**
  * The sheet that asks before the OS does (docs/spec.md §10.5). `offer()`
  * comes after the user creates or joins an event; it opens the sheet only the
- * first time, and only while the OS hasn't asked yet. Shown once per device,
+ * first time, only while the OS hasn't asked yet, and never for a user who
+ * isn't 16+ (§1.15). Shown once per device,
  * kept in SecureStore, so "Not now" never comes back by itself: the push
  * settings screen is the way back.
  */
-export function createPushPrePrompt({ permission, store }: PushPrePromptDeps) {
+export function createPushPrePrompt({
+  sixteenPlus,
+  permission,
+  store,
+}: PushPrePromptDeps) {
   let open = false
   const listeners = new Set<() => void>()
   let queue: Promise<void> = Promise.resolve()
@@ -38,6 +45,7 @@ export function createPushPrePrompt({ permission, store }: PushPrePromptDeps) {
     offer(): Promise<void> {
       queue = queue
         .then(async () => {
+          if (!sixteenPlus()) return
           if ((await store.get(PRE_PROMPT_SHOWN_KEY)) !== null) return
           if ((await permission()) !== 'undetermined') return
           await store.set(PRE_PROMPT_SHOWN_KEY, '1')

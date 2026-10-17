@@ -21,11 +21,18 @@ export type PushDeviceDeps = {
   }
 }
 
-export type PushSession = { signedIn: boolean; online: boolean }
+// `sixteenPlus`: the user is in the 16+ band. Push is only for them, so
+// nothing registers for the 13-15 band, or while the age is unanswered or
+// not loaded yet (docs/spec.md §10.5).
+export type PushSession = {
+  signedIn: boolean
+  online: boolean
+  sixteenPlus: boolean
+}
 
 /**
  * This device's place in the server's push registry (docs/spec.md §10.5).
- * While signed in with permission granted it calls `push.register` on each
+ * While signed in as a 16+ user with permission granted it calls `push.register` on each
  * start and sign-in, and whenever `register()` asks (a grant, a new token, a
  * language change); offline, it waits for the connection, and a failed one
  * is tried again on the next. Signing out unregisters the device; a token
@@ -41,7 +48,11 @@ export function createPushDevice({
   unregister,
   store,
 }: PushDeviceDeps) {
-  let session: PushSession = { signedIn: false, online: false }
+  let session: PushSession = {
+    signedIn: false,
+    online: false,
+    sixteenPlus: false,
+  }
   // A registration is due.
   let wanted = false
   // Signed out on this device, though the session may not have ended yet.
@@ -69,6 +80,8 @@ export function createPushDevice({
     if (!session.online) return
     if (!(await sendUnsentUnregister())) return
     if (!session.signedIn || leaving || !wanted) return
+    // A registration stays due until the band is known to be 16+.
+    if (!session.sixteenPlus) return
     wanted = false
     if (!(await permissionGranted())) return
     try {
@@ -92,8 +105,11 @@ export function createPushDevice({
         leaving = false
       }
       if (!next.signedIn) wanted = false
+      const becameSixteenPlus = next.sixteenPlus && !previous.sixteenPlus
+      if (becameSixteenPlus && next.signedIn) wanted = true
       if (next.online && !previous.online) void run(flush)
       else if (next.signedIn && !previous.signedIn) void run(flush)
+      else if (becameSixteenPlus) void run(flush)
     },
 
     register() {

@@ -1,4 +1,4 @@
-import { PUSH_KINDS, type PushKind } from '@prezentowo/types'
+import { PUSH_KINDS, type PushKind, isSixteenPlus } from '@prezentowo/types'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Linking, ScrollView, Switch, View } from 'react-native'
@@ -52,6 +52,19 @@ export function PushNotificationsScreen() {
         errorMessage(err, t('common.somethingWentWrong')),
       )
     }
+  }
+
+  // Push is 16+ only (docs/spec.md §1.15, §10.2): nothing to turn on or off,
+  // and no way to ask the OS for it.
+  if (!isSixteenPlus(user)) {
+    return (
+      <SafeAreaView className="flex-1 bg-garland-paper">
+        <ScreenHeader title={t('pushSettings.title')} variant="back" />
+        <Text className="mx-[22px] mt-3 rounded-2xl bg-garland-paper2 p-4 text-[15px] leading-[22px] text-garland-ink">
+          {t('pushSettings.sixteenPlusOnly')}
+        </Text>
+      </SafeAreaView>
+    )
   }
 
   return (

@@ -1,4 +1,6 @@
+import type { AgeBand } from '@prezentowo/types'
 import type { ExpoPushReceipt, ExpoPushTicket } from 'expo-server-sdk'
+import { Meteor } from 'meteor/meteor'
 
 import {
   type PushClient,
@@ -91,4 +93,17 @@ export function useFakePushClient() {
     setPushClient(null)
   })
   return fake
+}
+
+/**
+ * Stores `ageBand` on each of `userIds`, as the first-login question does
+ * (docs/spec.md §1.15). Push is 16+ only, so a test of push seats its users
+ * in that band first.
+ */
+export async function setAgeBand(ageBand: AgeBand, ...userIds: string[]) {
+  await Meteor.users.updateAsync(
+    { _id: { $in: userIds } },
+    { $set: { ageBand } },
+    { multi: true },
+  )
 }

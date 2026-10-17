@@ -1,4 +1,4 @@
-import type { ApnsEnvironment } from '@prezentowo/types'
+import { type ApnsEnvironment, isSixteenPlus } from '@prezentowo/types'
 import {
   ApplicationReleaseType,
   getIosApplicationReleaseTypeAsync,
@@ -9,6 +9,7 @@ import * as Notifications from 'expo-notifications'
 import * as SecureStore from 'expo-secure-store'
 import { Platform } from 'react-native'
 
+import { getCurrentUser } from '@/api/users'
 import i18n from '@/localization/i18n'
 import { call } from '@/sync'
 
@@ -92,6 +93,7 @@ export const pushPermission = createPushPermission({
 })
 
 export const pushPrePrompt = createPushPrePrompt({
+  sixteenPlus: () => isSixteenPlus(getCurrentUser()),
   // An unreadable permission counts as answered: the sheet stays shut.
   permission: async () => {
     await pushPermission.refresh()

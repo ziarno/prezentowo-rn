@@ -2,6 +2,7 @@ import { AGE_ANSWERS, type SetAgeBandArgs } from '@prezentowo/types'
 import { Match, check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 
+import { removePushTokensOf } from '../push/push.tokens'
 import { deleteAccountFor, deleteCallersAccount } from './users.deleteAccount'
 
 // The first-login age question (docs/spec.md §1.15, §2.2). A band is stored
@@ -40,6 +41,11 @@ const setAgeBand = async function (
     return
   }
 
+  // An account from before the question may hold devices, here and in
+  // Stream, whose chat push would go on: under 16 has none (§10.5). They go
+  // before the band is stored, so a Stream failure leaves the question open
+  // to answer again.
+  if (answer === '13-15') await removePushTokensOf(userId)
   await Meteor.users.updateAsync(userId, { $set: { ageBand: answer } })
 }
 

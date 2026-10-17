@@ -4,8 +4,13 @@ import { createPushPrePrompt } from '../prePrompt'
 
 // A fake phone: SecureStore, kept across app runs, and the OS permission.
 function setup(store = new Map<string, string>()) {
-  const phone = { permission: 'undetermined' as PushPermission, store }
+  const phone = {
+    permission: 'undetermined' as PushPermission,
+    sixteenPlus: true,
+    store,
+  }
   const prePrompt = createPushPrePrompt({
+    sixteenPlus: () => phone.sixteenPlus,
     permission: async () => phone.permission,
     store: {
       get: async key => phone.store.get(key) ?? null,
@@ -57,6 +62,13 @@ describe('createPushPrePrompt', () => {
       await prePrompt.offer()
       expect(prePrompt.isOpen()).toBe(false)
     }
+  })
+
+  it('never opens for a user under 16, or one who has not answered the age question', async () => {
+    const { phone, prePrompt } = setup()
+    phone.sixteenPlus = false
+    await prePrompt.offer()
+    expect(prePrompt.isOpen()).toBe(false)
   })
 
   it('opens once for two events in a row', async () => {

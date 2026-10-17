@@ -6,7 +6,7 @@ import { type PushProviderType, chatServer } from '../chat/chat.server'
 import { upsertStreamUsers } from '../chat/chat.users'
 import { nonEmptyString } from '../patterns'
 import { type PushTokenDoc, PushTokens } from './push.collection'
-import { dropDevices, pushProviderName } from './push.tokens'
+import { dropDevices, mayHavePush, pushProviderName } from './push.tokens'
 
 const PROVIDER_TYPES: Record<PushTokenDoc['platform'], PushProviderType> = {
   ios: 'apn',
@@ -37,14 +37,20 @@ const register = async function (
   const held = await PushTokens.find({
     $or: [{ expoToken }, { deviceToken }],
   }).fetchAsync()
+  const mayPush = await mayHavePush(userId)
   await dropDevices(
-    held.filter(
-      t =>
-        t.userId !== userId ||
-        t.expoToken !== expoToken ||
-        t.deviceToken !== deviceToken,
-    ),
+    mayPush
+      ? held.filter(
+          t =>
+            t.userId !== userId ||
+            t.expoToken !== expoToken ||
+            t.deviceToken !== deviceToken,
+        )
+      : held,
   )
+  // Under 16, or not answered yet: the device goes to no one, with nothing
+  // registered anywhere (docs/spec.md §10.5).
+  if (!mayPush) return
   await PushTokens.upsertAsync(
     { expoToken },
     { $set: { userId, deviceToken, platform, locale, updatedAt: new Date() } },

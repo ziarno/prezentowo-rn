@@ -7,29 +7,42 @@ import {
 
 describe('pushSummary', () => {
   it('is on when every kind is on, missing ones included', () => {
-    expect(pushSummary('granted', {})).toBe('on')
-    expect(pushSummary('granted', { invited: true, chat: true })).toBe('on')
+    expect(pushSummary('granted', {}, true)).toBe('on')
+    expect(pushSummary('granted', { invited: true, chat: true }, true)).toBe(
+      'on',
+    )
   })
 
   it('is some when only some kinds are on', () => {
-    expect(pushSummary('granted', { chat: false })).toBe('some')
+    expect(pushSummary('granted', { chat: false }, true)).toBe('some')
   })
 
   it('is off when every kind is off', () => {
     expect(
-      pushSummary('granted', {
-        invited: false,
-        'participant-joined': false,
-        'suggestion-claimed': false,
-        'claimed-gift-removed': false,
-        chat: false,
-      }),
+      pushSummary(
+        'granted',
+        {
+          invited: false,
+          'participant-joined': false,
+          'suggestion-claimed': false,
+          'claimed-gift-removed': false,
+          chat: false,
+        },
+        true,
+      ),
     ).toBe('off')
   })
 
   it('is off in Settings whenever the OS isn’t delivering, whatever the toggles say', () => {
-    expect(pushSummary('denied', {})).toBe('offInSettings')
-    expect(pushSummary('undetermined', { chat: false })).toBe('offInSettings')
+    expect(pushSummary('denied', {}, true)).toBe('offInSettings')
+    expect(pushSummary('undetermined', { chat: false }, true)).toBe(
+      'offInSettings',
+    )
+  })
+
+  it('is for 16+ only for a user under 16, whatever the OS says', () => {
+    expect(pushSummary('granted', {}, false)).toBe('sixteenPlus')
+    expect(pushSummary('denied', {}, false)).toBe('sixteenPlus')
   })
 })
 
