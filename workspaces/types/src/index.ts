@@ -15,6 +15,26 @@ export type UpdateUserArgs = {
   photo?: string | null
 }
 
+// The age bands we keep (docs/spec.md §1.15), asked at first login. Never a
+// birth date. A user document with no band hasn't answered yet.
+export const AGE_BANDS = ['13-15', '16+'] as const
+export type AgeBand = (typeof AGE_BANDS)[number]
+
+// What the first-login question offers. `under-13` is never stored: it ends
+// the sign-up and the account is deleted.
+export const AGE_ANSWERS = ['under-13', ...AGE_BANDS] as const
+export type AgeAnswer = (typeof AGE_ANSWERS)[number]
+
+// `users.setAgeBand`: the answer to the first-login age question.
+export type SetAgeBandArgs = { answer: AgeAnswer }
+
+// Whether a user document is in the 16+ band. Both the 13-15 band and "no
+// band yet" are false, so a feature that is only for 16+ (push, being found
+// by search) stays off until the person has answered.
+export function isSixteenPlus(user: { ageBand?: AgeBand } | null | undefined) {
+  return user?.ageBand === '16+'
+}
+
 // `users.deleteAccount` (docs/spec.md §1.12): the account's own email,
 // retyped as a deliberate-action check, matched case-insensitively.
 export type DeleteAccountArgs = { email: string }

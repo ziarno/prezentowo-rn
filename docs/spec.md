@@ -320,6 +320,23 @@ export type UserStats = { events: number; wished: number; claimed: number }
 
 Definitions: §10.3.
 
+### 1.15 Age band — [#105](https://github.com/ziarno/prezentowo-rn/issues/105)
+
+The minimum age is **13**, with no parental-consent flow (basis: [Under 16 research](research/under-16-users.md), option b). First login asks the age and keeps a **band**, never a birth date.
+
+```ts
+export const AGE_BANDS = ['13-15', '16+'] as const
+export type AgeBand = (typeof AGE_BANDS)[number]
+export const AGE_ANSWERS = ['under-13', ...AGE_BANDS] as const
+export type AgeAnswer = (typeof AGE_ANSWERS)[number]
+export type SetAgeBandArgs = { answer: AgeAnswer }
+export function isSixteenPlus(user: { ageBand?: AgeBand } | null | undefined): boolean
+```
+
+- **`ageBand?: AgeBand`** is a top-level field of the user document, not under `profile`, so no publication of a profile can carry it. It is published to that user only, by the own-account publication with `createdAt` and `pushPreferences` (§2.1). It is never in `users.search` results, activity, chat or any other user's view.
+- A missing `ageBand` means "not answered yet". `under-13` is an answer, never a stored value.
+- `isSixteenPlus` is the one test other features use: true only for `16+`. The 13-15 band and "no band" are both false, so a 16+-only feature (no push, §10.5; being found by `users.search`) is off until the person has answered.
+
 ---
 
 ## 2. Backend — methods and publications
@@ -339,7 +356,7 @@ All methods are `async`, check `this.userId`, and validate arguments. "Member" m
 | `PushTokens` | `{ _id, userId, expoToken, deviceToken, platform, locale, updatedAt }` | new | `expoToken` unique; `deviceToken` unique; `userId`. Server-only, one per device, never published ([#82](https://github.com/ziarno/prezentowo-rn/issues/82)). |
 | `PushTickets` | `{ _id (Expo ticket id), expoToken, sentAt }` | new | `sentAt`. Server-only, never published: each sent inbox push until its receipt is read (§2.5), so a restart doesn't lose it. |
 | `Images` | `{ _id, ownerId, createdAt, attachedAt? }` | new | — (records who uploaded, and when a document took the upload; used for cleanup) |
-| `Meteor.users` | + `nameTokens: string[]` | changed | `nameTokens` (multikey). Server-only: `profile.name` folded (lower case, diacritics stripped, `ł`→`l`) and split on whitespace and hyphens; rewritten by every write of `profile.name` (registration, `profile.name`, Dev login). Never published ([#68](https://github.com/ziarno/prezentowo-rn/issues/68)). Also + `pushPreferences?: PushPreferences` (§1.13), published to that user only; + `services.accountDeletion?: { hashedToken, createdAt }`, the web deletion token (§3.6), server-only. |
+| `Meteor.users` | + `nameTokens: string[]` | changed | `nameTokens` (multikey). Server-only: `profile.name` folded (lower case, diacritics stripped, `ł`→`l`) and split on whitespace and hyphens; rewritten by every write of `profile.name` (registration, `profile.name`, Dev login). Never published ([#68](https://github.com/ziarno/prezentowo-rn/issues/68)). Also + `ageBand?: AgeBand` (§1.15), published to that user only, never inside `profile`; + `pushPreferences?: PushPreferences` (§1.13), published to that user only; + `services.accountDeletion?: { hashedToken, createdAt }`, the web deletion token (§3.6), server-only. |
 
 ### 2.2 Methods
 
@@ -366,6 +383,7 @@ Every event title, present title, placeholder name and profile name is stored tr
 | `stream.token()` | signed in | `createToken(userId, now+1h, iat=now)`. | — |
 | `updateUser(UpdateUserArgs)` | signed in | Sets `profile.name`, the stock `profile.avatar` and `profile.photo` (§1.10). Never touches `emails`; an `email` key is ignored. A new `photo` attaches the upload per §3.1 (`imageNotFound` / `imageInUse`); re-sending the current one attaches nothing. A new or `null` photo deletes the replaced upload. | — |
 | `users.deleteAccount(DeleteAccountArgs)` | signed in | `email` must match the account's email case-insensitively, else `notAuthorized` / `emailMismatch`. Then `deleteAccountFor(this.userId)` (§10.4). Online-only `call`, never queued. No magic-link re-auth: the session came from one, and the typed email is the deliberate-action check. | Per §10.4. |
+| `users.setAgeBand(SetAgeBandArgs)` | signed in | The first-login age question (§1.15, §4.4). `answer` must be `under-13`, `13-15` or `16+` (`check`). Asked **once**: when the user already has an `ageBand`, any answer is a no-op. `13-15` / `16+` set `ageBand`. `under-13` stores nothing and **deletes the account**: a user with no `profile.name` (they never finished first login and own nothing, so there is no chat to leave) has just the user document removed; one with a name, an account from before this question, goes through `deleteAccountFor` (§10.4). Either way the calling connection is detached from its login token first, as `users.deleteAccount` does, so the answer reaches the app. Online-only `call`, never queued. | Per §10.4 for a named account. |
 | `users.stats()` | signed in | Returns `UserStats`, counted fresh (§10.3). Online-only `call`, never queued, never mirrored, no rate limit. | — |
 | `users.setPushPreference(SetPushPreferenceArgs)` | signed in | Sets `pushPreferences.<kind>`. For `chat` it writes through to Stream: `setPushPreferences([{ user_id, chat_level: enabled ? 'all' : 'none' }])`. Stream can't be read back, so Mongo holds the truth. Online-only `call`, never queued. | — |
 | `push.register(RegisterPushArgs)` | signed in | Upserts this device's `PushTokens` doc (matched on either token) for the caller, with `locale` and `updatedAt`. Takes the same tokens from any other account first: deletes their docs and calls Stream `removeDevice` for them. Then calls Stream `addDevice(deviceToken, 'apn' \| 'firebase', userId, providerName)` and sets `language: locale` on the Stream user. `providerName` comes from settings.json's `stream.pushProviders`: `firebase` for Android, and for iOS `apn.development` or `apn.production` by the device's `apnsEnvironment` (missing = production). Idempotent; the app calls it often (§10.5). | — |
@@ -522,7 +540,7 @@ Server jobs at startup and then daily, beside the upload sweep (§3.1):
 ```
 src/app/
   _layout.tsx                 root Stack + Protected guards (unchanged) + pending-invite hook
-  onboarding / welcome / signin / check-email / first-login   (unchanged; welcome gains a __DEV__ Dev login button)
+  onboarding / welcome / signin / check-email / first-login / under-age   (welcome gains a __DEV__ Dev login button; first-login asks the age, §4.4; under-age is the stop message after an under-13 answer)
   e/[code].tsx                7a invite (modal, outside the guards)
   (app)/
     _layout.tsx               Drawer.Navigator (@react-navigation/drawer, drawerType 'front') → one screen → the Stack
@@ -567,6 +585,18 @@ src/app/
 
 ---
 
+### 4.4 First login and the age question — [#105](https://github.com/ziarno/prezentowo-rn/issues/105)
+
+The root guard sends a signed-in person to first-login while their own document lacks a name **or** an age band (`accountStage`), so one account made before the question existed is asked once, before the app, with a screen that has only the age. A missing field counts only once the publication that carries it has arrived (`emails` for the name, `createdAt` for the band, which comes with `ageBand`), so someone who already answered never sees the question flash up. Offline with the own document not yet arrived, the app opens as before.
+
+- **The question**: a labelled field, "How old are you?" / "Ile masz lat?", styled as the name field's label, with a three-segment select `Under 13` / `13–15` / `16 or older` (PL: `Poniżej 13` / `13–15` / `16 lub więcej`). **No segment is selected until the person picks one**, and nothing hints at the allowed age. Continue without an answer shows "Pick one to continue". Under the select: "We only keep which group you're in, never your birthday."
+- **13–15 / 16+**: `users.setAgeBand` first, then the name, avatar and photo as before. If the second step fails the band is already stored, so the screen is retried without asking again.
+- **Under 13**: nothing is uploaded or saved but the answer itself. The app shows the stop message (`under-age` screen: "Prezentowo is for ages 13 and up. You can't make an account yet, so we haven't kept anything: no name, no age, no email address. Come back when you turn 13.", with **Back**) the moment Continue is tapped, outranking every stage, and calls `users.setAgeBand('under-13')`. A failure (offline, server) brings first-login back with the error. After it, **Back** ends the session as after account deletion (§10.4: stored token, cache and queue wiped) and lands on welcome. The stop message is memory only: reopening the app lands on welcome too, since the account is gone.
+- The never-signed-in sweep (§3.8) is unchanged; an under-13 answer doesn't wait for it.
+- Dev login (§4) gives the dev user `16+` along with the name, so it skips first-login.
+
+---
+
 ## 5. Mobile — screens → contract
 
 | Screens | Reads | Writes | Notes |
@@ -582,6 +612,7 @@ src/app/
 | `7a` invite | `invites.byCode` | `events.join`, `invites.ignore` | Renders signed out. The placeholder list ends with "no, I'm new". A `reservedForYou` placeholder replaces the list and "no, I'm new": "{inviter} added you as {name}", with Join and Ignore, since `events.join` claims the reservation either way. Offline: a blocking error. |
 | Notifications | `notifications.mine`, `events.mine` (titles), `invites.deferred`, `users.inEvent` + `gifts.byEvent` per event its rows name | `notifications.markAllRead` on open | Layout per [#28](https://github.com/ziarno/prezentowo-rn/issues/28): flat inbox (New / Earlier this week / Older), same-event joins coalesced, unread styling from a snapshot taken at open. `invite-deferred` and `invited` → `7a` (code derived live from the event's `InviteDoc`; `invited` reads "{inviter} invited you to {event}"), `suggestion-claimed` → `1e` (deleted gift → `3f`, or `3c` if the recipient is gone), `participant-joined` → `3c`, `claimed-gift-removed` → `3f` ("{present} in {event} was removed"), `event-handed-over` → `3c` ("You're now the host of {event}"). An inbox push opens the same route (§10.5). |
 | `8a`/`8b` chat | `chatThreads.byEvent`, `stream.token` | Stream | Connect lazily, only when a chat screen opens. |
+| First-login | current user (`ageBand`, `profile.name`) | `users.setAgeBand`, `updateUser`, `POST /api/images` | §4.4. |
 | Profile | current user, `users.stats` | `updateUser`, `POST /api/images`, `users.deleteAccount` | Layout and rows: §10.1. The avatar opens a sheet: take a photo, choose one, or pick a stock avatar (§1.10), plus "Remove photo" when you have a photo of your own. A photo is square-cropped in the system picker, downscaled and uploaded at once, then saved. First-login's "+" tile does the same take/choose, previews the photo, and uploads it on Continue, saving it with the name. |
 | Push notifications | current user (`pushPreferences`), OS permission | `users.setPushPreference`, `push.register` | §10.2. |
 

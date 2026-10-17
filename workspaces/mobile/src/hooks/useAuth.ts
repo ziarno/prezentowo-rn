@@ -100,6 +100,14 @@ export const useAuth = () => {
     signOut: ({ onError }: SignOutParams) => {
       pushDevice.signOut().then(logout).then(clearAppSession, onError)
     },
+    // Back, from the under-13 stop message. The server already deleted the
+    // account, so, as after `deleteAccount`, the session just ends here.
+    leaveUnderAge: () => {
+      void pushDevice.forget()
+      forgetSession()
+      clearAppSession()
+      useAuthStore.getState().setUnderAge(false)
+    },
     // The server deletes the account and drops its logins, so the session
     // ends here without a `logout`; the wipe (cache, stats, queue, stored
     // token) follows it (docs/spec.md §10.4). A failure keeps the session.

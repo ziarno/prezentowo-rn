@@ -1,5 +1,8 @@
 import type {
+  AgeAnswer,
+  AgeBand,
   PushPreferences,
+  SetAgeBandArgs,
   SetPushPreferenceArgs,
   UpdateUserArgs,
   UserStats,
@@ -18,6 +21,9 @@ export type CurrentUser = {
   profile?: Profile
   // Which pushes the user wants; a missing kind is on (docs/spec.md §1.13).
   pushPreferences?: PushPreferences
+  // The first-login age answer; missing = not answered yet (§1.15). Only ever
+  // on the user's own document.
+  ageBand?: AgeBand
 }
 
 export type PublicUser = {
@@ -37,6 +43,13 @@ export function findUserById(userId: string): PublicUser | undefined {
 
 export function updateUser(args: UpdateUserArgs): Promise<void> {
   return call('updateUser', args)
+}
+
+// First-login's age question (docs/spec.md §1.15). A band is stored; under-13
+// deletes the account on the server, so the caller ends the session after it.
+// Online-only, never queued.
+export function setAgeBand(answer: AgeAnswer): Promise<void> {
+  return call('users.setAgeBand', { answer } satisfies SetAgeBandArgs)
 }
 
 // Follows the account to every phone. Online-only, never queued.

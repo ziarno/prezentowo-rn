@@ -47,6 +47,9 @@ function RootNavigator() {
   useMagicLinkDeepLink()
   const hasCompletedOnboarding = useAuthStore(s => s.hasCompletedOnboarding)
   const stage = useAccountStage()
+  // The stop message of an under-13 answer outranks every stage: the account
+  // behind it is already gone.
+  const underAge = useAuthStore(s => s.underAge)
 
   // hasCompletedOnboarding === null means we haven't read from SecureStore yet;
   // the splash screen stays up until then, so any guard would work — but we
@@ -56,9 +59,11 @@ function RootNavigator() {
   // screen rather than guess between first-login and the app.
   const showAuth =
     hasCompletedOnboarding === true &&
+    !underAge &&
     (stage === 'signedOut' || stage === 'loading')
-  const showFirstLogin = stage === 'firstLogin'
-  const showApp = stage === 'app'
+  const showFirstLogin = !underAge && stage === 'firstLogin'
+  const showUnderAge = underAge
+  const showApp = !underAge && stage === 'app'
   usePendingInvite(showApp)
   usePushRegistration()
   usePushOpening(showApp)
@@ -88,6 +93,10 @@ function RootNavigator() {
 
       <Stack.Protected guard={showFirstLogin}>
         <Stack.Screen name="first-login" />
+      </Stack.Protected>
+
+      <Stack.Protected guard={showUnderAge}>
+        <Stack.Screen name="under-age" />
       </Stack.Protected>
 
       <Stack.Protected guard={showApp}>

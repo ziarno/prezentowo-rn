@@ -74,7 +74,22 @@
     "nameLabel": "Twoje imię",
     "namePlaceholder": "Jan Kowalski",
     "profilePicture": "Zdjęcie profilowe",
-    "uploadHint": "Kliknij <0>+</0>, aby dodać własne zdjęcie, albo kliknij awatar, by wybrać jeden z naszych."
+    "uploadHint": "Kliknij <0>+</0>, aby dodać własne zdjęcie, albo kliknij awatar, by wybrać jeden z naszych.",
+    "ageLabel": "Ile masz lat?",
+    "ageUnder13": "Poniżej 13",
+    "age13to15": "13–15",
+    "age16plus": "16 lub więcej",
+    "ageHint": "Zapamiętujemy tylko grupę wiekową, nigdy daty urodzenia.",
+    "ageRequired": "Wybierz jedno, aby kontynuować",
+    "ageEyebrow": "Jedno pytanie.",
+    "ageTitleLine1": "Ile masz",
+    "ageTitleLine2": "lat?",
+    "ageSubtitle": "Prezentowo jest dla osób od 13 lat, więc musimy zapytać."
+  },
+  "underAge": {
+    "title": "Prezentowo jest dla osób od 13 lat",
+    "body": "Nie możesz jeszcze założyć konta, więc niczego nie zachowaliśmy: ani imienia, ani wieku, ani adresu e-mail. Wróć, gdy skończysz 13 lat.",
+    "back": "Wróć"
   },
   "avatarPicker": {
     "title": "Wybierz awatar",

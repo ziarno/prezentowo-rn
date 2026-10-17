@@ -1,11 +1,17 @@
+import type { AgeBand } from '@prezentowo/types'
+
 import { accountStage } from '@/api/accountStage'
 import type { CurrentUser } from '@/api/users'
 
 // The signed-in user's own document, as Meteor publishes it.
-const own = (profile?: { name?: string }) => ({
+// `createdAt` comes with the second of the two publications that make up the
+// own document, the one that also carries the age band.
+const own = (profile?: { name?: string }, ageBand?: AgeBand) => ({
   _id: 'u1',
+  createdAt: new Date('2026-10-01'),
   emails: [{ address: 'a@b.c', verified: true }],
   profile,
+  ...(ageBand ? { ageBand } : {}),
 })
 
 const signedIn = (user: CurrentUser | undefined, offline = false) =>
@@ -22,9 +28,27 @@ describe('accountStage', () => {
     ).toBe('signedOut')
   })
 
-  it('opens the app for a user with a name, online or offline', () => {
-    expect(signedIn(own({ name: 'Ala' }))).toBe('app')
-    expect(signedIn(own({ name: 'Ala' }), true)).toBe('app')
+  it('opens the app for a user with a name and an age band, online or offline', () => {
+    expect(signedIn(own({ name: 'Ala' }, '16+'))).toBe('app')
+    expect(signedIn(own({ name: 'Ala' }, '13-15'))).toBe('app')
+    expect(signedIn(own({ name: 'Ala' }, '13-15'), true)).toBe('app')
+  })
+
+  // First-login also asks the age, and so does an existing user once.
+  it('asks the age of a user with a name but no band', () => {
+    expect(signedIn(own({ name: 'Ala' }))).toBe('firstLogin')
+  })
+
+  it('asks the age of a user with neither', () => {
+    expect(signedIn(own())).toBe('firstLogin')
+  })
+
+  // The profile and emails arrive before the publication that carries the
+  // band; a user who has answered must not see the question in between.
+  it('waits for the band while only the first publication is in', () => {
+    const { createdAt: _, ...firstHalf } = own({ name: 'Ala' })
+    expect(signedIn(firstHalf)).toBe('loading')
+    expect(signedIn(firstHalf, true)).toBe('app')
   })
 
   it('asks for a name when the user has none', () => {
@@ -51,8 +75,8 @@ describe('accountStage', () => {
     expect(signedIn({ _id: 'u1', profile: {} })).toBe('loading')
   })
 
-  it('names the user from any publication that has the name', () => {
-    expect(signedIn({ _id: 'u1', profile: { name: 'Ala' } })).toBe('app')
+  it('waits for the own document when only a named profile is in', () => {
+    expect(signedIn({ _id: 'u1', profile: { name: 'Ala' } })).toBe('loading')
   })
 
   // A session on this device was signed in before; it never sees first-login

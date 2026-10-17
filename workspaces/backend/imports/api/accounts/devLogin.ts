@@ -1,4 +1,5 @@
 import { Accounts } from 'meteor/accounts-base'
+import { Meteor } from 'meteor/meteor'
 
 // Creates the dev user with its `nameTokens`.
 import '../users/users.nameTokens'
@@ -7,18 +8,31 @@ import '../users/users.nameTokens'
 // ever registered in development; see registerDevLogin.
 export const DEV_LOGIN_EMAIL = 'dev@prezentowo.local'
 export const DEV_LOGIN_NAME = 'Dev'
+const DEV_LOGIN_AGE_BAND = '16+'
 
 type DevLoginOptions = { devLogin?: unknown }
 
 async function findOrCreateDevUser() {
   const existing = await Accounts.findUserByEmail(DEV_LOGIN_EMAIL)
-  if (existing) return existing._id
+  if (existing) {
+    // A dev user from before the age question gets its band now.
+    if (!existing.ageBand) {
+      await Meteor.users.updateAsync(existing._id, {
+        $set: { ageBand: DEV_LOGIN_AGE_BAND },
+      })
+    }
+    return existing._id
+  }
 
-  // The name is set up front so the app skips first-login.
-  return Accounts.createUserAsync({
+  // The name and age band are set up front so the app skips first-login.
+  const userId = await Accounts.createUserAsync({
     email: DEV_LOGIN_EMAIL,
     profile: { name: DEV_LOGIN_NAME },
   })
+  await Meteor.users.updateAsync(userId, {
+    $set: { ageBand: DEV_LOGIN_AGE_BAND },
+  })
+  return userId
 }
 
 async function devLoginHandler(options: DevLoginOptions) {

@@ -188,6 +188,35 @@ type AccountsInternals = {
   ) => void
 }
 
+/**
+ * Deletes the account of the method's caller (`this.userId`) and ends the
+ * caller's session, for the methods that delete the account they were called
+ * from. `deleter` is what removes the account, `deleteAccountFor` unless the
+ * caller knows a lighter removal does.
+ */
+export async function deleteCallersAccount(
+  method: Meteor.MethodThisType,
+  deleter: (userId: string) => Promise<void> = deleteAccountFor,
+): Promise<void> {
+  const userId = method.userId!
+  // Removing the user closes every connection logged in as them, this one
+  // too, possibly before the answer is sent; the client would then resend
+  // the call signed out. So detach this connection from its login token
+  // first, as `logout` does, and only the account's other connections close.
+  // A run that fails part-way reattaches it, so the user can retry.
+  const connection = method.connection
+  const accounts = Accounts as unknown as AccountsInternals
+  const token = connection ? accounts._getLoginToken(connection.id) : null
+  if (connection) accounts._setLoginToken(userId, connection, null)
+  try {
+    await deleter(userId)
+  } catch (error) {
+    if (connection) accounts._setLoginToken(userId, connection, token)
+    throw error
+  }
+  if (connection) await method.setUserId(null)
+}
+
 const deleteAccount = async function (
   this: Meteor.MethodThisType,
   options: DeleteAccountArgs,
@@ -214,22 +243,7 @@ const deleteAccount = async function (
     throw new Meteor.Error('notAuthorized', 'emailMismatch')
   }
 
-  // Removing the user closes every connection logged in as them, this one
-  // too, possibly before the answer is sent; the client would then resend
-  // the call signed out. So detach this connection from its login token
-  // first, as `logout` does, and only the account's other connections close.
-  // A run that fails part-way reattaches it, so the user can retry.
-  const connection = this.connection
-  const accounts = Accounts as unknown as AccountsInternals
-  const token = connection ? accounts._getLoginToken(connection.id) : null
-  if (connection) accounts._setLoginToken(userId, connection, null)
-  try {
-    await deleteAccountFor(userId)
-  } catch (error) {
-    if (connection) accounts._setLoginToken(userId, connection, token)
-    throw error
-  }
-  if (connection) await this.setUserId(null)
+  await deleteCallersAccount(this)
 }
 
 Meteor.methods({ 'users.deleteAccount': deleteAccount })
