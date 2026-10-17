@@ -37,6 +37,10 @@ import {
   chatAvatarOverrides,
 } from '@/ui/components/ChatAvatars'
 import {
+  chatMessageActions,
+  chatModerationOverrides,
+} from '@/ui/components/ChatModeration'
+import {
   ChatPresentsProvider,
   MentionTextInput,
   chatPresentOverrides,
@@ -187,6 +191,8 @@ function ThreadView({ thread }: { thread: ChatThreadDoc }) {
             additionalKeyboardAvoidingViewProps={{ style: { flex: 1 } }}
             // Voice messages: hold the composer's mic to record (expo-audio).
             audioRecordingEnabled
+            // Flag and Block on others' messages (docs/spec.md §7.1).
+            messageActions={chatMessageActions}
             // A present mention's titles reach the push, not history.
             doSendMessageRequest={(_, message, options) =>
               sendWithPushText(shown, message, options)
@@ -201,7 +207,11 @@ function ThreadView({ thread }: { thread: ChatThreadDoc }) {
   )
 }
 
-const chatOverrides = { ...chatAvatarOverrides, ...chatPresentOverrides }
+const chatOverrides = {
+  ...chatAvatarOverrides,
+  ...chatPresentOverrides,
+  ...chatModerationOverrides,
+}
 
 // Stream is unreachable (docs/spec.md §7).
 function CantLoad({ onRetry }: { onRetry?: () => void }) {

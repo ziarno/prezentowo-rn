@@ -1,4 +1,5 @@
 import {
+  contactUrl,
   formatJoined,
   formatStat,
   legalPageUrl,
@@ -11,6 +12,12 @@ describe('legalPageUrl', () => {
     ['terms', 'en', 'https://prezentowo.jarno.pl/terms?lang=en'],
   ] as const)('%s in %s', (page, lang, url) => {
     expect(legalPageUrl(page, lang)).toBe(url)
+  })
+})
+
+describe('contactUrl', () => {
+  test('is a mailto link to the support address', () => {
+    expect(contactUrl()).toBe('mailto:prezentowo@jarno.pl')
   })
 })
 

@@ -114,6 +114,7 @@
     "version": "Version",
     "privacy": "Privacy policy",
     "terms": "Terms of use",
+    "contact": "Contact",
     "signOut": "Sign out",
     "unsynced_one": "{{count}} offline change not synced yet",
     "unsynced_other": "{{count}} offline changes not synced yet",
@@ -590,6 +591,11 @@
     "mentionClose": "Close",
     "mentionBlockedTitle": "You can't mention this present",
     "mentionBlocked": "{{name}} is in this chat and mustn't know about this present.",
-    "mentionUnavailable": "Unavailable present"
+    "mentionUnavailable": "Unavailable present",
+    "blockedHidden": "Hidden: you blocked {{name}}. Tap to unblock.",
+    "unblockTitle": "Unblock {{name}}?",
+    "unblockBody": "You'll see their messages in chats again.",
+    "unblock": "Unblock",
+    "unblockCancel": "Cancel"
   }
 }

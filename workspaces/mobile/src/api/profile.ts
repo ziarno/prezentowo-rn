@@ -1,10 +1,13 @@
-import { WEB_URL } from '@/constants/web'
+import { CONTACT_EMAIL, WEB_URL } from '@/constants/web'
 
 export type LegalPage = 'privacy' | 'terms'
 
 // The landing site's legal pages, in the app's language (docs/spec.md §3.7).
 export const legalPageUrl = (page: LegalPage, lang: string) =>
   `${WEB_URL}/${page}?lang=${encodeURIComponent(lang)}`
+
+// About's Contact row opens the mail app on the support address.
+export const contactUrl = () => `mailto:${CONTACT_EMAIL}`
 
 // About's Version row: `expo-application`'s version and build, e.g.
 // "1.2.0 (42)".

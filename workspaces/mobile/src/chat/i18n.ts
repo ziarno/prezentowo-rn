@@ -99,6 +99,10 @@ const pl = {
   'Unmute User': 'Wyłącz wyciszenie',
   'Block User': 'Zablokuj użytkownika',
   'Unblock User': 'Odblokuj użytkownika',
+  Block: 'Zablokuj',
+  'Block {{ name }}': 'Zablokować użytkownika {{ name }}?',
+  "They won't be able to message or call you. You can unblock them later.":
+    'Nie zobaczysz jego wiadomości na czatach, a on się o tym nie dowie. Możesz go odblokować, stukając ukrytą wiadomość.',
   'Message Reactions': 'Reakcje',
   'Tap to remove': 'Stuknij, aby usunąć',
   '{{count}} Reactions_one': '{{count}} reakcja',
@@ -220,7 +224,17 @@ const plDayjs = {
 // One instance for the app, so its translators survive every chat screen.
 // English fallback, not the raw key: some keys are templates (`timestamp/…`).
 export const chatI18n = new Streami18n(
-  { language: 'en' },
+  {
+    language: 'en',
+    // Stream's block text says the person can't message you, which is true
+    // of direct messages only. Here it hides their messages from you, and
+    // tells them nothing (src/chat/moderation.ts).
+    translationsForLanguage: {
+      'Block {{ name }}': 'Block {{ name }}?',
+      "They won't be able to message or call you. You can unblock them later.":
+        "You won't see their messages in chats, and they won't be told. You can unblock them by tapping a hidden message.",
+    },
+  },
   { fallbackLng: 'en' },
 )
 chatI18n.registerTranslation('pl', pl, plDayjs)

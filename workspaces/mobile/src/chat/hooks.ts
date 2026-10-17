@@ -57,7 +57,8 @@ export function useChatRecap(
         .then(
           channels => {
             if (!current) return
-            const lines = channels[0] ? recapOf(channels[0]) : []
+            const blocked = client.blockedUsers.getLatestValue().userIds
+            const lines = channels[0] ? recapOf(channels[0], blocked) : []
             setResult({ cid, recap: { status: 'loaded', lines } })
           },
           () => {

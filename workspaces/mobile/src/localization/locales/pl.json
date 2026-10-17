@@ -114,6 +114,7 @@
     "version": "Wersja",
     "privacy": "Polityka prywatności",
     "terms": "Regulamin",
+    "contact": "Kontakt",
     "signOut": "Wyloguj się",
     "unsynced_one": "{{count}} zmiana offline jeszcze niezsynchronizowana",
     "unsynced_few": "{{count}} zmiany offline jeszcze niezsynchronizowane",
@@ -626,6 +627,11 @@
     "mentionClose": "Zamknij",
     "mentionBlockedTitle": "Nie możesz wspomnieć tego prezentu",
     "mentionBlocked": "{{name}} jest w tym czacie i nie może wiedzieć o tym prezencie.",
-    "mentionUnavailable": "Niedostępny prezent"
+    "mentionUnavailable": "Niedostępny prezent",
+    "blockedHidden": "Ukryte: zablokowano użytkownika {{name}}. Stuknij, aby odblokować.",
+    "unblockTitle": "Odblokować użytkownika {{name}}?",
+    "unblockBody": "Znowu zobaczysz jego wiadomości na czatach.",
+    "unblock": "Odblokuj",
+    "unblockCancel": "Anuluj"
   }
 }

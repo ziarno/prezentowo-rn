@@ -67,6 +67,21 @@ describe('recapOf', function () {
     expect(recap.map(line => line.id)).toEqual(['m2', 'm3', 'm4'])
   })
 
+  it("leaves out the viewer's blocked people", function () {
+    const recap = recapOf(
+      {
+        messages: [
+          message('m1', 'bartek', 'Lego?'),
+          message('m2', 'ola', 'I got it'),
+          message('m3', 'bartek', 'Ha'),
+        ],
+      },
+      ['bartek'],
+    )
+
+    expect(recap.map(line => line.id)).toEqual(['m2'])
+  })
+
   it('skips deleted and system messages', function () {
     const recap = recapOf({
       messages: [

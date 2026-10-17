@@ -9,6 +9,7 @@ export {
   useChatSnapshot,
   type ChatRecap,
 } from './hooks'
+export { isFromBlockedUser } from './moderation'
 export {
   cidOf,
   eventThreadOf,

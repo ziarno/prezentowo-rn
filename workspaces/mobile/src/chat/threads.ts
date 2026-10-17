@@ -1,5 +1,7 @@
 import type { ChatThreadDoc } from '@prezentowo/types'
 
+import { isFromBlockedUser } from './moderation'
+
 // How many messages a recap box shows.
 export const RECAP_LENGTH = 3
 
@@ -37,10 +39,14 @@ export type RecapLine = {
 }
 
 // A recap box's lines, oldest first: a channel's last few messages that are
-// still there and that someone wrote.
-export function recapOf(channel: { messages?: RecapMessage[] }): RecapLine[] {
+// still there and that someone wrote, not someone the viewer blocked.
+export function recapOf(
+  channel: { messages?: RecapMessage[] },
+  blockedUserIds: readonly string[] = [],
+): RecapLine[] {
   return (channel.messages ?? [])
     .filter(m => m.type !== 'deleted' && m.type !== 'system' && !m.deleted_at)
+    .filter(m => !isFromBlockedUser(blockedUserIds, m))
     .slice(-RECAP_LENGTH)
     .map(m => ({
       id: m.id,

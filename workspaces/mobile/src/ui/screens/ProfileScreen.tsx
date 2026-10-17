@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Pressable,
   ScrollView,
   TextInput,
@@ -14,7 +15,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { uploadImage, uploadImageUrl } from '@/api/images'
-import { formatJoined, formatStat, versionLabel } from '@/api/profile'
+import {
+  contactUrl,
+  formatJoined,
+  formatStat,
+  versionLabel,
+} from '@/api/profile'
 import { updateUser } from '@/api/users'
 import {
   BellIcon,
@@ -27,6 +33,7 @@ import {
 import { Text } from '@/components/ui/text'
 import { type AvatarKey, avatar } from '@/constants/avatars'
 import { garland } from '@/constants/colors'
+import { CONTACT_EMAIL } from '@/constants/web'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useOffline } from '@/hooks/useOffline'
 import { useOpenLegalPage } from '@/hooks/useOpenLegalPage'
@@ -255,6 +262,11 @@ export function ProfileScreen() {
           <SettingsRow
             label={t('profile.terms')}
             onPress={() => openLegalPage('terms')}
+          />
+          <SettingsRow
+            label={t('profile.contact')}
+            sublabel={CONTACT_EMAIL}
+            onPress={() => void Linking.openURL(contactUrl()).catch(() => {})}
             last
           />
         </Card>
